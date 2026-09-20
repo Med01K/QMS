@@ -8,34 +8,45 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: Tahoma, sans-serif; text-align: center; background-color: #f0f2f5; margin-top: 80px; }
+        body { font-family: Tahoma, sans-serif; text-align: center; background-color: #f0f2f5; margin-top: 50px; }
         .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: inline-block; max-width: 400px; width: 90%; }
-        h1 { color: #333; font-size: 22px; }
-        .number { font-size: 100px; color: #007bff; margin: 20px 0; font-weight: bold; }
-        .status { color: #28a745; font-size: 16px; font-weight: bold; }
+        h1 { color: #333; font-size: 22px; margin-bottom: 5px; }
+        .number { font-size: 90px; color: #007bff; margin: 10px 0; font-weight: bold; }
+        .console-info { font-size: 20px; color: #555; margin-bottom: 20px; background: #e9ecef; padding: 10px; border-radius: 10px; }
+        .status { color: #28a745; font-size: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>رقم الصف الحالي</h1>
+        <h1>رقم الدور الحالي</h1>
         <div class="number" id="queueNum">--</div>
+        <div class="console-info">الشباك / الكونسول: <span id="consoleNum" style="font-weight: bold; color: #007bff;">--</span></div>
         <div class="status">● النظام متصل ويحدث فورياً</div>
     </div>
 
     <script>
-        // ضع إعدادات مشروعك في فايربيس هنا
+        // إعدادات مشروع فايربيس
         const firebaseConfig = {
             databaseURL: "https://qms-online-2658d-default-rtdb.firebaseio.com/"
         };
         firebase.initializeApp(firebaseConfig);
 
-        // مراقبة التغييرات في قاعدة البيانات لحظياً
-        const dbRef = firebase.database().ref('queue/current');
-        dbRef.on('value', (snapshot) => {
+        const db = firebase.database();
+
+        // 1. مراقبة رقم الدور الحالي
+        db.ref('queue/current_ticket').on('value', (snapshot) => {
             const val = snapshot.val();
             if (val !== null) {
                 document.getElementById('queueNum').innerText = val;
+            }
+        });
+
+        // 2. مراقبة رقم الكونسول الحالي
+        db.ref('queue/current_console').on('value', (snapshot) => {
+            const val = snapshot.val();
+            if (val !== null) {
+                document.getElementById('consoleNum').innerText = val;
             }
         });
     </script>
