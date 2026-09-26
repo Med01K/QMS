@@ -1,208 +1,354 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الصف - متابعة الدور</title>
-    
-    <!-- استدعاء مكتبة Firebase Web SDK (v9 Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نظام إدارة الصف - متابعة الدور</title>
 
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
-            background-color: #f0f2f5; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background-color: #f0f2f5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 16px;
+    }
+    .card {
+      background: #ffffff;
+      padding: 36px 26px;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      max-width: 460px;
+      width: 100%;
+    }
+    h1 {
+      color: #444;
+      font-size: 24px;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .number-box {
+      background: #f8f9fa;
+      border-radius: 16px;
+      padding: 10px;
+      margin: 15px 0 10px;
+      border: 2px solid #e9ecef;
+    }
+    .number {
+      font-size: 96px;
+      color: #0d6efd;
+      font-weight: 800;
+      line-height: 1.1;
+      transition: color 0.3s ease, transform 0.2s ease;
+    }
+    .number.updated { transform: scale(1.08); color: #198754; }
 
-        .card { 
-            background: #ffffff; 
-            padding: 40px 30px; 
-            border-radius: 24px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
-            max-width: 420px; 
-            width: 90%; 
-            transition: transform 0.2s ease;
-        }
+    .console-info {
+      font-size: 20px;
+      color: #495057;
+      margin: 14px 0 18px;
+      background: #e7f1ff;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #b6d4fe;
+    }
+    .console-num { font-weight: bold; color: #0d6efd; font-size: 24px; }
 
-        h1 { 
-            color: #444; 
-            font-size: 24px; 
-            margin-bottom: 10px; 
-            font-weight: 600;
-        }
+    .row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    button {
+      border: 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #0d6efd;
+      color: #fff;
+    }
+    button.secondary { background: #6c757d; }
 
-        .number-box {
-            background: #f8f9fa;
-            border-radius: 16px;
-            padding: 10px;
-            margin: 15px 0;
-            border: 2px solid #e9ecef;
-        }
+    .status-container {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 20px;
+      background-color: #e9ecef;
+      color: #6c757d;
+      margin-top: 12px;
+      user-select: none;
+    }
+    .status-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background-color: #dc3545;
+      display: inline-block;
+    }
+    .status-container.online { background-color: #d1e7dd; color: #0f5132; }
+    .status-container.online .status-dot {
+      background-color: #198754;
+      box-shadow: 0 0 8px #198754;
+    }
 
-        .number { 
-            font-size: 100px; 
-            color: #0d6efd; 
-            font-weight: 800; 
-            line-height: 1.1;
-            transition: color 0.3s ease, transform 0.2s ease;
-        }
-
-        /* تأثير فلاش عند تغير الرقم */
-        .number.updated {
-            transform: scale(1.08);
-            color: #198754;
-        }
-
-        .console-info { 
-            font-size: 22px; 
-            color: #495057; 
-            margin-bottom: 25px; 
-            background: #e7f1ff; 
-            padding: 12px; 
-            border-radius: 12px; 
-            border: 1px solid #b6d4fe;
-        }
-
-        .console-num {
-            font-weight: bold; 
-            color: #0d6efd;
-            font-size: 26px;
-        }
-
-        .status-container {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            padding: 6px 16px;
-            border-radius: 20px;
-            background-color: #e9ecef;
-            color: #6c757d;
-        }
-
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #dc3545; /* أحمر عند الانفصال */
-            display: inline-block;
-        }
-
-        .status-container.online {
-            background-color: #d1e7dd;
-            color: #0f5132;
-        }
-
-        .status-container.online .status-dot {
-            background-color: #198754; /* أخضر عند الاتصال */
-            box-shadow: 0 0 8px #198754;
-        }
-    </style>
+    .hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6c757d;
+      line-height: 1.6;
+    }
+    code { background: #f1f3f5; padding: 2px 6px; border-radius: 8px; }
+  </style>
 </head>
-<body>
 
-    <div class="card">
-        <h1>رقم الدور الحالي</h1>
-        <div class="number-box">
-            <div class="number" id="queueNum">--</div>
-        </div>
-        <div class="console-info">
-            الشباك / الكونسول: <span class="console-num" id="consoleNum">--</span>
-        </div>
-        
-        <div class="status-container" id="statusContainer">
-            <span class="status-dot"></span>
-            <span id="statusText">جاري الاتصال بالنظام...</span>
-        </div>
+<body>
+  <div class="card">
+    <h1>رقم الدور الحالي</h1>
+
+    <div class="number-box">
+      <div class="number" id="queueNum">--</div>
     </div>
 
-    <script>
-        // إعدادات Firebase
-        const firebaseConfig = {
-            databaseURL: "https://qms-online-2658d-default-rtdb.firebaseio.com/"
-        };
-        
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+    <div class="console-info">
+      الشباك / الكونسول: <span class="console-num" id="consoleNum">--</span>
+    </div>
 
-        const queueNumEl = document.getElementById('queueNum');
-        const consoleNumEl = document.getElementById('consoleNum');
-        const statusContainer = document.getElementById('statusContainer');
-        const statusText = document.getElementById('statusText');
+    <div class="status-container" id="statusContainer">
+      <span class="status-dot"></span>
+      <span id="statusText">جاري الاتصال...</span>
+    </div>
 
-        // مولد صوت التنبيه (Ding) باستخدام Web Audio API دون الحاجة لملفات خارجية
-        function playChime() {
-            try {
-                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, audioCtx.currentTime); // نغمة A5
-                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.8);
-                
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.8);
-            } catch (e) {
-                // في حال منع المتصفح الصوت قبل التفاعل
-            }
+    <div class="row">
+      <button id="enableSoundBtn" class="secondary" type="button">تفعيل الصوت</button>
+      <button id="reconnectBtn" type="button">إعادة اتصال</button>
+    </div>
+
+    <div class="hint">
+      هذه الصفحة متوافقة مع كود ESP32 الذي يحدّث:
+      <br/>
+      <code>/queue/current_ticket</code> و <code>/queue/current_console</code>
+      <br/>
+      ملاحظة: إذا كانت قواعد Firebase تمنع القراءة بدون توثيق، لن تظهر البيانات.
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * إعدادات قاعدة البيانات
+     * (تتطابق مع روابط ESP32)
+     ***********************/
+    const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
+
+    // لو قاعدة البيانات تحتاج توثيق (token)، ضعها هنا:
+    // const AUTH = "YOUR_DATABASE_SECRET_OR_ID_TOKEN";
+    // const AUTH_QS = "&auth=" + encodeURIComponent(AUTH);
+    const AUTH_QS = "";
+
+    // Streaming (Server-Sent Events) لمجلد queue (سيرسل current_ticket و current_console)
+    const STREAM_URL = `${DB_BASE}/queue.json?print=silent${AUTH_QS}`;
+
+    // Fetch عادي كاحتياط
+    const TICKET_URL  = `${DB_BASE}/queue/current_ticket.json${AUTH_QS}`;
+    const CONSOLE_URL = `${DB_BASE}/queue/current_console.json${AUTH_QS}`;
+
+    const queueNumEl = document.getElementById('queueNum');
+    const consoleNumEl = document.getElementById('consoleNum');
+    const statusContainer = document.getElementById('statusContainer');
+    const statusText = document.getElementById('statusText');
+    const enableSoundBtn = document.getElementById('enableSoundBtn');
+    const reconnectBtn = document.getElementById('reconnectBtn');
+
+    // حالة محلية
+    const state = {
+      current_ticket: null,
+      current_console: null
+    };
+
+    /***********************
+     * صوت التنبيه (يتطلب تفاعل المستخدم غالباً)
+     ***********************/
+    let audioCtx = null;
+    let soundEnabled = false;
+
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') return audioCtx.resume();
+      return Promise.resolve();
+    }
+
+    function playChime() {
+      if (!soundEnabled) return;
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.7);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.7);
+    }
+
+    enableSoundBtn.addEventListener('click', async () => {
+      try {
+        await ensureAudio();
+        soundEnabled = true;
+        enableSoundBtn.textContent = "الصوت مُفعل";
+        enableSoundBtn.classList.remove('secondary');
+      } catch (e) {
+        alert("المتصفح منع الصوت. جرّب الضغط مرة أخرى أو افتح الصفحة في متصفح آخر.");
+      }
+    });
+
+    function triggerUpdateAnimation() {
+      queueNumEl.classList.add('updated');
+      setTimeout(() => queueNumEl.classList.remove('updated'), 400);
+    }
+
+    /***********************
+     * تحديث الواجهة عند تغيّر القيم
+     ***********************/
+    function setTicket(val) {
+      if (val === null || typeof val === "undefined") return;
+
+      const old = queueNumEl.textContent;
+      const next = String(val);
+
+      if (old !== '--' && old !== next) {
+        playChime();
+        triggerUpdateAnimation();
+      }
+      queueNumEl.textContent = next;
+    }
+
+    function setConsole(val) {
+      if (val === null || typeof val === "undefined") return;
+      consoleNumEl.textContent = String(val);
+    }
+
+    function setOnline(isOnline, msg) {
+      if (isOnline) statusContainer.classList.add('online');
+      else statusContainer.classList.remove('online');
+      statusText.textContent = msg || (isOnline ? "متصل ويحدث فورياً" : "غير متصل - جاري إعادة الاتصال...");
+    }
+
+    /***********************
+     * 1) جلب أولي (Fetch) لضمان ظهور القيم حتى لو تأخر الستريم
+     ***********************/
+    async function initialFetch() {
+      try {
+        const [tRes, cRes] = await Promise.all([fetch(TICKET_URL), fetch(CONSOLE_URL)]);
+        if (!tRes.ok || !cRes.ok) throw new Error("Fetch failed");
+
+        const ticket = await tRes.json();
+        const cons = await cRes.json();
+
+        state.current_ticket = ticket;
+        state.current_console = cons;
+
+        setTicket(ticket);
+        setConsole(cons);
+      } catch (e) {
+        // لا توقف الصفحة؛ قد يعمل الستريم
+      }
+    }
+
+    /***********************
+     * 2) متابعة لحظية عبر Firebase REST Streaming (SSE)
+     * متوافقة مباشرة مع تحديثات ESP32 (PUT)
+     ***********************/
+    let es = null;
+
+    function applyStreamPayload(payload) {
+      // payload مثال:
+      // { path: "/", data: { current_ticket: 5, current_console: 2 } }
+      // أو { path: "/current_ticket", data: 6 }
+      if (!payload || typeof payload !== "object") return;
+
+      const { path, data } = payload;
+
+      if (path === "/") {
+        if (data && typeof data === "object") {
+          if ("current_ticket" in data) {
+            state.current_ticket = data.current_ticket;
+            setTicket(data.current_ticket);
+          }
+          if ("current_console" in data) {
+            state.current_console = data.current_console;
+            setConsole(data.current_console);
+          }
         }
+        return;
+      }
 
-        // دالة إعطاء تأثير بصري عند التحديث
-        function triggerUpdateAnimation() {
-            queueNumEl.classList.add('updated');
-            setTimeout(() => {
-                queueNumEl.classList.remove('updated');
-            }, 400);
-        }
+      // path مثل "/current_ticket"
+      const key = path.replace("/", "");
+      if (key === "current_ticket") {
+        state.current_ticket = data;
+        setTicket(data);
+      } else if (key === "current_console") {
+        state.current_console = data;
+        setConsole(data);
+      }
+    }
 
-        // 1. مراقبة رقم الدور الحالي
-        db.ref('queue/current_ticket').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val !== null) {
-                if (queueNumEl.innerText !== String(val) && queueNumEl.innerText !== '--') {
-                    playChime();
-                    triggerUpdateAnimation();
-                }
-                queueNumEl.innerText = val;
-            }
-        });
+    function connectStream() {
+      if (es) {
+        try { es.close(); } catch {}
+        es = null;
+      }
 
-        // 2. مراقبة رقم الكونسول الحالي
-        db.ref('queue/current_console').on('value', (snapshot) => {
-            const val = snapshot.val();
-            if (val !== null) {
-                consoleNumEl.innerText = val;
-            }
-        });
+      setOnline(false, "جاري الاتصال بالنظام...");
 
-        // 3. مراقبة حالة الاتصال بالخادم
-        db.ref('.info/connected').on('value', (snap) => {
-            if (snap.val() === true) {
-                statusContainer.classList.add('online');
-                statusText.innerText = 'النظام متصل ويحدث فورياً';
-            } else {
-                statusContainer.classList.remove('online');
-                statusText.innerText = 'غير متصل - جاري إعادة الاتصال...';
-            }
-        });
-    </script>
+      es = new EventSource(STREAM_URL);
+
+      es.onopen = () => {
+        setOnline(true, "النظام متصل ويحدث فورياً");
+      };
+
+      // Firebase ترسل أحداث: put / patch
+      es.addEventListener("put", (e) => {
+        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+      });
+
+      es.addEventListener("patch", (e) => {
+        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+      });
+
+      // fallback
+      es.onmessage = (e) => {
+        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+      };
+
+      es.onerror = () => {
+        setOnline(false, "غير متصل - جاري إعادة الاتصال...");
+        // EventSource سيحاول إعادة الاتصال تلقائياً
+      };
+    }
+
+    reconnectBtn.addEventListener('click', () => {
+      connectStream();
+      initialFetch();
+    });
+
+    // تشغيل
+    initialFetch();
+    connectStream();
+  </script>
 </body>
 </html>
