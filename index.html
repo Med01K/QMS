@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>نظام إدارة طابور الانتظار | Système de gestion de file d'attente</title>
+  <title>Système de gestion de file d'attente / نظام إدارة طابور الانتظار</title>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       text-align: center;
@@ -17,40 +18,49 @@
       min-height: 100vh;
       padding: 16px;
     }
+
     .card {
       background: #ffffff;
       padding: 32px 24px;
       border-radius: 24px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      max-width: 480px;
+      max-width: 520px;
       width: 100%;
     }
 
-    /* عرض ثنائي اللغة */
-    .bilingual {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      line-height: 1.15;
+    /* سطر ثنائي اللغة: فرنسي يسار / عربي يمين / وبينهما شرطة مائلة */
+    .bi-line{
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+      align-items: baseline;
+      column-gap: 10px;
     }
-    .ar {
-      direction: rtl;
-      unicode-bidi: isolate;
-      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
-    }
-    .fr {
+    .bi-line .fr{
+      min-width: 0;
+      text-align: left;
       direction: ltr;
       unicode-bidi: isolate;
+    }
+    .bi-line .sep{
+      opacity: 0.5;
+      user-select: none;
+      font-weight: 700;
+    }
+    .bi-line .ar{
+      min-width: 0;
+      text-align: right;
+      direction: rtl;
+      unicode-bidi: isolate;
+      font-family: Tahoma, 'Segoe UI', Arial, sans-serif;
     }
 
     h1 {
       color: #333;
-      font-size: 22px;
+      font-size: 20px;
       margin-bottom: 12px;
-      font-weight: 700;
+      font-weight: 800;
     }
-    h1 .ar { font-weight: 800; }
-    h1 .fr { font-weight: 800; }
 
     .number-box {
       background: #f8f9fa;
@@ -59,6 +69,7 @@
       margin: 15px 0 10px;
       border: 2px solid #e9ecef;
     }
+
     .number {
       font-size: 88px;
       color: #0d6efd;
@@ -75,6 +86,7 @@
       margin: 16px 0;
       text-align: left;
     }
+
     .user-section h3 {
       font-size: 15px;
       color: #333;
@@ -82,25 +94,19 @@
       text-align: center;
       font-weight: 800;
     }
+
     .input-group {
       display: flex;
       flex-direction: column;
       gap: 8px;
       margin-bottom: 10px;
     }
+
     .input-group label {
       font-size: 12px;
       color: #495057;
-      font-weight: 600;
-      line-height: 1.25;
-    }
-    .input-group label .ar,
-    .input-group label .fr {
-      display: block;
       font-weight: 700;
     }
-    .input-group label .ar { text-align: right; }
-    .input-group label .fr { text-align: left; }
 
     .input-group input {
       padding: 10px;
@@ -121,7 +127,7 @@
       padding: 10px;
       border-radius: 10px;
       font-size: 13px;
-      font-weight: bold;
+      font-weight: 800;
       margin-top: 10px;
       text-align: center;
     }
@@ -137,20 +143,24 @@
       align-items: center;
       gap: 10px;
       font-size: 13px;
-      font-weight: 700;
+      font-weight: 800;
       padding: 8px 16px;
       border-radius: 20px;
       background-color: #f8d7da;
       color: #842029;
       margin-top: 12px;
       user-select: none;
+      width: 100%;
+      justify-content: center;
     }
+
     .status-dot {
       width: 10px; height: 10px; border-radius: 50%;
       background-color: #dc3545;
       display: inline-block;
       flex: 0 0 auto;
     }
+
     .status-container.online { background-color: #d1e7dd; color: #0f5132; }
     .status-container.online .status-dot {
       background-color: #198754;
@@ -161,34 +171,45 @@
 
 <body>
   <div class="card">
-    <h1 class="bilingual">
-      <span class="ar" dir="rtl">رقم التذكرة الحالي</span>
-      <span class="fr" dir="ltr">Numéro de ticket actuel</span>
+    <h1>
+      <div class="bi-line">
+        <span class="fr" lang="fr">Numéro de ticket actuel</span>
+        <span class="sep">/</span>
+        <span class="ar" lang="ar">رقم التذكرة الحالي</span>
+      </div>
     </h1>
 
     <div class="number-box">
       <div class="number" id="queueNum">--</div>
     </div>
 
-    <!-- Section de suivi du ticket utilisateur -->
     <div class="user-section">
-      <h3 class="bilingual">
-        <span class="ar" dir="rtl">تتبّع تذكرتك</span>
-        <span class="fr" dir="ltr">Suivi de votre ticket</span>
+      <h3>
+        <div class="bi-line">
+          <span class="fr" lang="fr">Suivi de votre ticket</span>
+          <span class="sep">/</span>
+          <span class="ar" lang="ar">تتبُّع تذكرتك</span>
+        </div>
       </h3>
 
       <div class="input-group">
         <label for="myTicketInput">
-          <span class="ar" dir="rtl">رقم تذكرتك:</span>
-          <span class="fr" dir="ltr">Votre numéro de ticket :</span>
+          <div class="bi-line">
+            <span class="fr" lang="fr">Votre numéro de ticket :</span>
+            <span class="sep">/</span>
+            <span class="ar" lang="ar">رقم تذكرتك:</span>
+          </div>
         </label>
-        <input type="number" id="myTicketInput" placeholder="مثال: 45 | Ex : 45" min="1" />
+        <input type="number" id="myTicketInput" placeholder="Ex : 45 / مثال: 45" min="1" />
       </div>
 
       <div class="input-group">
         <label for="thresholdInput">
-          <span class="ar" dir="rtl">هامش التنبيه (عدد الأشخاص قبلك):</span>
-          <span class="fr" dir="ltr">Marge d'alerte (personnes avant vous) :</span>
+          <div class="bi-line">
+            <span class="fr" lang="fr">Marge d'alerte (personnes avant vous) :</span>
+            <span class="sep">/</span>
+            <span class="ar" lang="ar">هامش التنبيه (عدد الأشخاص قبلك):</span>
+          </div>
         </label>
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
@@ -198,9 +219,12 @@
 
     <div class="status-container" id="statusContainer">
       <span class="status-dot"></span>
-      <span id="statusText" class="bilingual">
-        <span class="ar" dir="rtl">جارٍ الاتصال...</span>
-        <span class="fr" dir="ltr">Connexion en cours...</span>
+      <span id="statusText" style="width:100%;">
+        <span class="bi-line">
+          <span class="fr" lang="fr">Connexion en cours...</span>
+          <span class="sep">/</span>
+          <span class="ar" lang="ar">جارٍ الاتصال...</span>
+        </span>
       </span>
     </div>
   </div>
@@ -228,7 +252,7 @@
     };
 
     /***********************
-     * Helpers (Bilingue + sécurité HTML بسيطة)
+     * Helpers: سطر ثنائي اللغة (فرنسي يسار / عربي يمين /)
      ***********************/
     function escapeHtml(str) {
       return String(str)
@@ -239,14 +263,22 @@
         .replaceAll("'", "&#039;");
     }
 
-    function setBilingualHTML(el, arText, frText) {
-      el.innerHTML =
-        `<span class="ar" dir="rtl">${escapeHtml(arText)}</span>` +
-        `<span class="fr" dir="ltr">${escapeHtml(frText)}</span>`;
+    function biLineHTML(frText, arText) {
+      return `
+        <span class="bi-line">
+          <span class="fr" lang="fr">${escapeHtml(frText)}</span>
+          <span class="sep">/</span>
+          <span class="ar" lang="ar">${escapeHtml(arText)}</span>
+        </span>
+      `;
     }
 
-    function setBanner(arText, frText, { active = true, urgent = false } = {}) {
-      setBilingualHTML(alertBanner, arText, frText);
+    function setStatus(frText, arText) {
+      statusText.innerHTML = biLineHTML(frText, arText);
+    }
+
+    function setBanner(frText, arText, { active = true, urgent = false } = {}) {
+      alertBanner.innerHTML = biLineHTML(frText, arText);
       alertBanner.classList.toggle('active', !!active);
       alertBanner.classList.toggle('urgent', !!urgent);
     }
@@ -268,8 +300,8 @@
           const permission = await Notification.requestPermission();
           if (permission === "granted") {
             sendSystemNotification(
-              "تم تفعيل الإشعارات — Notifications activées",
-              "ستتلقى تنبيهًا عندما يقترب دورك.\nVous recevrez une alerte quand votre tour approche."
+              "Notifications activées / تم تفعيل الإشعارات",
+              "Vous recevrez une alerte quand votre tour approche. / ستتلقى تنبيهًا عندما يقترب دورك."
             );
           }
         } catch (e) {}
@@ -284,13 +316,13 @@
             icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png"
           });
         } catch (e) {
-          console.error("خطأ في إرسال الإشعار — Erreur d'envoi de notification:", e);
+          console.error("Erreur d'envoi de notification / خطأ في إرسال الإشعار:", e);
         }
       }
     }
 
     /***********************
-     * Audio (دائمًا مفعّل لكن يحتاج أول تفاعل ليفتح AudioContext)
+     * Audio (دائمًا مفعّل لكن يحتاج أول تفاعل)
      ***********************/
     let audioCtx = null;
     const soundEnabled = true;
@@ -299,9 +331,7 @@
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
-      if (audioCtx.state === 'suspended') {
-        return audioCtx.resume();
-      }
+      if (audioCtx.state === 'suspended') return audioCtx.resume();
       return Promise.resolve();
     }
 
@@ -318,18 +348,15 @@
     initAudioAndNotifications();
 
     // تفعيل تلقائي عند أول تفاعل (بدون زر)
-    const firstGestureEvents = ["pointerdown", "touchstart", "mousedown", "keydown"];
-    firstGestureEvents.forEach(evt => {
+    ["pointerdown", "touchstart", "mousedown", "keydown"].forEach(evt => {
       window.addEventListener(evt, initAudioAndNotifications, { once: true, passive: true });
     });
 
     document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") {
-        ensureAudio().catch(() => {});
-      }
+      if (document.visibilityState === "visible") ensureAudio().catch(() => {});
     });
 
-    // صوت التحذير فقط (double bip)
+    // صوت التحذير فقط
     function playAlertBeep() {
       if (!soundEnabled) return;
       ensureAudio().then(() => {
@@ -349,8 +376,8 @@
         };
 
         const now = audioCtx.currentTime;
-        playTone(987.77, now, 0.25);       // Note B5
-        playTone(1318.51, now + 0.3, 0.4); // Note E6
+        playTone(987.77, now, 0.25);
+        playTone(1318.51, now + 0.3, 0.4);
       }).catch(() => {});
     }
 
@@ -360,7 +387,7 @@
     }
 
     /***********************
-     * Vérification de l'alerte ticket et déclenchement
+     * Alerte utilisateur (فرنسي / عربي)
      ***********************/
     function checkUserAlert(currentTicket) {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -376,37 +403,35 @@
       let alertTriggered = false;
 
       if (diff === 0) {
-        const arMsg = "لقد حان دورك! تفضّل إلى الشباك.";
         const frMsg = "C'est votre tour ! Présentez-vous au guichet.";
-        setBanner(arMsg, frMsg, { active: true, urgent: true });
+        const arMsg = "لقد حان دورك! يُرجى التوجّه إلى الشباك.";
+        setBanner(frMsg, arMsg, { active: true, urgent: true });
 
         if (state.lastAlertedDiff !== 0) {
           playAlertBeep();
           sendSystemNotification(
-            "طابور الانتظار — File d'attente",
-            `${arMsg}\n${frMsg}`
+            "File d'attente / طابور الانتظار",
+            `${frMsg} / ${arMsg}`
           );
           state.lastAlertedDiff = 0;
           alertTriggered = true;
         }
       } else if (diff > 0 && diff <= threshold) {
-        const arMsg = `انتباه! بقي أمامك ${diff} شخص/أشخاص قبل دورك.`;
         const frMsg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
-        setBanner(arMsg, frMsg, { active: true, urgent: false });
+        const arMsg = `تنبيه! يتبقّى أمامك ${diff} شخص/أشخاص قبل دورك.`;
+        setBanner(frMsg, arMsg, { active: true, urgent: false });
 
         if (state.lastAlertedDiff !== diff) {
           playAlertBeep();
           sendSystemNotification(
-            "تنبيه: يقترب دورك — Alerte tour approche",
-            `${arMsg}\n${frMsg}`
+            "Alerte tour approche / تنبيه: يقترب دورك",
+            `${frMsg} / ${arMsg}`
           );
           state.lastAlertedDiff = diff;
           alertTriggered = true;
         }
       } else if (diff < 0) {
-        const arMsg = "لقد فات دورك.";
-        const frMsg = "Votre tour est déjà passé.";
-        setBanner(arMsg, frMsg, { active: true, urgent: true });
+        setBanner("Votre tour est déjà passé.", "لقد فات دورك.", { active: true, urgent: true });
         state.lastAlertedDiff = diff;
       } else {
         clearBanner();
@@ -420,7 +445,7 @@
     thresholdInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
 
     /***********************
-     * Mise à jour de l'interface
+     * Mise à jour UI
      ***********************/
     function setTicket(val) {
       if (val === null || typeof val === "undefined") return;
@@ -431,22 +456,20 @@
 
       queueNumEl.textContent = String(next);
 
-      // هذه الدالة هي التي تُطلق صوت التحذير فقط عند الاقتراب/الدور
+      // فقط صوت التحذير عند الاقتراب/الدور
       checkUserAlert(next);
 
-      // فقط حركة/أنيميشن عند التحديث (بدون صوت تحديث)
-      if (isNumberChanged) {
-        triggerUpdateAnimation();
-      }
+      // أنيميشن فقط بدون صوت تحديث
+      if (isNumberChanged) triggerUpdateAnimation();
     }
 
-    function setOnline(isOnline, arMsg, frMsg) {
+    function setOnline(isOnline, frMsg, arMsg) {
       if (isOnline) statusContainer.classList.add('online');
       else statusContainer.classList.remove('online');
 
-      const ar = arMsg || (isOnline ? "النظام متصل" : "غير متصل - جارٍ إعادة الاتصال...");
       const fr = frMsg || (isOnline ? "Système connecté" : "Hors ligne - Reconnexion...");
-      setBilingualHTML(statusText, ar, fr);
+      const ar = arMsg || (isOnline ? "النظام متصل" : "غير متصل - جارٍ إعادة الاتصال...");
+      setStatus(fr, ar);
     }
 
     /***********************
@@ -456,7 +479,6 @@
       try {
         const tRes = await fetch(TICKET_URL);
         if (!tRes.ok) throw new Error("Fetch failed");
-
         const ticket = await tRes.json();
         state.current_ticket = ticket;
         setTicket(ticket);
@@ -496,12 +518,12 @@
         es = null;
       }
 
-      setOnline(false, "جارٍ الاتصال بالنظام...", "Connexion au système...");
+      setOnline(false, "Connexion au système...", "جارٍ الاتصال بالنظام...");
 
       es = new EventSource(STREAM_URL);
 
       es.onopen = () => {
-        setOnline(true, "النظام متصل", "Système connecté");
+        setOnline(true, "Système connecté", "النظام متصل");
       };
 
       es.addEventListener("put", (e) => {
@@ -517,7 +539,7 @@
       };
 
       es.onerror = () => {
-        setOnline(false, "غير متصل - جارٍ إعادة الاتصال...", "Hors ligne - Reconnexion...");
+        setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
       };
     }
 
