@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Système de gestion de file d'attente / نظام إدارة طابور الانتظار</title>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
@@ -188,13 +187,12 @@
       width: 100%;
       border: 0;
       border-radius: 12px;
-      background-color: var(--primary);
+      background: var(--primary);
       color: #fff;
       padding: 12px 14px;
       cursor: pointer;
-      transition: filter 0.15s ease, transform 0.05s ease;
+      transition: filter 0.15s ease, transform 0.05s ease, background-color 0.2s ease;
       margin-top: 4px;
-      will-change: transform;
     }
     .btn:hover { filter: brightness(0.96); }
     .btn:active { transform: translateY(1px); }
@@ -204,26 +202,9 @@
       font-weight: 800;
     }
 
-    /* ✅ تأثير للزر عند الضغط (مثل تأثير الرقم لكن على الزر نفسه) */
-    @keyframes btnPulse {
-      0% {
-        transform: scale(1);
-        background-color: var(--primary);
-        box-shadow: 0 0 0 0 rgba(37,99,235,0.0);
-      }
-      50% {
-        transform: scale(1.03);
-        background-color: var(--success);
-        box-shadow: 0 0 0 6px rgba(22,163,74,0.18);
-      }
-      100% {
-        transform: scale(1);
-        background-color: var(--primary);
-        box-shadow: 0 0 0 0 rgba(37,99,235,0.0);
-      }
-    }
-    .btn.updated {
-      animation: btnPulse 350ms ease;
+    /* ✅ شكل واضح عندما يكون التتبع مفعّل (يعني الزر "انضغط") */
+    .btn.active {
+      background: var(--success);
     }
 
     .alert-banner {
@@ -244,6 +225,34 @@
     }
     .alert-banner .bi.small .fr,
     .alert-banner .bi.small .ar{
+      color: inherit;
+      font-weight: 800;
+    }
+
+    /* ✅ مؤشر لحالة التتبع (يوضح هل تم الضغط أم لا) */
+    .tracking-indicator{
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      text-align: center;
+    }
+    .tracking-indicator.active{
+      display: block;
+      background-color: var(--online-bg);
+      color: var(--online-tx);
+      border-color: rgba(22,163,74,0.25);
+    }
+    .tracking-indicator.paused{
+      display: block;
+      background-color: var(--warn-bg);
+      color: var(--warn-tx);
+      border-color: var(--warn-bd);
+    }
+    .tracking-indicator .bi.small .fr,
+    .tracking-indicator .bi.small .ar{
       color: inherit;
       font-weight: 800;
     }
@@ -322,12 +331,16 @@
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
 
+      <!-- زر: لا تظهر التحذيرات إلا عند الضغط هنا -->
       <button id="verifyBtn" class="btn" type="button">
         <span class="bi center small">
           <span class="ar" lang="ar">تحقّق وابدأ التتبّع</span>
           <span class="fr" lang="fr">Vérifier et démarrer le suivi</span>
         </span>
       </button>
+
+      <!-- ✅ هذا يبين بشكل واضح أن زر التتبع تم ضغطه وحالة التتبع -->
+      <div id="trackingIndicator" class="tracking-indicator"></div>
 
       <div id="alertBanner" class="alert-banner"></div>
     </div>
@@ -361,6 +374,9 @@
     const alertBanner = document.getElementById('alertBanner');
     const verifyBtn = document.getElementById('verifyBtn');
 
+    // ✅ جديد
+    const trackingIndicator = document.getElementById('trackingIndicator');
+
     const state = {
       current_ticket: null,
       lastAlertedDiff: null,
@@ -369,7 +385,10 @@
       trackingEnabled: false,
 
       // لمنع أي فحص أثناء التحرير (احتياط إضافي)
-      userEditing: false
+      userEditing: false,
+
+      // ✅ وقت آخر ضغط على زر التحقق
+      lastVerifiedAt: null
     };
 
     /***********************
@@ -407,6 +426,75 @@
       alertBanner.classList.remove('active', 'urgent');
       alertBanner.innerHTML = "";
     }
+
+    /***********************
+     * ✅ واجهة التتبع: يوضح أن الزر تم الضغط وأن التتبع فعّال/متوقف
+     ***********************/
+    function fmtTime(lang){
+      try {
+        return new Date().toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      } catch {
+        return new Date().toLocaleTimeString();
+      }
+    }
+
+    function setTrackingUI(mode) {
+      // mode: "inactive" | "active" | "paused"
+      trackingIndicator.classList.remove("active", "paused");
+      verifyBtn.classList.remove("active");
+
+      if (mode === "inactive") {
+        trackingIndicator.style.display = "none";
+        verifyBtn.innerHTML = `
+          <span class="bi center small">
+            <span class="ar" lang="ar">تحقّق وابدأ التتبّع</span>
+            <span class="fr" lang="fr">Vérifier et démarrer le suivi</span>
+          </span>
+        `;
+        return;
+      }
+
+      if (mode === "paused") {
+        trackingIndicator.style.display = "";
+        trackingIndicator.classList.add("paused");
+        trackingIndicator.innerHTML = biHTML(
+          `Suivi en pause — appuyez sur "Vérifier" pour reprendre.`,
+          `التتبع متوقف مؤقتًا — اضغط "تحقّق" للاستئناف.`,
+          "small"
+        );
+
+        verifyBtn.innerHTML = `
+          <span class="bi center small">
+            <span class="ar" lang="ar">إعادة التحقّق لاستئناف التتبّع</span>
+            <span class="fr" lang="fr">Revérifier pour reprendre le suivi</span>
+          </span>
+        `;
+        return;
+      }
+
+      // active
+      const tFR = state.lastVerifiedAt ? fmtTime("fr-FR") : "";
+      const tAR = state.lastVerifiedAt ? fmtTime("ar") : "";
+      trackingIndicator.style.display = "";
+      trackingIndicator.classList.add("active");
+      verifyBtn.classList.add("active");
+
+      trackingIndicator.innerHTML = biHTML(
+        `Suivi activé — dernière vérification : ${tFR}`,
+        `التتبع مفعّل — آخر تحقّق: ${tAR}`,
+        "small"
+      );
+
+      verifyBtn.innerHTML = `
+        <span class="bi center small">
+          <span class="ar" lang="ar">التتبّع مفعّل (اضغط لإعادة التحقّق)</span>
+          <span class="fr" lang="fr">Suivi activé (appuyez pour revérifier)</span>
+        </span>
+      `;
+    }
+
+    // ابدأ بوضع غير مفعّل
+    setTrackingUI("inactive");
 
     /***********************
      * Notifications (Permission + Envoi)
@@ -465,7 +553,7 @@
     // محاولة عند التحميل (قد لا تنجح بدون تفاعل)
     initAudioAndNotifications();
 
-    // تفعيل تلقائي عند أول تفاعل
+    // تفعيل تلقائي عند أول تفاعل (بدون زر)
     ["pointerdown", "touchstart", "mousedown", "keydown"].forEach(evt => {
       window.addEventListener(evt, initAudioAndNotifications, { once: true, passive: true });
     });
@@ -501,15 +589,6 @@
     function triggerUpdateAnimation() {
       queueNumEl.classList.add('updated');
       setTimeout(() => queueNumEl.classList.remove('updated'), 350);
-    }
-
-    /* ✅ نفس فكرة تأثير الرقم لكن على الزر */
-    function triggerButtonAnimation() {
-      verifyBtn.classList.remove('updated');
-      // لإعادة تشغيل الأنيميشن حتى لو ضغطت بسرعة
-      void verifyBtn.offsetWidth;
-      verifyBtn.classList.add('updated');
-      setTimeout(() => verifyBtn.classList.remove('updated'), 350);
     }
 
     /***********************
@@ -565,9 +644,12 @@
      * ✅ منطق الزر: لا تحذير أثناء الكتابة
      ***********************/
     function disableTrackingWhileEditing() {
-      state.trackingEnabled = false;
-      state.lastAlertedDiff = null;
-      clearBanner();
+      state.trackingEnabled = false;  // لن نحدث التحذيرات إلا بعد ضغط الزر
+      state.lastAlertedDiff = null;   // إعادة ضبط حتى لا يصدر تنبيه قديم
+      clearBanner();                  // اخفاء التحذير القديم أثناء التعديل
+
+      // ✅ أظهر أن التتبع توقف مؤقتاً بسبب التعديل
+      setTrackingUI("paused");
     }
 
     myTicketInput.addEventListener('focus', () => { state.userEditing = true; });
@@ -576,19 +658,48 @@
     myTicketInput.addEventListener('blur', () => { state.userEditing = false; });
     thresholdInput.addEventListener('blur', () => { state.userEditing = false; });
 
+    // عند أي كتابة: فقط نخفي التحذير ونوقف التتبع (بدون فحص)
     myTicketInput.addEventListener('input', disableTrackingWhileEditing);
     thresholdInput.addEventListener('input', disableTrackingWhileEditing);
 
-    function startTrackingAndCheck() {
-      // ✅ تأثير بصري يؤكد أن الزر تم الضغط عليه
-      triggerButtonAnimation();
+    function inputsAreValidOrShowMessage(){
+      const myTicket = parseInt(myTicketInput.value, 10);
+      const threshold = parseInt(thresholdInput.value, 10);
 
+      if (isNaN(myTicket) || myTicket < 1) {
+        setBanner(
+          "Veuillez saisir un numéro de ticket valide.",
+          "يرجى إدخال رقم تذكرة صحيح.",
+          { active: true, urgent: true }
+        );
+        setTrackingUI("inactive");
+        return false;
+      }
+      if (isNaN(threshold) || threshold < 1) {
+        setBanner(
+          "Veuillez saisir une marge d'alerte valide (>= 1).",
+          "يرجى إدخال هامش تنبيه صحيح (>= 1).",
+          { active: true, urgent: true }
+        );
+        setTrackingUI("inactive");
+        return false;
+      }
+      return true;
+    }
+
+    function startTrackingAndCheck() {
       // تفعيل الصوت/الإشعارات عند ضغط الزر (يُعتبر تفاعل مستخدم)
       initAudioAndNotifications();
+
+      if (!inputsAreValidOrShowMessage()) return;
 
       state.userEditing = false;
       state.trackingEnabled = true;
       state.lastAlertedDiff = null;
+
+      // ✅ سجل وقت الضغط وأظهر أنه تم الضغط
+      state.lastVerifiedAt = Date.now();
+      setTrackingUI("active");
 
       checkUserAlert(state.current_ticket);
     }
@@ -618,11 +729,11 @@
       queueNumEl.textContent = String(next);
 
       // ✅ لا نفحص إلا إذا المستخدم ضغط "تحقق" وفعّل التتبع
+      // واحتياطًا: ليس أثناء التحرير
       if (state.trackingEnabled && !state.userEditing) {
         checkUserAlert(next);
       }
 
-      // تأثير الرقم عند تغيّر رقم التذكرة (يبقى كما هو)
       if (isNumberChanged) triggerUpdateAnimation();
     }
 
