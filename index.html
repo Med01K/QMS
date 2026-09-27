@@ -94,7 +94,6 @@
       color: var(--muted);
     }
 
-    /* عنوان أعلى البطاقة */
     .page-title{
       margin-bottom: 12px;
     }
@@ -185,6 +184,25 @@
       box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
     }
 
+    .btn {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      background: var(--primary);
+      color: #fff;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: filter 0.15s ease, transform 0.05s ease;
+      margin-top: 4px;
+    }
+    .btn:hover { filter: brightness(0.96); }
+    .btn:active { transform: translateY(1px); }
+    .btn .bi.small .ar,
+    .btn .bi.small .fr{
+      color: rgba(255,255,255,0.92);
+      font-weight: 800;
+    }
+
     .alert-banner {
       display: none;
       background-color: var(--warn-bg);
@@ -192,7 +210,7 @@
       border: 1px solid var(--warn-bd);
       padding: 12px 12px;
       border-radius: 12px;
-      margin-top: 8px;
+      margin-top: 10px;
       text-align: center;
     }
     .alert-banner.active { display: block; }
@@ -281,6 +299,14 @@
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
 
+      <!-- زر: لا تظهر التحذيرات إلا عند الضغط هنا -->
+      <button id="verifyBtn" class="btn" type="button">
+        <span class="bi center small">
+          <span class="ar" lang="ar">تحقّق وابدأ التتبّع</span>
+          <span class="fr" lang="fr">Vérifier et démarrer le suivi</span>
+        </span>
+      </button>
+
       <div id="alertBanner" class="alert-banner"></div>
     </div>
 
@@ -311,10 +337,17 @@
     const myTicketInput = document.getElementById('myTicketInput');
     const thresholdInput = document.getElementById('thresholdInput');
     const alertBanner = document.getElementById('alertBanner');
+    const verifyBtn = document.getElementById('verifyBtn');
 
     const state = {
       current_ticket: null,
-      lastAlertedDiff: null
+      lastAlertedDiff: null,
+
+      // ✅ لا نفحص إلا بعد الضغط على زر التحقق
+      trackingEnabled: false,
+
+      // لمنع أي فحص أثناء التحرير (احتياط إضافي)
+      userEditing: false
     };
 
     /***********************
@@ -393,9 +426,7 @@
     const soundEnabled = true;
 
     function ensureAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') return audioCtx.resume();
       return Promise.resolve();
     }
@@ -421,7 +452,6 @@
       if (document.visibilityState === "visible") ensureAudio().catch(() => {});
     });
 
-    // صوت التحذير فقط
     function playAlertBeep() {
       if (!soundEnabled) return;
       ensureAudio().then(() => {
@@ -452,7 +482,7 @@
     }
 
     /***********************
-     * Alerte utilisateur (فرنسي / عربي)
+     * Alerte utilisateur
      ***********************/
     function checkUserAlert(currentTicket) {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -500,8 +530,47 @@
       return alertTriggered;
     }
 
-    myTicketInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
-    thresholdInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
+    /***********************
+     * ✅ منطق الزر: لا تحذير أثناء الكتابة
+     ***********************/
+    function disableTrackingWhileEditing() {
+      state.trackingEnabled = false;  // لن نحدث التحذيرات إلا بعد ضغط الزر
+      state.lastAlertedDiff = null;   // إعادة ضبط حتى لا يصدر تنبيه قديم
+      clearBanner();                  // اخفاء التحذير القديم أثناء التعديل
+    }
+
+    myTicketInput.addEventListener('focus', () => { state.userEditing = true; });
+    thresholdInput.addEventListener('focus', () => { state.userEditing = true; });
+
+    myTicketInput.addEventListener('blur', () => { state.userEditing = false; });
+    thresholdInput.addEventListener('blur', () => { state.userEditing = false; });
+
+    // عند أي كتابة: فقط نخفي التحذير ونوقف التتبع (بدون فحص)
+    myTicketInput.addEventListener('input', disableTrackingWhileEditing);
+    thresholdInput.addEventListener('input', disableTrackingWhileEditing);
+
+    function startTrackingAndCheck() {
+      // تفعيل الصوت/الإشعارات عند ضغط الزر (يُعتبر تفاعل مستخدم)
+      initAudioAndNotifications();
+
+      state.userEditing = false;
+      state.trackingEnabled = true;
+      state.lastAlertedDiff = null;
+
+      checkUserAlert(state.current_ticket);
+    }
+
+    verifyBtn.addEventListener('click', startTrackingAndCheck);
+
+    // Enter = مثل الضغط على زر تحقق
+    function onEnterToVerify(e){
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        startTrackingAndCheck();
+      }
+    }
+    myTicketInput.addEventListener('keydown', onEnterToVerify);
+    thresholdInput.addEventListener('keydown', onEnterToVerify);
 
     /***********************
      * Mise à jour UI
@@ -515,10 +584,12 @@
 
       queueNumEl.textContent = String(next);
 
-      // فقط صوت التحذير عند الاقتراب/الدور
-      checkUserAlert(next);
+      // ✅ لا نفحص إلا إذا المستخدم ضغط "تحقق" وفعّل التتبع
+      // واحتياطًا: ليس أثناء التحرير
+      if (state.trackingEnabled && !state.userEditing) {
+        checkUserAlert(next);
+      }
 
-      // أنيميشن فقط بدون صوت تحديث
       if (isNumberChanged) triggerUpdateAnimation();
     }
 
