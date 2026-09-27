@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Système de gestion de file d'attente / نظام إدارة طابور الانتظار</title>
 
-  <!-- Fonts (اختياري لكن يعطي شكل أجمل بكثير للعربية والفرنسية) -->
+  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
@@ -188,12 +188,13 @@
       width: 100%;
       border: 0;
       border-radius: 12px;
-      background: var(--primary);
+      background-color: var(--primary);
       color: #fff;
       padding: 12px 14px;
       cursor: pointer;
-      transition: filter 0.15s ease, transform 0.05s ease, background 0.2s ease;
+      transition: filter 0.15s ease, transform 0.05s ease;
       margin-top: 4px;
+      will-change: transform;
     }
     .btn:hover { filter: brightness(0.96); }
     .btn:active { transform: translateY(1px); }
@@ -203,9 +204,27 @@
       font-weight: 800;
     }
 
-    /* ✅ حالة "تم تفعيل التتبع" للزر */
-    .btn.active { background: var(--success); }
-    .btn.active:hover { filter: brightness(0.97); }
+    /* ✅ تأثير للزر عند الضغط (مثل تأثير الرقم لكن على الزر نفسه) */
+    @keyframes btnPulse {
+      0% {
+        transform: scale(1);
+        background-color: var(--primary);
+        box-shadow: 0 0 0 0 rgba(37,99,235,0.0);
+      }
+      50% {
+        transform: scale(1.03);
+        background-color: var(--success);
+        box-shadow: 0 0 0 6px rgba(22,163,74,0.18);
+      }
+      100% {
+        transform: scale(1);
+        background-color: var(--primary);
+        box-shadow: 0 0 0 0 rgba(37,99,235,0.0);
+      }
+    }
+    .btn.updated {
+      animation: btnPulse 350ms ease;
+    }
 
     .alert-banner {
       display: none;
@@ -303,7 +322,6 @@
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
 
-      <!-- زر: لا تظهر التحذيرات إلا عند الضغط هنا -->
       <button id="verifyBtn" class="btn" type="button">
         <span class="bi center small">
           <span class="ar" lang="ar">تحقّق وابدأ التتبّع</span>
@@ -391,27 +409,6 @@
     }
 
     /***********************
-     * ✅ زر التتبع: حالة تُثبت أنه تم الضغط
-     ***********************/
-    const verifyBtnAr = verifyBtn.querySelector('.ar');
-    const verifyBtnFr = verifyBtn.querySelector('.fr');
-
-    function setVerifyBtnState(isActive){
-      verifyBtn.classList.toggle('active', !!isActive);
-
-      if (isActive) {
-        verifyBtnAr.textContent = "التتبّع مُفعّل";
-        verifyBtnFr.textContent = "Suivi activé";
-      } else {
-        verifyBtnAr.textContent = "تحقّق وابدأ التتبّع";
-        verifyBtnFr.textContent = "Vérifier et démarrer le suivi";
-      }
-    }
-
-    // الحالة الافتراضية
-    setVerifyBtnState(false);
-
-    /***********************
      * Notifications (Permission + Envoi)
      ***********************/
     async function requestNotificationPermission() {
@@ -468,7 +465,7 @@
     // محاولة عند التحميل (قد لا تنجح بدون تفاعل)
     initAudioAndNotifications();
 
-    // تفعيل تلقائي عند أول تفاعل (بدون زر)
+    // تفعيل تلقائي عند أول تفاعل
     ["pointerdown", "touchstart", "mousedown", "keydown"].forEach(evt => {
       window.addEventListener(evt, initAudioAndNotifications, { once: true, passive: true });
     });
@@ -501,12 +498,18 @@
       }).catch(() => {});
     }
 
-    /* ✅ أنيميشن الرقم: إعادة تشغيله كل مرة (حتى لو ضغطت الزر) */
     function triggerUpdateAnimation() {
-      queueNumEl.classList.remove('updated');
-      void queueNumEl.offsetWidth; // force reflow لإعادة تشغيل الأنيميشن
       queueNumEl.classList.add('updated');
       setTimeout(() => queueNumEl.classList.remove('updated'), 350);
+    }
+
+    /* ✅ نفس فكرة تأثير الرقم لكن على الزر */
+    function triggerButtonAnimation() {
+      verifyBtn.classList.remove('updated');
+      // لإعادة تشغيل الأنيميشن حتى لو ضغطت بسرعة
+      void verifyBtn.offsetWidth;
+      verifyBtn.classList.add('updated');
+      setTimeout(() => verifyBtn.classList.remove('updated'), 350);
     }
 
     /***********************
@@ -562,10 +565,9 @@
      * ✅ منطق الزر: لا تحذير أثناء الكتابة
      ***********************/
     function disableTrackingWhileEditing() {
-      state.trackingEnabled = false;  // لن نحدث التحذيرات إلا بعد ضغط الزر
-      state.lastAlertedDiff = null;   // إعادة ضبط حتى لا يصدر تنبيه قديم
-      clearBanner();                  // اخفاء التحذير القديم أثناء التعديل
-      setVerifyBtnState(false);       // ✅ يرجع الزر لحالة "غير مُفعّل"
+      state.trackingEnabled = false;
+      state.lastAlertedDiff = null;
+      clearBanner();
     }
 
     myTicketInput.addEventListener('focus', () => { state.userEditing = true; });
@@ -574,21 +576,19 @@
     myTicketInput.addEventListener('blur', () => { state.userEditing = false; });
     thresholdInput.addEventListener('blur', () => { state.userEditing = false; });
 
-    // عند أي كتابة: فقط نخفي التحذير ونوقف التتبع (بدون فحص)
     myTicketInput.addEventListener('input', disableTrackingWhileEditing);
     thresholdInput.addEventListener('input', disableTrackingWhileEditing);
 
     function startTrackingAndCheck() {
+      // ✅ تأثير بصري يؤكد أن الزر تم الضغط عليه
+      triggerButtonAnimation();
+
       // تفعيل الصوت/الإشعارات عند ضغط الزر (يُعتبر تفاعل مستخدم)
       initAudioAndNotifications();
 
       state.userEditing = false;
       state.trackingEnabled = true;
       state.lastAlertedDiff = null;
-
-      // ✅ آلية واضحة أن الزر تم الضغط + نفس تأثير تحديث الرقم
-      setVerifyBtnState(true);
-      triggerUpdateAnimation();
 
       checkUserAlert(state.current_ticket);
     }
@@ -618,11 +618,11 @@
       queueNumEl.textContent = String(next);
 
       // ✅ لا نفحص إلا إذا المستخدم ضغط "تحقق" وفعّل التتبع
-      // واحتياطًا: ليس أثناء التحرير
       if (state.trackingEnabled && !state.userEditing) {
         checkUserAlert(next);
       }
 
+      // تأثير الرقم عند تغيّر رقم التذكرة (يبقى كما هو)
       if (isNumberChanged) triggerUpdateAnimation();
     }
 
