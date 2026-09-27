@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+أنا أود أن أنزع  الزر وأن أجعل الصوت مفعلًا دائمًا
+"<!DOCTYPE html> 
 <html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8" />
@@ -101,20 +102,24 @@
       border-color: #f5c2c7;
     }
 
-    /* تلميح بسيط بدل الزر */
-    .hint {
-      display: none;
+    .row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
       margin-top: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 700;
-      background: #e7f1ff;
-      border: 1px solid #cfe2ff;
-      color: #084298;
-      text-align: center;
     }
-    .hint.active { display: block; }
+    button {
+      border: 0;
+      padding: 10px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      background: #0d6efd;
+      color: #fff;
+      font-size: 13px;
+    }
+    button.secondary { background: #198754; }
 
     .status-container {
       display: inline-flex;
@@ -150,6 +155,7 @@
       <div class="number" id="queueNum">--</div>
     </div>
 
+    <!-- Section de suivi du ticket utilisateur -->
     <div class="user-section">
       <h3>Suivi de votre ticket</h3>
       <div class="input-group">
@@ -160,18 +166,16 @@
         <label for="thresholdInput">Marge d'alerte (personnes avant vous) :</label>
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
-
       <div id="alertBanner" class="alert-banner"></div>
-
-      <!-- تلميح يظهر فقط إلى أن يقوم المستخدم بأول تفاعل -->
-      <div id="hint" class="hint active">
-        Cliquez / touchez la page une fois pour autoriser le son et les notifications.
-      </div>
     </div>
 
     <div class="status-container" id="statusContainer">
       <span class="status-dot"></span>
       <span id="statusText">Connexion en cours...</span>
+    </div>
+
+    <div class="row">
+      <button id="enableSoundBtn" class="secondary" type="button">Activer sons & notifications</button>
     </div>
   </div>
 
@@ -188,10 +192,10 @@
     const queueNumEl = document.getElementById('queueNum');
     const statusContainer = document.getElementById('statusContainer');
     const statusText = document.getElementById('statusText');
+    const enableSoundBtn = document.getElementById('enableSoundBtn');
     const myTicketInput = document.getElementById('myTicketInput');
     const thresholdInput = document.getElementById('thresholdInput');
     const alertBanner = document.getElementById('alertBanner');
-    const hintEl = document.getElementById('hint');
 
     const state = {
       current_ticket: null,
@@ -199,30 +203,30 @@
     };
 
     /***********************
-     * Notifications
+     * Demande d'autorisation des Notifications
      ***********************/
-    async function requestNotificationPermissionUserGesture() {
-      if (!("Notification" in window)) return;
+    async function requestNotificationPermission() {
+      if (!("Notification" in window)) {
+        alert("Ce navigateur ne prend pas en charge les notifications de bureau.");
+        return;
+      }
 
-      // لا نعيد طلب الإذن بشكل مزعج
-      const askedBefore = localStorage.getItem("notifAsked") === "1";
-      if (Notification.permission === "default" && !askedBefore) {
-        localStorage.setItem("notifAsked", "1");
-        try {
-          await Notification.requestPermission();
-          if (Notification.permission === "granted") {
-            sendSystemNotification("Notifications activées", "Vous recevrez une alerte quand votre tour approche.");
-          }
-        } catch (e) {}
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          sendSystemNotification("Notifications activées", "Vous recevrez une alerte quand votre tour approche.");
+        }
+      } else if (Notification.permission === "denied") {
+        alert("Les notifications sont bloquées dans votre navigateur. Veuillez les autoriser dans les paramètres du site.");
       }
     }
 
     function sendSystemNotification(title, body) {
       if ("Notification" in window && Notification.permission === "granted") {
         try {
-          new Notification(title, {
-            body,
-            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png"
+          new Notification(title, { 
+            body: body, 
+            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png" 
           });
         } catch (e) {
           console.error("Erreur d'envoi de notification:", e);
@@ -231,10 +235,10 @@
     }
 
     /***********************
-     * Audio (WebAudio)
+     * Gestion Audio
      ***********************/
     let audioCtx = null;
-    let audioUnlocked = false; // لن نعتبره مفعلاً إلا بعد تفاعل المستخدم
+    let soundEnabled = true;
 
     function ensureAudio() {
       if (!audioCtx) {
@@ -246,33 +250,9 @@
       return Promise.resolve();
     }
 
-    async function unlockAudioAndNotificationsOnce() {
-      // هذه الدالة يجب أن تُستدعى من تفاعل المستخدم
-      try {
-        await ensureAudio();
-        audioUnlocked = true;
-      } catch (e) {}
-
-      try {
-        await requestNotificationPermissionUserGesture();
-      } catch (e) {}
-
-      if (audioUnlocked || (("Notification" in window) && Notification.permission !== "default")) {
-        hintEl.classList.remove('active');
-      }
-    }
-
-    // استمع لأول تفاعل في أي مكان (بدل زر)
-    ["pointerdown", "touchstart", "keydown"].forEach(evt => {
-      window.addEventListener(evt, unlockAudioAndNotificationsOnce, { once: true, passive: true });
-    });
-
-    // أيضاً: لو المستخدم ركّز على الإدخال/كتب، يعتبر تفاعل
-    myTicketInput.addEventListener("focus", unlockAudioAndNotificationsOnce, { once: true });
-    thresholdInput.addEventListener("focus", unlockAudioAndNotificationsOnce, { once: true });
-
+    // Son de mise à jour standard
     function playChime() {
-      if (!audioUnlocked) return;
+      if (!soundEnabled) return;
       ensureAudio().then(() => {
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
@@ -291,11 +271,12 @@
       }).catch(() => {});
     }
 
+    // Son d'avertissement spécifique (double bip)
     function playAlertBeep() {
-      if (!audioUnlocked) return;
+      if (!soundEnabled) return;
       ensureAudio().then(() => {
         if (!audioCtx) return;
-
+        
         const playTone = (freq, time, duration) => {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
@@ -310,21 +291,31 @@
         };
 
         const now = audioCtx.currentTime;
-        playTone(987.77, now, 0.25);
-        playTone(1318.51, now + 0.3, 0.4);
+        playTone(987.77, now, 0.25);       // Note B5
+        playTone(1318.51, now + 0.3, 0.4); // Note E6
       }).catch(() => {});
     }
 
-    /***********************
-     * Animation update
-     ***********************/
+    enableSoundBtn.addEventListener('click', async () => {
+      soundEnabled = !soundEnabled;
+      if (soundEnabled) {
+        await ensureAudio();
+        await requestNotificationPermission();
+        enableSoundBtn.textContent = "Sons & Notifications activés";
+        enableSoundBtn.classList.add('secondary');
+      } else {
+        enableSoundBtn.textContent = "Désactivé";
+        enableSoundBtn.classList.remove('secondary');
+      }
+    });
+
     function triggerUpdateAnimation() {
       queueNumEl.classList.add('updated');
       setTimeout(() => queueNumEl.classList.remove('updated'), 400);
     }
 
     /***********************
-     * Alert logic
+     * Vérification de l'alerte ticket et déclenchement
      ***********************/
     function checkUserAlert(currentTicket) {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -378,7 +369,7 @@
     thresholdInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
 
     /***********************
-     * UI update
+     * Mise à jour de l'interface
      ***********************/
     function setTicket(val) {
       if (val === null || typeof val === "undefined") return;
@@ -388,12 +379,14 @@
       const isNumberChanged = (old !== '--' && old !== String(next));
 
       queueNumEl.textContent = String(next);
-
+      
       const hasCustomAlert = checkUserAlert(next);
 
       if (isNumberChanged) {
         triggerUpdateAnimation();
-        if (!hasCustomAlert) playChime();
+        if (!hasCustomAlert) {
+          playChime();
+        }
       }
     }
 
@@ -404,25 +397,25 @@
     }
 
     /***********************
-     * Initial fetch
+     * Données initiales (Fetch)
      ***********************/
     async function initialFetch() {
       try {
-        const tRes = await fetch(TICKET_URL, { cache: "no-store" });
+        const tRes = await fetch(TICKET_URL);
         if (!tRes.ok) throw new Error("Fetch failed");
+
         const ticket = await tRes.json();
         state.current_ticket = ticket;
         setTicket(ticket);
       } catch (e) {
-        // SSE أو polling سيتكفل لاحقاً
+        // Le flux SSE prendra le relais
       }
     }
 
     /***********************
-     * Realtime: SSE with fallback polling
+     * Flux en temps réel (SSE)
      ***********************/
     let es = null;
-    let pollTimer = null;
 
     function applyStreamPayload(payload) {
       if (!payload || typeof payload !== "object") return;
@@ -444,56 +437,41 @@
       }
     }
 
-    function startPolling(intervalMs = 2500) {
-      if (pollTimer) clearInterval(pollTimer);
-      setOnline(true, "Mode compatibilité (polling)");
-      pollTimer = setInterval(async () => {
-        try {
-          const r = await fetch(TICKET_URL, { cache: "no-store" });
-          if (!r.ok) return;
-          const ticket = await r.json();
-          if (ticket !== state.current_ticket) {
-            state.current_ticket = ticket;
-            setTicket(ticket);
-          }
-        } catch (e) {
-          setOnline(false, "Hors ligne - Reconnexion...");
-        }
-      }, intervalMs);
-    }
-
     function connectStream() {
-      // إذا SSE غير مدعوم (متصفحات قديمة) استخدم polling
-      if (!("EventSource" in window)) {
-        startPolling(2500);
-        return;
+      if (es) {
+        try { es.close(); } catch {}
+        es = null;
       }
-
-      if (es) { try { es.close(); } catch {} es = null; }
-      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 
       setOnline(false, "Connexion au système...");
 
       es = new EventSource(STREAM_URL);
 
-      es.onopen = () => setOnline(true, "Système connecté");
+      es.onopen = () => {
+        setOnline(true, "Système connecté");
+      };
 
-      es.addEventListener("put", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-      es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-      es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
+      es.addEventListener("put", (e) => {
+        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+      });
+
+      es.addEventListener("patch", (e) => {
+        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+      });
+
+      es.onmessage = (e) => {
+        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+      };
 
       es.onerror = () => {
         setOnline(false, "Hors ligne - Reconnexion...");
-        // fallback تلقائي لو SSE تعطل
-        try { es.close(); } catch {}
-        es = null;
-        startPolling(2500);
       };
     }
 
-    // Start
+    // Démarrage
     initialFetch();
     connectStream();
   </script>
 </body>
 </html>
+"
