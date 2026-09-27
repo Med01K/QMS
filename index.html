@@ -543,7 +543,7 @@
         }
       } else if (diff > 0 && diff <= threshold) {
         const frMsg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
-        const arMsg = `تنبيه! يتبقّى أمامك ${diff} شخص/أشخاص قبل دورك.`;
+        const arMsg = `تنبيه! مازال ${diff} شخص/أشخاص قبل دورك.`;
         setBanner(frMsg, arMsg, { active: true, urgent: false });
 
         if (state.lastAlertedDiff !== diff) {
