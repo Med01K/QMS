@@ -178,12 +178,11 @@
     };
 
     /***********************
-     * Gestion Audio & Notifications (تفعيل تلقائي)
+     * Gestion Audio & Notifications (Tél/PC)
      ***********************/
     let audioCtx = null;
-    let isAudioInitialized = false;
 
-    // تهيئة الصوت والطلب التلقائي للإشعارات عند أول لمسة/تفاعل للمستخدم
+    // تهيئة الصوت والطلب التلقائي للإشعارات عند أول تفاعل من المستخدم
     function initAudioAndNotifications() {
       if (!audioCtx) {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -196,26 +195,24 @@
         audioCtx.resume();
       }
 
-      // طلب إذن الإشعارات تلقائياً عند أول تفاعل
+      // طلب إذن الإشعارات تلقائياً
       if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission().catch(() => {});
       }
-
-      isAudioInitialized = true;
     }
 
-    // ربط التفعيل المباشر بأول تفاعل من المستخدم (لمس الشاشة، النقر، أو الكتابة)
+    // الاستماع لأي تفاعل أولي في الصفحة لتفعيل الصوت والإشعارات
     ['click', 'touchstart', 'input', 'keydown'].forEach(eventType => {
       window.addEventListener(eventType, initAudioAndNotifications, { once: true });
     });
 
     function sendSystemNotification(title, body) {
-      // تفعيل الاهتزاز للهواتف المحمولة
+      // تفعيل الاهتزاز للهواتف الذكية عند توفره
       if ("vibrate" in navigator) {
         try { navigator.vibrate([300, 100, 300, 100, 300]); } catch (e) {}
       }
 
-      // إرسال الإشعار للنظام (حاسوب أو هاتف)
+      // إرسال إشعار النظام
       if ("Notification" in window && Notification.permission === "granted") {
         try {
           new Notification(title, { 
@@ -229,7 +226,7 @@
       }
     }
 
-    // تشغيل صوت التحذير عند اقتراب/وصول الدور
+    // تشغيل صوت التحذير فقط
     function playAlertBeep() {
       if (!audioCtx) {
         initAudioAndNotifications();
