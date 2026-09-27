@@ -183,10 +183,9 @@
 
     /* ====== زر بسيط (Flat) ====== */
     .btn {
-      /* كان عريض لأنه width:100% فقط -> الآن نعطيه max-width ونجعله في الوسط */
       width: 100%;
-      max-width: 280px;   /* عدّل هذا الرقم كما تريد */
-      margin: 8px auto 0; /* توسيط الزر */
+      max-width: 280px;   /* عرض أقل */
+      margin: 8px auto 0; /* توسيط */
       display: block;
 
       border: 1px solid rgba(0,0,0,0.06);
@@ -201,7 +200,6 @@
     }
     .btn:hover { filter: brightness(0.97); }
 
-    /* نص الزر ثنائي اللغة */
     .btn .bi .ar{
       color: rgba(255,255,255,0.98);
       font-weight: 900;
@@ -214,7 +212,6 @@
       font-size: 12.5px;
     }
 
-    /* ✅ عند تفعيل التتبع: يصبح أخضر */
     .btn.active{
       background: var(--success);
       border-color: rgba(0,0,0,0.08);
@@ -317,7 +314,6 @@
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
 
-      <!-- ✅ زر أضيق + يتغير نصه عند التفعيل -->
       <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
         <span class="bi center">
           <span class="ar" id="verifyBtnAr" lang="ar">تتبّع</span>
@@ -341,13 +337,17 @@
 
   <script>
     /***********************
-     * Configuration Firebase
+     * Configuration Firebase (REST)
      ***********************/
     const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
     const AUTH_QS = "";
 
     const STREAM_URL = `${DB_BASE}/queue.json?print=silent${AUTH_QS}`;
     const TICKET_URL = `${DB_BASE}/queue/current_ticket.json${AUTH_QS}`;
+
+    // Polling fallback intervals
+    const POLL_VISIBLE_MS = 8000;  // كل 8 ثواني عندما الصفحة ظاهرة
+    const POLL_HIDDEN_MS  = 15000; // كل 15 ثانية بالخلفية (قد لا يعمل دائمًا حسب النظام)
 
     const queueNumEl = document.getElementById('queueNum');
     const statusContainer = document.getElementById('statusContainer');
@@ -356,15 +356,13 @@
     const thresholdInput = document.getElementById('thresholdInput');
     const alertBanner = document.getElementById('alertBanner');
     const verifyBtn = document.getElementById('verifyBtn');
-
-    // نصوص الزر (لتغييرها عند التفعيل)
     const verifyBtnAr = document.getElementById('verifyBtnAr');
     const verifyBtnFr = document.getElementById('verifyBtnFr');
 
     const state = {
       current_ticket: null,
       lastAlertedDiff: null,
-      trackingEnabled: false,  // لا يعمل إلا بعد الضغط
+      trackingEnabled: false,
       userEditing: false
     };
 
@@ -380,11 +378,10 @@
         verifyBtnFr.textContent = "Suivi";
       }
     }
-    // تأكيد الحالة الافتراضية
     setVerifyBtnActive(false);
 
     /***********************
-     * Helpers: ثنائي اللغة
+     * Helpers
      ***********************/
     function escapeHtml(str) {
       return String(str)
@@ -420,22 +417,18 @@
     }
 
     /***********************
-     * Notifications
+     * Notifications (مهم: في الهاتف الأفضل طلب الإذن عند الضغط على زر)
      ***********************/
     async function requestNotificationPermission() {
-      if (!("Notification" in window)) return;
-      if (Notification.permission === "denied") return;
+      if (!("Notification" in window)) return false;
+      if (Notification.permission === "granted") return true;
+      if (Notification.permission === "denied") return false;
 
-      if (Notification.permission === "default") {
-        try {
-          const permission = await Notification.requestPermission();
-          if (permission === "granted") {
-            sendSystemNotification(
-              "تم تفعيل الإشعارات",
-              "ستتلقى تنبيهًا عندما يقترب دورك."
-            );
-          }
-        } catch (e) {}
+      try {
+        const permission = await Notification.requestPermission();
+        return permission === "granted";
+      } catch {
+        return false;
       }
     }
 
@@ -443,11 +436,13 @@
       if ("Notification" in window && Notification.permission === "granted") {
         try {
           new Notification(title, {
-            body: body,
+            body,
+            tag: "qms-alert",      // يمنع التكرار العشوائي
+            renotify: true,
             icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png"
           });
         } catch (e) {
-          console.error("Erreur d'envoi de notification / خطأ في إرسال الإشعار:", e);
+          console.error("Notification error:", e);
         }
       }
     }
@@ -464,21 +459,16 @@
       return Promise.resolve();
     }
 
-    let initDone = false;
-    async function initAudioAndNotifications() {
-      if (initDone) return;
-      initDone = true;
-
+    // فقط تهيئة الصوت عند أول تفاعل (بدون طلب إشعارات هنا)
+    let audioInitDone = false;
+    async function initAudioOnce() {
+      if (audioInitDone) return;
+      audioInitDone = true;
       try { await ensureAudio(); } catch {}
-      await requestNotificationPermission();
     }
 
-    // محاولة عند التحميل
-    initAudioAndNotifications();
-
-    // تفعيل تلقائي عند أول تفاعل
     ["pointerdown", "touchstart", "mousedown", "keydown"].forEach(evt => {
-      window.addEventListener(evt, initAudioAndNotifications, { once: true, passive: true });
+      window.addEventListener(evt, initAudioOnce, { once: true, passive: true });
     });
 
     document.addEventListener("visibilitychange", () => {
@@ -537,6 +527,7 @@
 
         if (state.lastAlertedDiff !== 0) {
           playAlertBeep();
+          if (navigator.vibrate) { try { navigator.vibrate([200, 80, 200]); } catch {} }
           sendSystemNotification("طابور الانتظار", arMsg);
           state.lastAlertedDiff = 0;
           alertTriggered = true;
@@ -548,6 +539,7 @@
 
         if (state.lastAlertedDiff !== diff) {
           playAlertBeep();
+          if (navigator.vibrate) { try { navigator.vibrate(120); } catch {} }
           sendSystemNotification("تنبيه: يقترب دورك", arMsg);
           state.lastAlertedDiff = diff;
           alertTriggered = true;
@@ -564,18 +556,18 @@
     }
 
     /***********************
-     * منطق الزر: التتبع لا يعمل إلا بعد الضغط
+     * زر التتبع
      ***********************/
     function disableTrackingWhileEditing() {
       state.trackingEnabled = false;
       state.lastAlertedDiff = null;
       clearBanner();
-      setVerifyBtnActive(false); // يرجع أزرق + يرجع النص "تتبّع / Suivi"
+      setVerifyBtnActive(false);
+      stopPolling();
     }
 
     myTicketInput.addEventListener('focus', () => { state.userEditing = true; });
     thresholdInput.addEventListener('focus', () => { state.userEditing = true; });
-
     myTicketInput.addEventListener('blur', () => { state.userEditing = false; });
     thresholdInput.addEventListener('blur', () => { state.userEditing = false; });
 
@@ -597,8 +589,43 @@
       return true;
     }
 
-    function startTrackingAndCheck() {
-      initAudioAndNotifications();
+    /***********************
+     * Polling fallback (حل مساعد للهاتف عندما SSE يتوقف بالخلفية)
+     ***********************/
+    let pollTimer = null;
+
+    async function pollCurrentTicketOnce() {
+      try {
+        const res = await fetch(TICKET_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("poll failed");
+        const ticket = await res.json();
+        state.current_ticket = ticket;
+        setTicket(ticket);
+      } catch {
+        // ignore (SSE قد يكون شغال)
+      }
+    }
+
+    function startPolling() {
+      stopPolling();
+      const period = (document.visibilityState === "visible") ? POLL_VISIBLE_MS : POLL_HIDDEN_MS;
+      pollTimer = setInterval(pollCurrentTicketOnce, period);
+      pollCurrentTicketOnce(); // فحص فوري
+    }
+
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    async function startTrackingAndCheck() {
+      // تهيئة الصوت (محاولة)
+      initAudioOnce();
+
+      // طلب إذن الإشعارات عند الضغط (أفضل للهواتف)
+      await requestNotificationPermission();
 
       if (!inputsAreValidOrShowMessage()) {
         setVerifyBtnActive(false);
@@ -609,9 +636,12 @@
       state.trackingEnabled = true;
       state.lastAlertedDiff = null;
 
-      // ✅ إثبات الضغط: الزر يصبح أخضر + النص يتغير
       setVerifyBtnActive(true);
 
+      // شغّل polling كاحتياط + سيستمر SSE لو أمكن
+      startPolling();
+
+      // فحص فوري
       checkUserAlert(state.current_ticket);
     }
 
@@ -627,7 +657,7 @@
     thresholdInput.addEventListener('keydown', onEnterToVerify);
 
     /***********************
-     * Mise à jour UI
+     * UI updates
      ***********************/
     function setTicket(val) {
       if (val === null || typeof val === "undefined") return;
@@ -655,24 +685,33 @@
     }
 
     /***********************
-     * Données initiales (Fetch)
+     * Fetch initial
      ***********************/
     async function initialFetch() {
       try {
-        const tRes = await fetch(TICKET_URL);
+        const tRes = await fetch(TICKET_URL, { cache: "no-store" });
         if (!tRes.ok) throw new Error("Fetch failed");
         const ticket = await tRes.json();
         state.current_ticket = ticket;
         setTicket(ticket);
-      } catch (e) {
-        // SSE will take over
+      } catch {
+        // ignore
       }
     }
 
     /***********************
-     * Flux en temps réel (SSE)
+     * SSE stream + reconnect helper
      ***********************/
     let es = null;
+    let reconnectTimer = null;
+
+    function scheduleReconnect() {
+      if (reconnectTimer) return;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connectStream();
+      }, 4000);
+    }
 
     function applyStreamPayload(payload) {
       if (!payload || typeof payload !== "object") return;
@@ -702,17 +741,34 @@
 
       setOnline(false, "Connexion au système...", "جارٍ الاتصال بالنظام...");
 
-      es = new EventSource(STREAM_URL);
+      try {
+        es = new EventSource(STREAM_URL);
 
-      es.onopen = () => setOnline(true, "Système connecté", "النظام متصل");
+        es.onopen = () => setOnline(true, "Système connecté", "النظام متصل");
 
-      es.addEventListener("put", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-      es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
+        es.addEventListener("put", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
+        es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
 
-      es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
+        es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
 
-      es.onerror = () => setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+        es.onerror = () => {
+          setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+          scheduleReconnect(); // إعادة محاولة
+        };
+      } catch {
+        setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+        scheduleReconnect();
+      }
     }
+
+    // عند الرجوع للصفحة: نعيد fetch + stream + polling (إن كان التتبع شغال)
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        initialFetch();
+        connectStream();
+      }
+      if (state.trackingEnabled) startPolling();
+    });
 
     // Start
     initialFetch();
