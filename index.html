@@ -1,5 +1,5 @@
-أنا أود أن أنزع  الزر وأن أجعل الصوت مفعلًا دائمًا
-"<!DOCTYPE html> 
+
+<!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8" />
@@ -102,24 +102,19 @@
       border-color: #f5c2c7;
     }
 
-    .row {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    button {
-      border: 0;
-      padding: 10px 14px;
-      border-radius: 12px;
-      cursor: pointer;
+    .hint {
+      display: none;
+      background: #e7f1ff;
+      border: 1px solid #cfe2ff;
+      color: #084298;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 12px;
       font-weight: 700;
-      background: #0d6efd;
-      color: #fff;
-      font-size: 13px;
+      margin-top: 10px;
+      text-align: center;
     }
-    button.secondary { background: #198754; }
+    .hint.active { display: block; }
 
     .status-container {
       display: inline-flex;
@@ -155,7 +150,6 @@
       <div class="number" id="queueNum">--</div>
     </div>
 
-    <!-- Section de suivi du ticket utilisateur -->
     <div class="user-section">
       <h3>Suivi de votre ticket</h3>
       <div class="input-group">
@@ -166,16 +160,14 @@
         <label for="thresholdInput">Marge d'alerte (personnes avant vous) :</label>
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
+
       <div id="alertBanner" class="alert-banner"></div>
+      <div id="audioHint" class="hint active">Cliquez / touchez la page une fois pour activer le son (obligation des navigateurs).</div>
     </div>
 
     <div class="status-container" id="statusContainer">
       <span class="status-dot"></span>
       <span id="statusText">Connexion en cours...</span>
-    </div>
-
-    <div class="row">
-      <button id="enableSoundBtn" class="secondary" type="button">Activer sons & notifications</button>
     </div>
   </div>
 
@@ -192,10 +184,10 @@
     const queueNumEl = document.getElementById('queueNum');
     const statusContainer = document.getElementById('statusContainer');
     const statusText = document.getElementById('statusText');
-    const enableSoundBtn = document.getElementById('enableSoundBtn');
     const myTicketInput = document.getElementById('myTicketInput');
     const thresholdInput = document.getElementById('thresholdInput');
     const alertBanner = document.getElementById('alertBanner');
+    const audioHint = document.getElementById('audioHint');
 
     const state = {
       current_ticket: null,
@@ -203,30 +195,27 @@
     };
 
     /***********************
-     * Demande d'autorisation des Notifications
+     * Notifications
      ***********************/
     async function requestNotificationPermission() {
-      if (!("Notification" in window)) {
-        alert("Ce navigateur ne prend pas en charge les notifications de bureau.");
-        return;
-      }
+      if (!("Notification" in window)) return;
 
       if (Notification.permission === "default") {
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-          sendSystemNotification("Notifications activées", "Vous recevrez une alerte quand votre tour approche.");
-        }
-      } else if (Notification.permission === "denied") {
-        alert("Les notifications sont bloquées dans votre navigateur. Veuillez les autoriser dans les paramètres du site.");
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") {
+            sendSystemNotification("Notifications activées", "Vous recevrez une alerte quand votre tour approche.");
+          }
+        } catch (e) {}
       }
     }
 
     function sendSystemNotification(title, body) {
       if ("Notification" in window && Notification.permission === "granted") {
         try {
-          new Notification(title, { 
-            body: body, 
-            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png" 
+          new Notification(title, {
+            body: body,
+            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png"
           });
         } catch (e) {
           console.error("Erreur d'envoi de notification:", e);
@@ -235,10 +224,11 @@
     }
 
     /***********************
-     * Gestion Audio
+     * Audio (toujours فعال)
      ***********************/
     let audioCtx = null;
-    let soundEnabled = true;
+    let soundEnabled = true; // الصوت مفعّل دائمًا
+    let audioUnlocked = false;
 
     function ensureAudio() {
       if (!audioCtx) {
@@ -249,6 +239,19 @@
       }
       return Promise.resolve();
     }
+
+    // لازم أول تفاعل من المستخدم في أغلب المتصفحات لتفعيل الصوت
+    async function unlockAudioAndNotificationsOnce() {
+      if (audioUnlocked) return;
+      try { await ensureAudio(); audioUnlocked = true; } catch (e) {}
+      try { await requestNotificationPermission(); } catch (e) {}
+      if (audioUnlocked) audioHint.classList.remove('active');
+    }
+
+    // أي نقرة/لمسة/زر كيبورد = تفعيل
+    window.addEventListener('pointerdown', unlockAudioAndNotificationsOnce, { once: true, passive: true });
+    window.addEventListener('touchstart', unlockAudioAndNotificationsOnce, { once: true, passive: true });
+    window.addEventListener('keydown', unlockAudioAndNotificationsOnce, { once: true });
 
     // Son de mise à jour standard
     function playChime() {
@@ -276,7 +279,7 @@
       if (!soundEnabled) return;
       ensureAudio().then(() => {
         if (!audioCtx) return;
-        
+
         const playTone = (freq, time, duration) => {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
@@ -291,23 +294,10 @@
         };
 
         const now = audioCtx.currentTime;
-        playTone(987.77, now, 0.25);       // Note B5
-        playTone(1318.51, now + 0.3, 0.4); // Note E6
+        playTone(987.77, now, 0.25);
+        playTone(1318.51, now + 0.3, 0.4);
       }).catch(() => {});
     }
-
-    enableSoundBtn.addEventListener('click', async () => {
-      soundEnabled = !soundEnabled;
-      if (soundEnabled) {
-        await ensureAudio();
-        await requestNotificationPermission();
-        enableSoundBtn.textContent = "Sons & Notifications activés";
-        enableSoundBtn.classList.add('secondary');
-      } else {
-        enableSoundBtn.textContent = "Désactivé";
-        enableSoundBtn.classList.remove('secondary');
-      }
-    });
 
     function triggerUpdateAnimation() {
       queueNumEl.classList.add('updated');
@@ -315,7 +305,7 @@
     }
 
     /***********************
-     * Vérification de l'alerte ticket et déclenchement
+     * Vérification alerte ticket
      ***********************/
     function checkUserAlert(currentTicket) {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -369,7 +359,7 @@
     thresholdInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
 
     /***********************
-     * Mise à jour de l'interface
+     * Mise à jour UI
      ***********************/
     function setTicket(val) {
       if (val === null || typeof val === "undefined") return;
@@ -379,14 +369,12 @@
       const isNumberChanged = (old !== '--' && old !== String(next));
 
       queueNumEl.textContent = String(next);
-      
+
       const hasCustomAlert = checkUserAlert(next);
 
       if (isNumberChanged) {
         triggerUpdateAnimation();
-        if (!hasCustomAlert) {
-          playChime();
-        }
+        if (!hasCustomAlert) playChime();
       }
     }
 
@@ -401,21 +389,46 @@
      ***********************/
     async function initialFetch() {
       try {
-        const tRes = await fetch(TICKET_URL);
+        const tRes = await fetch(TICKET_URL, { cache: "no-store" });
         if (!tRes.ok) throw new Error("Fetch failed");
-
         const ticket = await tRes.json();
         state.current_ticket = ticket;
         setTicket(ticket);
       } catch (e) {
-        // Le flux SSE prendra le relais
+        // SSE / Polling prendra le relais
       }
     }
 
     /***********************
-     * Flux en temps réel (SSE)
+     * Realtime: SSE + fallback Polling (pour compatibilité)
      ***********************/
     let es = null;
+    let pollTimer = null;
+
+    async function pollTicket() {
+      try {
+        const r = await fetch(TICKET_URL, { cache: "no-store" });
+        if (!r.ok) throw new Error("poll failed");
+        const ticket = await r.json();
+        if (ticket !== state.current_ticket) {
+          state.current_ticket = ticket;
+          setTicket(ticket);
+        }
+        setOnline(true, "Système connecté (Polling)");
+      } catch (e) {
+        setOnline(false, "Hors ligne - Reconnexion...");
+      }
+    }
+
+    function startPolling(intervalMs = 2500) {
+      if (pollTimer) return;
+      pollTicket();
+      pollTimer = setInterval(pollTicket, intervalMs);
+    }
+
+    function stopPolling() {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
 
     function applyStreamPayload(payload) {
       if (!payload || typeof payload !== "object") return;
@@ -438,6 +451,14 @@
     }
 
     function connectStream() {
+      // إذا EventSource غير مدعوم → Polling
+      if (!("EventSource" in window)) {
+        startPolling(2500);
+        return;
+      }
+
+      stopPolling();
+
       if (es) {
         try { es.close(); } catch {}
         es = null;
@@ -447,24 +468,18 @@
 
       es = new EventSource(STREAM_URL);
 
-      es.onopen = () => {
-        setOnline(true, "Système connecté");
-      };
+      es.onopen = () => setOnline(true, "Système connecté");
 
-      es.addEventListener("put", (e) => {
-        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      });
-
-      es.addEventListener("patch", (e) => {
-        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      });
-
-      es.onmessage = (e) => {
-        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      };
+      es.addEventListener("put", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
+      es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
+      es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
 
       es.onerror = () => {
         setOnline(false, "Hors ligne - Reconnexion...");
+        try { es.close(); } catch {}
+        es = null;
+        // fallback
+        startPolling(2500);
       };
     }
 
@@ -474,4 +489,4 @@
   </script>
 </body>
 </html>
-"
+```
