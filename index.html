@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Système de gestion de file d'attente / نظام إدارة طابور الانتظار</title>
 
-  <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
@@ -184,6 +183,7 @@
       box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
     }
 
+    /* ====== زر تتبع (نص قصير + تأثير جديد) ====== */
     .btn {
       width: 100%;
       border: 0;
@@ -192,19 +192,40 @@
       color: #fff;
       padding: 12px 14px;
       cursor: pointer;
-      transition: filter 0.15s ease, transform 0.05s ease, background-color 0.2s ease;
       margin-top: 4px;
-    }
-    .btn:hover { filter: brightness(0.96); }
-    .btn:active { transform: translateY(1px); }
-    .btn .bi.small .ar,
-    .btn .bi.small .fr{
-      color: rgba(255,255,255,0.92);
-      font-weight: 800;
-    }
 
-    /* ✅ فقط هذا: لما تنضغط وتبدأ المتابعة يصير أخضر */
-    .btn.active { background: var(--success); }
+      font-family: Tajawal, Inter, sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.2px;
+
+      position: relative;
+      transition: transform 0.12s ease, box-shadow 0.2s ease, background-color 0.2s ease, filter 0.2s ease;
+    }
+    .btn:hover { filter: brightness(0.98); }
+
+    /* “نقرة” خفيفة */
+    .btn.pressed { transform: scale(0.985); }
+
+    /* ✅ عند تفعيل التتبع: يصبح أخضر + حلقة نبض (تأثير جديد) */
+    .btn.active {
+      background: linear-gradient(180deg, #22c55e, #16a34a);
+      box-shadow: 0 12px 26px rgba(22,163,74,0.24);
+    }
+    .btn.active::after{
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border-radius: 14px;
+      border: 2px solid rgba(255,255,255,0.65);
+      opacity: 0;
+      pointer-events: none;
+      animation: pulseRing 1.25s ease-out infinite;
+    }
+    @keyframes pulseRing {
+      0%   { transform: scale(0.98); opacity: 0.70; }
+      100% { transform: scale(1.08); opacity: 0.00; }
+    }
 
     .alert-banner {
       display: none;
@@ -302,13 +323,8 @@
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
 
-      <!-- زر: لا تظهر التحذيرات إلا عند الضغط هنا -->
-      <button id="verifyBtn" class="btn" type="button">
-        <span class="bi center small">
-          <span class="ar" lang="ar">تحقّق وابدأ التتبّع</span>
-          <span class="fr" lang="fr">Vérifier et démarrer le suivi</span>
-        </span>
-      </button>
+      <!-- ✅ زر بنص قصير -->
+      <button id="verifyBtn" class="btn" type="button">تتبع</button>
 
       <div id="alertBanner" class="alert-banner"></div>
     </div>
@@ -345,11 +361,7 @@
     const state = {
       current_ticket: null,
       lastAlertedDiff: null,
-
-      // ✅ لا نفحص إلا بعد الضغط على زر التحقق
       trackingEnabled: false,
-
-      // احتياط: منع الفحص أثناء التحرير
       userEditing: false
     };
 
@@ -390,7 +402,7 @@
     }
 
     /***********************
-     * Notifications (Permission + Envoi)
+     * Notifications
      ***********************/
     async function requestNotificationPermission() {
       if (!("Notification" in window)) return;
@@ -443,10 +455,8 @@
       await requestNotificationPermission();
     }
 
-    // محاولة عند التحميل
     initAudioAndNotifications();
 
-    // تفعيل تلقائي عند أول تفاعل
     ["pointerdown", "touchstart", "mousedown", "keydown"].forEach(evt => {
       window.addEventListener(evt, initAudioAndNotifications, { once: true, passive: true });
     });
@@ -534,15 +544,14 @@
     }
 
     /***********************
-     * ✅ منطق الزر: إثبات الضغط فقط (يصير أخضر)
-     * وإذا المستخدم عدّل الأرقام بعدها، نوقف التتبع ونرجّع الزر أزرق
+     * زر: تفعيل التتبع فقط بعد الضغط
      ***********************/
     function disableTrackingWhileEditing() {
       state.trackingEnabled = false;
       state.lastAlertedDiff = null;
       clearBanner();
 
-      // ✅ رجّع لون الزر (لأن لازم يضغط مرة ثانية بعد التعديل)
+      // رجّع الزر لوضعه الطبيعي بعد أي تعديل
       verifyBtn.classList.remove('active');
     }
 
@@ -560,19 +569,11 @@
       const threshold = parseInt(thresholdInput.value, 10);
 
       if (isNaN(myTicket) || myTicket < 1) {
-        setBanner(
-          "Veuillez saisir un numéro de ticket valide.",
-          "يرجى إدخال رقم تذكرة صحيح.",
-          { active: true, urgent: true }
-        );
+        setBanner("Veuillez saisir un numéro de ticket valide.", "يرجى إدخال رقم تذكرة صحيح.", { active: true, urgent: true });
         return false;
       }
       if (isNaN(threshold) || threshold < 1) {
-        setBanner(
-          "Veuillez saisir une marge d'alerte valide (>= 1).",
-          "يرجى إدخال هامش تنبيه صحيح (>= 1).",
-          { active: true, urgent: true }
-        );
+        setBanner("Veuillez saisir une marge d'alerte valide (>= 1).", "يرجى إدخال هامش تنبيه صحيح (>= 1).", { active: true, urgent: true });
         return false;
       }
       return true;
@@ -581,13 +582,17 @@
     function startTrackingAndCheck() {
       initAudioAndNotifications();
 
+      // تأثير “نقرة” سريع
+      verifyBtn.classList.add('pressed');
+      setTimeout(() => verifyBtn.classList.remove('pressed'), 140);
+
       if (!inputsAreValidOrShowMessage()) return;
 
       state.userEditing = false;
       state.trackingEnabled = true;
       state.lastAlertedDiff = null;
 
-      // ✅ هذا هو "الإثبات": الزر يصير أخضر بعد الضغط
+      // الإثبات: الزر يصبح أخضر + تأثير الحلقة النابضة
       verifyBtn.classList.add('active');
 
       checkUserAlert(state.current_ticket);
@@ -643,7 +648,7 @@
         state.current_ticket = ticket;
         setTicket(ticket);
       } catch (e) {
-        // Le flux SSE prendra le relais
+        // SSE will take over
       }
     }
 
@@ -682,28 +687,17 @@
 
       es = new EventSource(STREAM_URL);
 
-      es.onopen = () => {
-        setOnline(true, "Système connecté", "النظام متصل");
-      };
+      es.onopen = () => setOnline(true, "Système connecté", "النظام متصل");
 
-      es.addEventListener("put", (e) => {
-        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      });
+      es.addEventListener("put", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
+      es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
 
-      es.addEventListener("patch", (e) => {
-        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      });
+      es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
 
-      es.onmessage = (e) => {
-        try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      };
-
-      es.onerror = () => {
-        setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
-      };
+      es.onerror = () => setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
     }
 
-    // Démarrage
+    // Start
     initialFetch();
     connectStream();
   </script>
