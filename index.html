@@ -101,25 +101,6 @@
       border-color: #f5c2c7;
     }
 
-    .row {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 10px;
-    }
-    button {
-      border: 0;
-      padding: 10px 14px;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 700;
-      background: #0d6efd;
-      color: #fff;
-      font-size: 13px;
-    }
-    button.secondary { background: #198754; }
-
     .status-container {
       display: inline-flex;
       align-items: center;
@@ -172,10 +153,6 @@
       <span class="status-dot"></span>
       <span id="statusText">Connexion en cours...</span>
     </div>
-
-    <div class="row">
-      <button id="enableSoundBtn" class="secondary" type="button">Activer alertes & notifications</button>
-    </div>
   </div>
 
   <script>
@@ -191,7 +168,6 @@
     const queueNumEl = document.getElementById('queueNum');
     const statusContainer = document.getElementById('statusContainer');
     const statusText = document.getElementById('statusText');
-    const enableSoundBtn = document.getElementById('enableSoundBtn');
     const myTicketInput = document.getElementById('myTicketInput');
     const thresholdInput = document.getElementById('thresholdInput');
     const alertBanner = document.getElementById('alertBanner');
@@ -202,23 +178,36 @@
     };
 
     /***********************
-     * Demande d'autorisation & Envoi des Notifications System
+     * Gestion Audio & Notifications (تفعيل تلقائي)
      ***********************/
-    async function requestNotificationPermission() {
-      if (!("Notification" in window)) {
-        alert("Ce navigateur ne prend pas en charge les notifications système.");
-        return;
+    let audioCtx = null;
+    let isAudioInitialized = false;
+
+    // تهيئة الصوت والطلب التلقائي للإشعارات عند أول لمسة/تفاعل للمستخدم
+    function initAudioAndNotifications() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
       }
 
-      if (Notification.permission === "default") {
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-          sendSystemNotification("Notifications activées", "Vous recevrez une alerte quand votre tour approche.");
-        }
-      } else if (Notification.permission === "denied") {
-        alert("Les notifications sont bloquées. Veuillez les autoriser dans les paramètres du navigateur.");
+      // طلب إذن الإشعارات تلقائياً عند أول تفاعل
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
       }
+
+      isAudioInitialized = true;
     }
+
+    // ربط التفعيل المباشر بأول تفاعل من المستخدم (لمس الشاشة، النقر، أو الكتابة)
+    ['click', 'touchstart', 'input', 'keydown'].forEach(eventType => {
+      window.addEventListener(eventType, initAudioAndNotifications, { once: true });
+    });
 
     function sendSystemNotification(title, body) {
       // تفعيل الاهتزاز للهواتف المحمولة
@@ -226,42 +215,33 @@
         try { navigator.vibrate([300, 100, 300, 100, 300]); } catch (e) {}
       }
 
-      // إرسال إشعار للنظام (سواء حاسوب أو هاتف)
+      // إرسال الإشعار للنظام (حاسوب أو هاتف)
       if ("Notification" in window && Notification.permission === "granted") {
         try {
           new Notification(title, { 
             body: body, 
             icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
-            requireInteraction: true // يبقى الإشعار ظاهراً حتى يتفاعل معه المستخدم
+            requireInteraction: true
           });
         } catch (e) {
-          console.error("Erreur d'envoi de notification:", e);
+          console.error("Erreur notification:", e);
         }
       }
     }
 
-    /***********************
-     * Gestion Audio (صوت التحذير فقط)
-     ***********************/
-    let audioCtx = null;
-    let soundEnabled = true;
-
-    function ensureAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        return audioCtx.resume();
-      }
-      return Promise.resolve();
-    }
-
-    // صوت التنبيه والتحذير عند اقتراب/وصول الدور
+    // تشغيل صوت التحذير عند اقتراب/وصول الدور
     function playAlertBeep() {
-      if (!soundEnabled) return;
-      ensureAudio().then(() => {
-        if (!audioCtx) return;
-        
+      if (!audioCtx) {
+        initAudioAndNotifications();
+      }
+      
+      if (!audioCtx) return;
+
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      try {
         const playTone = (freq, time, duration) => {
           const osc = audioCtx.createOscillator();
           const gain = audioCtx.createGain();
@@ -278,21 +258,10 @@
         const now = audioCtx.currentTime;
         playTone(987.77, now, 0.25);       // Note B5
         playTone(1318.51, now + 0.3, 0.4); // Note E6
-      }).catch(() => {});
-    }
-
-    enableSoundBtn.addEventListener('click', async () => {
-      soundEnabled = !soundEnabled;
-      if (soundEnabled) {
-        await ensureAudio();
-        await requestNotificationPermission();
-        enableSoundBtn.textContent = "Alertes & Notifications activées";
-        enableSoundBtn.classList.add('secondary');
-      } else {
-        enableSoundBtn.textContent = "Désactivé";
-        enableSoundBtn.classList.remove('secondary');
+      } catch (e) {
+        console.error("Erreur lecture audio:", e);
       }
-    });
+    }
 
     function triggerUpdateAnimation() {
       queueNumEl.classList.add('updated');
@@ -300,7 +269,7 @@
     }
 
     /***********************
-     * Vérification de l'alerte ticket et déclenchement
+     * Vérification de l'alerte ticket
      ***********************/
     function checkUserAlert(currentTicket) {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -360,7 +329,6 @@
 
       queueNumEl.textContent = String(next);
       
-      // التثبت من التنبيهات الخاصة بالمستخدم (تشغيل الصوت والإشعار فقط إذا تحقق الشرط)
       checkUserAlert(next);
 
       if (isNumberChanged) {
