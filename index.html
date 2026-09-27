@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Système de gestion de file d'attente</title>
+  <title>نظام إدارة طابور الانتظار | Système de gestion de file d'attente</title>
 
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,12 +25,33 @@
       max-width: 480px;
       width: 100%;
     }
+
+    /* عرض ثنائي اللغة */
+    .bilingual {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      line-height: 1.15;
+    }
+    .ar {
+      direction: rtl;
+      unicode-bidi: isolate;
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    }
+    .fr {
+      direction: ltr;
+      unicode-bidi: isolate;
+    }
+
     h1 {
       color: #333;
       font-size: 22px;
       margin-bottom: 12px;
       font-weight: 700;
     }
+    h1 .ar { font-weight: 800; }
+    h1 .fr { font-weight: 800; }
+
     .number-box {
       background: #f8f9fa;
       border-radius: 16px;
@@ -59,6 +80,7 @@
       color: #333;
       margin-bottom: 10px;
       text-align: center;
+      font-weight: 800;
     }
     .input-group {
       display: flex;
@@ -70,7 +92,16 @@
       font-size: 12px;
       color: #495057;
       font-weight: 600;
+      line-height: 1.25;
     }
+    .input-group label .ar,
+    .input-group label .fr {
+      display: block;
+      font-weight: 700;
+    }
+    .input-group label .ar { text-align: right; }
+    .input-group label .fr { text-align: left; }
+
     .input-group input {
       padding: 10px;
       border-radius: 8px;
@@ -104,7 +135,7 @@
     .status-container {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       font-size: 13px;
       font-weight: 700;
       padding: 8px 16px;
@@ -118,6 +149,7 @@
       width: 10px; height: 10px; border-radius: 50%;
       background-color: #dc3545;
       display: inline-block;
+      flex: 0 0 auto;
     }
     .status-container.online { background-color: #d1e7dd; color: #0f5132; }
     .status-container.online .status-dot {
@@ -129,7 +161,10 @@
 
 <body>
   <div class="card">
-    <h1>Numéro de ticket actuel</h1>
+    <h1 class="bilingual">
+      <span class="ar" dir="rtl">رقم التذكرة الحالي</span>
+      <span class="fr" dir="ltr">Numéro de ticket actuel</span>
+    </h1>
 
     <div class="number-box">
       <div class="number" id="queueNum">--</div>
@@ -137,21 +172,36 @@
 
     <!-- Section de suivi du ticket utilisateur -->
     <div class="user-section">
-      <h3>Suivi de votre ticket</h3>
+      <h3 class="bilingual">
+        <span class="ar" dir="rtl">تتبّع تذكرتك</span>
+        <span class="fr" dir="ltr">Suivi de votre ticket</span>
+      </h3>
+
       <div class="input-group">
-        <label for="myTicketInput">Votre numéro de ticket :</label>
-        <input type="number" id="myTicketInput" placeholder="Ex: 45" min="1" />
+        <label for="myTicketInput">
+          <span class="ar" dir="rtl">رقم تذكرتك:</span>
+          <span class="fr" dir="ltr">Votre numéro de ticket :</span>
+        </label>
+        <input type="number" id="myTicketInput" placeholder="مثال: 45 | Ex : 45" min="1" />
       </div>
+
       <div class="input-group">
-        <label for="thresholdInput">Marge d'alerte (personnes avant vous) :</label>
+        <label for="thresholdInput">
+          <span class="ar" dir="rtl">هامش التنبيه (عدد الأشخاص قبلك):</span>
+          <span class="fr" dir="ltr">Marge d'alerte (personnes avant vous) :</span>
+        </label>
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
+
       <div id="alertBanner" class="alert-banner"></div>
     </div>
 
     <div class="status-container" id="statusContainer">
       <span class="status-dot"></span>
-      <span id="statusText">Connexion en cours...</span>
+      <span id="statusText" class="bilingual">
+        <span class="ar" dir="rtl">جارٍ الاتصال...</span>
+        <span class="fr" dir="ltr">Connexion en cours...</span>
+      </span>
     </div>
   </div>
 
@@ -178,11 +228,39 @@
     };
 
     /***********************
+     * Helpers (Bilingue + sécurité HTML بسيطة)
+     ***********************/
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setBilingualHTML(el, arText, frText) {
+      el.innerHTML =
+        `<span class="ar" dir="rtl">${escapeHtml(arText)}</span>` +
+        `<span class="fr" dir="ltr">${escapeHtml(frText)}</span>`;
+    }
+
+    function setBanner(arText, frText, { active = true, urgent = false } = {}) {
+      setBilingualHTML(alertBanner, arText, frText);
+      alertBanner.classList.toggle('active', !!active);
+      alertBanner.classList.toggle('urgent', !!urgent);
+    }
+
+    function clearBanner() {
+      alertBanner.classList.remove('active', 'urgent');
+      alertBanner.innerHTML = "";
+    }
+
+    /***********************
      * Notifications (Permission + Envoi)
      ***********************/
     async function requestNotificationPermission() {
       if (!("Notification" in window)) return;
-
       if (Notification.permission === "denied") return;
 
       if (Notification.permission === "default") {
@@ -190,8 +268,8 @@
           const permission = await Notification.requestPermission();
           if (permission === "granted") {
             sendSystemNotification(
-              "Notifications activées",
-              "Vous recevrez une alerte quand votre tour approche."
+              "تم تفعيل الإشعارات — Notifications activées",
+              "ستتلقى تنبيهًا عندما يقترب دورك.\nVous recevrez une alerte quand votre tour approche."
             );
           }
         } catch (e) {}
@@ -206,7 +284,7 @@
             icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png"
           });
         } catch (e) {
-          console.error("Erreur d'envoi de notification:", e);
+          console.error("خطأ في إرسال الإشعار — Erreur d'envoi de notification:", e);
         }
       }
     }
@@ -289,7 +367,7 @@
       const threshold = parseInt(thresholdInput.value, 10) || 10;
 
       if (isNaN(myTicket) || currentTicket === null || isNaN(currentTicket)) {
-        alertBanner.classList.remove('active', 'urgent');
+        clearBanner();
         state.lastAlertedDiff = null;
         return false;
       }
@@ -298,34 +376,40 @@
       let alertTriggered = false;
 
       if (diff === 0) {
-        const msg = "C'est votre tour ! Présentez-vous au guichet.";
-        alertBanner.textContent = msg;
-        alertBanner.classList.add('active', 'urgent');
+        const arMsg = "لقد حان دورك! تفضّل إلى الشباك.";
+        const frMsg = "C'est votre tour ! Présentez-vous au guichet.";
+        setBanner(arMsg, frMsg, { active: true, urgent: true });
 
         if (state.lastAlertedDiff !== 0) {
           playAlertBeep();
-          sendSystemNotification("File d'attente", msg);
+          sendSystemNotification(
+            "طابور الانتظار — File d'attente",
+            `${arMsg}\n${frMsg}`
+          );
           state.lastAlertedDiff = 0;
           alertTriggered = true;
         }
       } else if (diff > 0 && diff <= threshold) {
-        const msg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
-        alertBanner.textContent = msg;
-        alertBanner.classList.add('active');
-        alertBanner.classList.remove('urgent');
+        const arMsg = `انتباه! بقي أمامك ${diff} شخص/أشخاص قبل دورك.`;
+        const frMsg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
+        setBanner(arMsg, frMsg, { active: true, urgent: false });
 
         if (state.lastAlertedDiff !== diff) {
           playAlertBeep();
-          sendSystemNotification("Alerte tour approche", msg);
+          sendSystemNotification(
+            "تنبيه: يقترب دورك — Alerte tour approche",
+            `${arMsg}\n${frMsg}`
+          );
           state.lastAlertedDiff = diff;
           alertTriggered = true;
         }
       } else if (diff < 0) {
-        alertBanner.textContent = "Votre tour est déjà passé.";
-        alertBanner.classList.add('active', 'urgent');
+        const arMsg = "لقد فات دورك.";
+        const frMsg = "Votre tour est déjà passé.";
+        setBanner(arMsg, frMsg, { active: true, urgent: true });
         state.lastAlertedDiff = diff;
       } else {
-        alertBanner.classList.remove('active', 'urgent');
+        clearBanner();
         state.lastAlertedDiff = diff;
       }
 
@@ -356,10 +440,13 @@
       }
     }
 
-    function setOnline(isOnline, msg) {
+    function setOnline(isOnline, arMsg, frMsg) {
       if (isOnline) statusContainer.classList.add('online');
       else statusContainer.classList.remove('online');
-      statusText.textContent = msg || (isOnline ? "Système connecté" : "Hors ligne - Reconnexion...");
+
+      const ar = arMsg || (isOnline ? "النظام متصل" : "غير متصل - جارٍ إعادة الاتصال...");
+      const fr = frMsg || (isOnline ? "Système connecté" : "Hors ligne - Reconnexion...");
+      setBilingualHTML(statusText, ar, fr);
     }
 
     /***********************
@@ -409,12 +496,12 @@
         es = null;
       }
 
-      setOnline(false, "Connexion au système...");
+      setOnline(false, "جارٍ الاتصال بالنظام...", "Connexion au système...");
 
       es = new EventSource(STREAM_URL);
 
       es.onopen = () => {
-        setOnline(true, "Système connecté");
+        setOnline(true, "النظام متصل", "Système connecté");
       };
 
       es.addEventListener("put", (e) => {
@@ -430,7 +517,7 @@
       };
 
       es.onerror = () => {
-        setOnline(false, "Hors ligne - Reconnexion...");
+        setOnline(false, "غير متصل - جارٍ إعادة الاتصال...", "Hors ligne - Reconnexion...");
       };
     }
 
