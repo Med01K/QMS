@@ -192,7 +192,7 @@
       color: #fff;
       padding: 12px 14px;
       cursor: pointer;
-      transition: filter 0.15s ease, transform 0.05s ease;
+      transition: filter 0.15s ease, transform 0.05s ease, background 0.2s ease;
       margin-top: 4px;
     }
     .btn:hover { filter: brightness(0.96); }
@@ -202,6 +202,10 @@
       color: rgba(255,255,255,0.92);
       font-weight: 800;
     }
+
+    /* ✅ حالة "تم تفعيل التتبع" للزر */
+    .btn.active { background: var(--success); }
+    .btn.active:hover { filter: brightness(0.97); }
 
     .alert-banner {
       display: none;
@@ -387,6 +391,27 @@
     }
 
     /***********************
+     * ✅ زر التتبع: حالة تُثبت أنه تم الضغط
+     ***********************/
+    const verifyBtnAr = verifyBtn.querySelector('.ar');
+    const verifyBtnFr = verifyBtn.querySelector('.fr');
+
+    function setVerifyBtnState(isActive){
+      verifyBtn.classList.toggle('active', !!isActive);
+
+      if (isActive) {
+        verifyBtnAr.textContent = "التتبّع مُفعّل";
+        verifyBtnFr.textContent = "Suivi activé";
+      } else {
+        verifyBtnAr.textContent = "تحقّق وابدأ التتبّع";
+        verifyBtnFr.textContent = "Vérifier et démarrer le suivi";
+      }
+    }
+
+    // الحالة الافتراضية
+    setVerifyBtnState(false);
+
+    /***********************
      * Notifications (Permission + Envoi)
      ***********************/
     async function requestNotificationPermission() {
@@ -476,7 +501,10 @@
       }).catch(() => {});
     }
 
+    /* ✅ أنيميشن الرقم: إعادة تشغيله كل مرة (حتى لو ضغطت الزر) */
     function triggerUpdateAnimation() {
+      queueNumEl.classList.remove('updated');
+      void queueNumEl.offsetWidth; // force reflow لإعادة تشغيل الأنيميشن
       queueNumEl.classList.add('updated');
       setTimeout(() => queueNumEl.classList.remove('updated'), 350);
     }
@@ -537,6 +565,7 @@
       state.trackingEnabled = false;  // لن نحدث التحذيرات إلا بعد ضغط الزر
       state.lastAlertedDiff = null;   // إعادة ضبط حتى لا يصدر تنبيه قديم
       clearBanner();                  // اخفاء التحذير القديم أثناء التعديل
+      setVerifyBtnState(false);       // ✅ يرجع الزر لحالة "غير مُفعّل"
     }
 
     myTicketInput.addEventListener('focus', () => { state.userEditing = true; });
@@ -556,6 +585,10 @@
       state.userEditing = false;
       state.trackingEnabled = true;
       state.lastAlertedDiff = null;
+
+      // ✅ آلية واضحة أن الزر تم الضغط + نفس تأثير تحديث الرقم
+      setVerifyBtnState(true);
+      triggerUpdateAnimation();
 
       checkUserAlert(state.current_ticket);
     }
