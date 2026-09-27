@@ -183,16 +183,19 @@
 
     /* ====== زر بسيط (Flat) ====== */
     .btn {
+      /* كان عريض لأنه width:100% فقط -> الآن نعطيه max-width ونجعله في الوسط */
       width: 100%;
+      max-width: 280px;   /* عدّل هذا الرقم كما تريد */
+      margin: 8px auto 0; /* توسيط الزر */
+      display: block;
+
       border: 1px solid rgba(0,0,0,0.06);
       border-radius: 12px;
       background: var(--primary);
       color: #fff;
       padding: 12px 14px;
       cursor: pointer;
-      margin-top: 4px;
 
-      /* بدون 3D: لا shadow ولا transform */
       box-shadow: none;
       transition: filter 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
     }
@@ -211,7 +214,7 @@
       font-size: 12.5px;
     }
 
-    /* ✅ عند تفعيل التتبع: يصبح أخضر (بدون أي مؤثرات إضافية) */
+    /* ✅ عند تفعيل التتبع: يصبح أخضر */
     .btn.active{
       background: var(--success);
       border-color: rgba(0,0,0,0.08);
@@ -314,11 +317,11 @@
         <input type="number" id="thresholdInput" value="10" min="1" />
       </div>
 
-      <!-- ✅ زر بسيط + ترجمة -->
-      <button id="verifyBtn" class="btn" type="button">
+      <!-- ✅ زر أضيق + يتغير نصه عند التفعيل -->
+      <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
         <span class="bi center">
-          <span class="ar" lang="ar">تتبّع</span>
-          <span class="fr" lang="fr">Suivi</span>
+          <span class="ar" id="verifyBtnAr" lang="ar">تتبّع</span>
+          <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
         </span>
       </button>
 
@@ -354,12 +357,31 @@
     const alertBanner = document.getElementById('alertBanner');
     const verifyBtn = document.getElementById('verifyBtn');
 
+    // نصوص الزر (لتغييرها عند التفعيل)
+    const verifyBtnAr = document.getElementById('verifyBtnAr');
+    const verifyBtnFr = document.getElementById('verifyBtnFr');
+
     const state = {
       current_ticket: null,
       lastAlertedDiff: null,
       trackingEnabled: false,  // لا يعمل إلا بعد الضغط
       userEditing: false
     };
+
+    function setVerifyBtnActive(isActive){
+      verifyBtn.classList.toggle('active', !!isActive);
+      verifyBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+
+      if (isActive) {
+        verifyBtnAr.textContent = "يتم التتبع الآن";
+        verifyBtnFr.textContent = "Suivi en cours";
+      } else {
+        verifyBtnAr.textContent = "تتبّع";
+        verifyBtnFr.textContent = "Suivi";
+      }
+    }
+    // تأكيد الحالة الافتراضية
+    setVerifyBtnActive(false);
 
     /***********************
      * Helpers: ثنائي اللغة
@@ -548,7 +570,7 @@
       state.trackingEnabled = false;
       state.lastAlertedDiff = null;
       clearBanner();
-      verifyBtn.classList.remove('active'); // يرجع أزرق بعد أي تعديل
+      setVerifyBtnActive(false); // يرجع أزرق + يرجع النص "تتبّع / Suivi"
     }
 
     myTicketInput.addEventListener('focus', () => { state.userEditing = true; });
@@ -578,14 +600,17 @@
     function startTrackingAndCheck() {
       initAudioAndNotifications();
 
-      if (!inputsAreValidOrShowMessage()) return;
+      if (!inputsAreValidOrShowMessage()) {
+        setVerifyBtnActive(false);
+        return;
+      }
 
       state.userEditing = false;
       state.trackingEnabled = true;
       state.lastAlertedDiff = null;
 
-      // "إثبات الضغط": الزر يصبح أخضر
-      verifyBtn.classList.add('active');
+      // ✅ إثبات الضغط: الزر يصبح أخضر + النص يتغير
+      setVerifyBtnActive(true);
 
       checkUserAlert(state.current_ticket);
     }
