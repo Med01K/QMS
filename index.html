@@ -308,10 +308,11 @@
       if (isNaN(myTicket) || currentTicket === null || isNaN(currentTicket)) {
         alertBanner.classList.remove('active', 'urgent');
         state.lastAlertedDiff = null;
-        return;
+        return false;
       }
 
       const diff = myTicket - currentTicket;
+      let alertTriggered = false;
 
       if (diff === 0) {
         const msg = "C'est votre tour ! Présentez-vous au guichet.";
@@ -322,6 +323,7 @@
           playAlertBeep();
           sendSystemNotification("File d'attente", msg);
           state.lastAlertedDiff = 0;
+          alertTriggered = true;
         }
       } else if (diff > 0 && diff <= threshold) {
         const msg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
@@ -333,6 +335,7 @@
           playAlertBeep();
           sendSystemNotification("Alerte tour approche", msg);
           state.lastAlertedDiff = diff;
+          alertTriggered = true;
         }
       } else if (diff < 0) {
         alertBanner.textContent = "Votre tour est déjà passé.";
@@ -342,6 +345,8 @@
         alertBanner.classList.remove('active', 'urgent');
         state.lastAlertedDiff = diff;
       }
+
+      return alertTriggered;
     }
 
     myTicketInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
@@ -355,13 +360,20 @@
 
       const old = queueNumEl.textContent;
       const next = Number(val);
+      const isNumberChanged = (old !== '--' && old !== String(next));
 
-      if (old !== '--' && old !== String(next)) {
-        playChime();
-        triggerUpdateAnimation();
-      }
       queueNumEl.textContent = String(next);
-      checkUserAlert(next);
+      
+      // نتحقق أولاً من التنبيه الخاص، إذا تم إطلاقه ترجع true
+      const hasCustomAlert = checkUserAlert(next);
+
+      // إذا تغير الرقم ولم يتم إطلاق التنبيه الخاص، نشغل الصوت العادي
+      if (isNumberChanged) {
+        triggerUpdateAnimation();
+        if (!hasCustomAlert) {
+          playChime();
+        }
+      }
     }
 
     function setOnline(isOnline, msg) {
