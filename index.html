@@ -183,7 +183,6 @@
     async function requestNotificationPermission() {
       if (!("Notification" in window)) return;
 
-      // إذا كانت مرفوضة، لا يمكننا إجبارها
       if (Notification.permission === "denied") return;
 
       if (Notification.permission === "default") {
@@ -195,9 +194,7 @@
               "Vous recevrez une alerte quand votre tour approche."
             );
           }
-        } catch (e) {
-          // بعض المتصفحات ترفض الطلب بدون تفاعل
-        }
+        } catch (e) {}
       }
     }
 
@@ -218,7 +215,7 @@
      * Audio (دائمًا مفعّل لكن يحتاج أول تفاعل ليفتح AudioContext)
      ***********************/
     let audioCtx = null;
-    const soundEnabled = true; // دائمًا مفعّل
+    const soundEnabled = true;
 
     function ensureAudio() {
       if (!audioCtx) {
@@ -230,57 +227,31 @@
       return Promise.resolve();
     }
 
-    // محاولة تفعيل الصوت + طلب الإشعارات تلقائياً
     let initDone = false;
     async function initAudioAndNotifications() {
       if (initDone) return;
       initDone = true;
 
-      // الصوت غالبًا يحتاج gesture، لذلك هذا يُستدعى عند أول تفاعل كذلك
       try { await ensureAudio(); } catch {}
-
-      // الإشعارات غالبًا تحتاج gesture أيضًا
       await requestNotificationPermission();
     }
 
-    // نحاول مرة عند التحميل (قد لا تنجح حسب المتصفح)
+    // محاولة عند التحميل (قد لا تنجح بدون تفاعل)
     initAudioAndNotifications();
 
-    // والأهم: نفعلها "بدون زر" عند أول تفاعل بأي مكان
+    // تفعيل تلقائي عند أول تفاعل (بدون زر)
     const firstGestureEvents = ["pointerdown", "touchstart", "mousedown", "keydown"];
     firstGestureEvents.forEach(evt => {
       window.addEventListener(evt, initAudioAndNotifications, { once: true, passive: true });
     });
 
-    // إذا رجع المستخدم للصفحة وخلفية/أمام: حاول استئناف الصوت
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         ensureAudio().catch(() => {});
       }
     });
 
-    // Son de mise à jour standard
-    function playChime() {
-      if (!soundEnabled) return;
-      ensureAudio().then(() => {
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.7);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.7);
-      }).catch(() => {});
-    }
-
-    // Son d'avertissement spécifique (double bip)
+    // صوت التحذير فقط (double bip)
     function playAlertBeep() {
       if (!soundEnabled) return;
       ensureAudio().then(() => {
@@ -376,13 +347,12 @@
 
       queueNumEl.textContent = String(next);
 
-      const hasCustomAlert = checkUserAlert(next);
+      // هذه الدالة هي التي تُطلق صوت التحذير فقط عند الاقتراب/الدور
+      checkUserAlert(next);
 
+      // فقط حركة/أنيميشن عند التحديث (بدون صوت تحديث)
       if (isNumberChanged) {
         triggerUpdateAnimation();
-        if (!hasCustomAlert) {
-          playChime();
-        }
       }
     }
 
