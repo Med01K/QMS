@@ -174,7 +174,7 @@
     </div>
 
     <div class="row">
-      <button id="enableSoundBtn" class="secondary" type="button">Activer sons & notifications</button>
+      <button id="enableSoundBtn" class="secondary" type="button">Activer alertes & notifications</button>
     </div>
   </div>
 
@@ -202,11 +202,11 @@
     };
 
     /***********************
-     * Demande d'autorisation des Notifications
+     * Demande d'autorisation & Envoi des Notifications System
      ***********************/
     async function requestNotificationPermission() {
       if (!("Notification" in window)) {
-        alert("Ce navigateur ne prend pas en charge les notifications de bureau.");
+        alert("Ce navigateur ne prend pas en charge les notifications système.");
         return;
       }
 
@@ -216,16 +216,23 @@
           sendSystemNotification("Notifications activées", "Vous recevrez une alerte quand votre tour approche.");
         }
       } else if (Notification.permission === "denied") {
-        alert("Les notifications sont bloquées dans votre navigateur. Veuillez les autoriser dans les paramètres du site.");
+        alert("Les notifications sont bloquées. Veuillez les autoriser dans les paramètres du navigateur.");
       }
     }
 
     function sendSystemNotification(title, body) {
+      // تفعيل الاهتزاز للهواتف المحمولة
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate([300, 100, 300, 100, 300]); } catch (e) {}
+      }
+
+      // إرسال إشعار للنظام (سواء حاسوب أو هاتف)
       if ("Notification" in window && Notification.permission === "granted") {
         try {
           new Notification(title, { 
             body: body, 
-            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png" 
+            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
+            requireInteraction: true // يبقى الإشعار ظاهراً حتى يتفاعل معه المستخدم
           });
         } catch (e) {
           console.error("Erreur d'envoi de notification:", e);
@@ -234,7 +241,7 @@
     }
 
     /***********************
-     * Gestion Audio
+     * Gestion Audio (صوت التحذير فقط)
      ***********************/
     let audioCtx = null;
     let soundEnabled = true;
@@ -249,28 +256,7 @@
       return Promise.resolve();
     }
 
-    // Son de mise à jour standard
-    function playChime() {
-      if (!soundEnabled) return;
-      ensureAudio().then(() => {
-        if (!audioCtx) return;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.7);
-
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.7);
-      }).catch(() => {});
-    }
-
-    // Son d'avertissement spécifique (double bip)
+    // صوت التنبيه والتحذير عند اقتراب/وصول الدور
     function playAlertBeep() {
       if (!soundEnabled) return;
       ensureAudio().then(() => {
@@ -281,7 +267,7 @@
           const gain = audioCtx.createGain();
           osc.type = 'triangle';
           osc.frequency.setValueAtTime(freq, time);
-          gain.gain.setValueAtTime(0.25, time);
+          gain.gain.setValueAtTime(0.3, time);
           gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
           osc.connect(gain);
           gain.connect(audioCtx.destination);
@@ -300,7 +286,7 @@
       if (soundEnabled) {
         await ensureAudio();
         await requestNotificationPermission();
-        enableSoundBtn.textContent = "Sons & Notifications activés";
+        enableSoundBtn.textContent = "Alertes & Notifications activées";
         enableSoundBtn.classList.add('secondary');
       } else {
         enableSoundBtn.textContent = "Désactivé";
@@ -323,11 +309,10 @@
       if (isNaN(myTicket) || currentTicket === null || isNaN(currentTicket)) {
         alertBanner.classList.remove('active', 'urgent');
         state.lastAlertedDiff = null;
-        return false;
+        return;
       }
 
       const diff = myTicket - currentTicket;
-      let alertTriggered = false;
 
       if (diff === 0) {
         const msg = "C'est votre tour ! Présentez-vous au guichet.";
@@ -336,9 +321,8 @@
 
         if (state.lastAlertedDiff !== 0) {
           playAlertBeep();
-          sendSystemNotification("File d'attente", msg);
+          sendSystemNotification("File d'attente - Votre tour !", msg);
           state.lastAlertedDiff = 0;
-          alertTriggered = true;
         }
       } else if (diff > 0 && diff <= threshold) {
         const msg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
@@ -350,7 +334,6 @@
           playAlertBeep();
           sendSystemNotification("Alerte tour approche", msg);
           state.lastAlertedDiff = diff;
-          alertTriggered = true;
         }
       } else if (diff < 0) {
         alertBanner.textContent = "Votre tour est déjà passé.";
@@ -360,8 +343,6 @@
         alertBanner.classList.remove('active', 'urgent');
         state.lastAlertedDiff = diff;
       }
-
-      return alertTriggered;
     }
 
     myTicketInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
@@ -379,13 +360,11 @@
 
       queueNumEl.textContent = String(next);
       
-      const hasCustomAlert = checkUserAlert(next);
+      // التثبت من التنبيهات الخاصة بالمستخدم (تشغيل الصوت والإشعار فقط إذا تحقق الشرط)
+      checkUserAlert(next);
 
       if (isNumberChanged) {
         triggerUpdateAnimation();
-        if (!hasCustomAlert) {
-          playChime();
-        }
       }
     }
 
@@ -460,7 +439,7 @@
 
       es.onmessage = (e) => {
         try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      };
+      });
 
       es.onerror = () => {
         setOnline(false, "Hors ligne - Reconnexion...");
