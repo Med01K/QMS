@@ -60,63 +60,25 @@
       border: 1px solid rgba(229,231,235,0.7);
     }
 
-    /* ====== ثنائي اللغة ====== */
-    .bi{
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .bi .fr,
-    .bi .ar{
-      display: block;
-      line-height: 1.2;
-      unicode-bidi: isolate;
-    }
-    .bi .fr{
-      direction: ltr;
-      text-align: left;
-      font-family: Inter, 'Segoe UI', Tahoma, sans-serif;
-    }
-    .bi .ar{
-      direction: rtl;
-      text-align: right;
-      font-family: Tajawal, Tahoma, Arial, sans-serif;
-    }
-    .bi.center .fr,
-    .bi.center .ar{
-      text-align: center;
-    }
-    .bi.small .fr,
-    .bi.small .ar{
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--muted);
-    }
+    .bi{ display: flex; flex-direction: column; gap: 4px; }
+    .bi .fr, .bi .ar{ display:block; line-height:1.2; unicode-bidi:isolate; }
+    .bi .fr{ direction:ltr; text-align:left; font-family:Inter, 'Segoe UI', Tahoma, sans-serif; }
+    .bi .ar{ direction:rtl; text-align:right; font-family:Tajawal, Tahoma, Arial, sans-serif; }
+    .bi.center .fr, .bi.center .ar{ text-align:center; }
+    .bi.small .fr, .bi.small .ar{ font-size:12.5px; font-weight:700; color:var(--muted); }
 
-    .page-title{
-      margin-bottom: 12px;
-    }
-    .page-title .ar{
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: 0.2px;
-    }
-    .page-title .fr{
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--muted);
-    }
+    .page-title{ margin-bottom: 12px; }
+    .page-title .ar{ font-size:20px; font-weight:800; color:var(--text); letter-spacing:0.2px; }
+    .page-title .fr{ font-size:12.5px; font-weight:700; color:var(--muted); }
 
-    .number-box {
+    .number-box{
       background: linear-gradient(180deg, #f8fafc, #ffffff);
       border-radius: 18px;
       padding: 14px 12px;
       margin: 14px 0 10px;
       border: 1px solid var(--border);
     }
-
-    .number {
+    .number{
       font-size: 92px;
       color: var(--primary);
       font-weight: 800;
@@ -124,152 +86,103 @@
       transition: color 0.25s ease, transform 0.18s ease;
       letter-spacing: 1px;
     }
-    .number.updated { transform: scale(1.06); color: var(--success); }
+    .number.updated{ transform: scale(1.06); color: var(--success); }
 
-    .user-section {
-      background: #f9fafb;
-      padding: 16px;
-      border-radius: 16px;
-      margin: 16px 0;
-      border: 1px solid var(--border);
-      text-align: initial;
-    }
-
-    .user-section h3 { margin-bottom: 10px; }
-    .user-section h3 .ar{
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text);
-      text-align: center;
-    }
-    .user-section h3 .fr{
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--muted);
-      text-align: center;
+    .user-section{
+      background:#f9fafb;
+      padding:16px;
+      border-radius:16px;
+      margin:16px 0;
+      border:1px solid var(--border);
+      text-align:initial;
     }
 
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
+    .user-section h3{ margin-bottom:10px; }
+    .user-section h3 .ar{ font-size:15px; font-weight:800; color:var(--text); text-align:center; }
+    .user-section h3 .fr{ font-size:12.5px; font-weight:700; color:var(--muted); text-align:center; }
 
-    .input-group label .ar{
-      font-size: 13px;
-      font-weight: 800;
-      color: var(--text);
-    }
-    .input-group label .fr{
-      font-size: 12.5px;
-      font-weight: 700;
-      color: var(--muted);
-    }
+    .input-group{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+    .input-group label .ar{ font-size:13px; font-weight:800; color:var(--text); }
+    .input-group label .fr{ font-size:12.5px; font-weight:700; color:var(--muted); }
 
-    .input-group input {
-      padding: 11px 12px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      font-size: 14px;
-      outline: none;
-      background: #fff;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    .input-group input{
+      padding:11px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      font-size:14px;
+      outline:none;
+      background:#fff;
+      transition:border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .input-group input:focus {
+    .input-group input:focus{
       border-color: rgba(37,99,235,0.55);
       box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
     }
 
-    /* ====== زر بسيط (Flat) ====== */
-    .btn {
-      width: 100%;
-      max-width: 280px;   /* عرض أقل */
-      margin: 8px auto 0; /* توسيط */
-      display: block;
+    .btn{
+      width:100%;
+      max-width:280px;
+      margin:8px auto 0;
+      display:block;
 
-      border: 1px solid rgba(0,0,0,0.06);
-      border-radius: 12px;
-      background: var(--primary);
-      color: #fff;
-      padding: 12px 14px;
-      cursor: pointer;
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:12px;
+      background:var(--primary);
+      color:#fff;
+      padding:12px 14px;
+      cursor:pointer;
 
-      box-shadow: none;
+      box-shadow:none;
       transition: filter 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
     }
-    .btn:hover { filter: brightness(0.97); }
+    .btn:hover{ filter: brightness(0.97); }
 
-    .btn .bi .ar{
-      color: rgba(255,255,255,0.98);
-      font-weight: 900;
-      font-size: 16px;
-      letter-spacing: 0.2px;
-    }
-    .btn .bi .fr{
-      color: rgba(255,255,255,0.92);
-      font-weight: 800;
-      font-size: 12.5px;
-    }
+    .btn .bi .ar{ color:rgba(255,255,255,0.98); font-weight:900; font-size:16px; letter-spacing:0.2px; }
+    .btn .bi .fr{ color:rgba(255,255,255,0.92); font-weight:800; font-size:12.5px; }
 
-    .btn.active{
-      background: var(--success);
-      border-color: rgba(0,0,0,0.08);
-      filter: none;
-    }
+    .btn.active{ background:var(--success); border-color:rgba(0,0,0,0.08); filter:none; }
 
-    .alert-banner {
-      display: none;
-      background-color: var(--warn-bg);
-      color: var(--warn-tx);
-      border: 1px solid var(--warn-bd);
-      padding: 12px 12px;
-      border-radius: 12px;
-      margin-top: 10px;
-      text-align: center;
+    .alert-banner{
+      display:none;
+      background-color:var(--warn-bg);
+      color:var(--warn-tx);
+      border:1px solid var(--warn-bd);
+      padding:12px 12px;
+      border-radius:12px;
+      margin-top:10px;
+      text-align:center;
     }
-    .alert-banner.active { display: block; }
-    .alert-banner.urgent {
-      background-color: var(--danger-bg);
-      color: var(--danger-tx);
-      border-color: var(--danger-bd);
+    .alert-banner.active{ display:block; }
+    .alert-banner.urgent{
+      background-color:var(--danger-bg);
+      color:var(--danger-tx);
+      border-color:var(--danger-bd);
     }
     .alert-banner .bi.small .fr,
-    .alert-banner .bi.small .ar{
-      color: inherit;
-      font-weight: 800;
-    }
+    .alert-banner .bi.small .ar{ color:inherit; font-weight:800; }
 
-    .status-container {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      border-radius: 16px;
-      user-select: none;
-      width: 100%;
-      justify-content: center;
-      border: 1px solid rgba(0,0,0,0.05);
-      background-color: var(--offline-bg);
-      color: var(--offline-tx);
+    .status-container{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding:10px 14px;
+      border-radius:16px;
+      user-select:none;
+      width:100%;
+      justify-content:center;
+      border:1px solid rgba(0,0,0,0.05);
+      background-color:var(--offline-bg);
+      color:var(--offline-tx);
     }
-
-    .status-dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background-color: var(--offline-dot);
-      display: inline-block;
-      flex: 0 0 auto;
-      box-shadow: 0 0 0 4px rgba(220,38,38,0.10);
+    .status-dot{
+      width:10px; height:10px; border-radius:50%;
+      background-color:var(--offline-dot);
+      display:inline-block;
+      flex:0 0 auto;
+      box-shadow:0 0 0 4px rgba(220,38,38,0.10);
     }
-
-    .status-container.online {
-      background-color: var(--online-bg);
-      color: var(--online-tx);
-    }
-    .status-container.online .status-dot {
-      background-color: var(--online-dot);
-      box-shadow: 0 0 0 4px rgba(22,163,74,0.12);
-    }
+    .status-container.online{ background-color:var(--online-bg); color:var(--online-tx); }
+    .status-container.online .status-dot{ background-color:var(--online-dot); box-shadow:0 0 0 4px rgba(22,163,74,0.12); }
   </style>
 </head>
 
@@ -345,9 +258,8 @@
     const STREAM_URL = `${DB_BASE}/queue.json?print=silent${AUTH_QS}`;
     const TICKET_URL = `${DB_BASE}/queue/current_ticket.json${AUTH_QS}`;
 
-    // Polling fallback intervals
-    const POLL_VISIBLE_MS = 8000;  // كل 8 ثواني عندما الصفحة ظاهرة
-    const POLL_HIDDEN_MS  = 15000; // كل 15 ثانية بالخلفية (قد لا يعمل دائمًا حسب النظام)
+    const POLL_VISIBLE_MS = 8000;
+    const POLL_HIDDEN_MS  = 15000;
 
     const queueNumEl = document.getElementById('queueNum');
     const statusContainer = document.getElementById('statusContainer');
@@ -369,7 +281,6 @@
     function setVerifyBtnActive(isActive){
       verifyBtn.classList.toggle('active', !!isActive);
       verifyBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-
       if (isActive) {
         verifyBtnAr.textContent = "يتم التتبع الآن";
         verifyBtnFr.textContent = "Suivi en cours";
@@ -417,33 +328,97 @@
     }
 
     /***********************
-     * Notifications (مهم: في الهاتف الأفضل طلب الإذن عند الضغط على زر)
+     * Service Worker (لتحسين موثوقية إظهار الإشعار في Chrome Android)
      ***********************/
-    async function requestNotificationPermission() {
-      if (!("Notification" in window)) return false;
-      if (Notification.permission === "granted") return true;
-      if (Notification.permission === "denied") return false;
-
+    async function registerSW() {
+      if (!("serviceWorker" in navigator)) return false;
       try {
-        const permission = await Notification.requestPermission();
-        return permission === "granted";
-      } catch {
+        await navigator.serviceWorker.register("./sw.js", { scope: "./" });
+        return true;
+      } catch (e) {
+        console.warn("SW register failed:", e);
         return false;
       }
     }
+    registerSW();
 
-    function sendSystemNotification(title, body) {
-      if ("Notification" in window && Notification.permission === "granted") {
-        try {
-          new Notification(title, {
-            body,
-            tag: "qms-alert",      // يمنع التكرار العشوائي
-            renotify: true,
-            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png"
-          });
-        } catch (e) {
-          console.error("Notification error:", e);
+    /***********************
+     * Notifications (مع تشخيص واضح)
+     ***********************/
+    async function ensureNotificationsEnabled() {
+      if (!("Notification" in window)) {
+        setBanner("Notifications non supportées.", "الإشعارات غير مدعومة في هذا المتصفح.", { active:true, urgent:true });
+        return false;
+      }
+      if (!window.isSecureContext) {
+        setBanner("Ouvrez en HTTPS.", "افتح الموقع عبر HTTPS.", { active:true, urgent:true });
+        return false;
+      }
+
+      if (Notification.permission === "granted") return true;
+
+      if (Notification.permission === "denied") {
+        setBanner(
+          "Notifications bloquées. Autorisez-les dans les paramètres du site.",
+          "الإشعارات محظورة. فعّلها من إعدادات الموقع.",
+          { active:true, urgent:true }
+        );
+        return false;
+      }
+
+      // default => نطلب الإذن (لازم يكون عبر ضغط زر)
+      let permission = "default";
+      try {
+        permission = await Notification.requestPermission();
+      } catch (e) {
+        console.warn("requestPermission failed:", e);
+      }
+
+      if (permission !== "granted") {
+        setBanner(
+          "Veuillez autoriser les notifications pour recevoir les alertes.",
+          "يرجى السماح بالإشعارات لكي يصلك التنبيه.",
+          { active:true, urgent:true }
+        );
+        return false;
+      }
+
+      // إشعار تجريبي حتى تتأكد أنها اشتغلت
+      await sendSystemNotification("تم تفعيل الإشعارات", "ستتلقى تنبيهًا عندما يقترب دورك.");
+      return true;
+    }
+
+    async function sendSystemNotification(title, body) {
+      if (!("Notification" in window)) return;
+      if (!window.isSecureContext) return;
+      if (Notification.permission !== "granted") return;
+
+      const options = {
+        body,
+        tag: "qms-alert",
+        renotify: true,
+        icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
+        vibrate: [200, 80, 200]
+      };
+
+      // الأفضل على Chrome Android: showNotification عبر service worker إن وُجد
+      try {
+        if ("serviceWorker" in navigator) {
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (reg && reg.showNotification) {
+            await reg.showNotification(title, options);
+            return;
+          }
         }
+      } catch (e) {
+        console.warn("showNotification via SW failed, fallback to new Notification:", e);
+      }
+
+      // fallback
+      try {
+        new Notification(title, options);
+      } catch (e) {
+        console.error("new Notification failed:", e);
       }
     }
 
@@ -459,7 +434,6 @@
       return Promise.resolve();
     }
 
-    // فقط تهيئة الصوت عند أول تفاعل (بدون طلب إشعارات هنا)
     let audioInitDone = false;
     async function initAudioOnce() {
       if (audioInitDone) return;
@@ -556,8 +530,34 @@
     }
 
     /***********************
-     * زر التتبع
+     * زر التتبع + Polling fallback
      ***********************/
+    let pollTimer = null;
+
+    async function pollCurrentTicketOnce() {
+      try {
+        const res = await fetch(TICKET_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("poll failed");
+        const ticket = await res.json();
+        state.current_ticket = ticket;
+        setTicket(ticket);
+      } catch {}
+    }
+
+    function startPolling() {
+      stopPolling();
+      const period = (document.visibilityState === "visible") ? POLL_VISIBLE_MS : POLL_HIDDEN_MS;
+      pollTimer = setInterval(pollCurrentTicketOnce, period);
+      pollCurrentTicketOnce();
+    }
+
+    function stopPolling() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
     function disableTrackingWhileEditing() {
       state.trackingEnabled = false;
       state.lastAlertedDiff = null;
@@ -589,43 +589,11 @@
       return true;
     }
 
-    /***********************
-     * Polling fallback (حل مساعد للهاتف عندما SSE يتوقف بالخلفية)
-     ***********************/
-    let pollTimer = null;
-
-    async function pollCurrentTicketOnce() {
-      try {
-        const res = await fetch(TICKET_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error("poll failed");
-        const ticket = await res.json();
-        state.current_ticket = ticket;
-        setTicket(ticket);
-      } catch {
-        // ignore (SSE قد يكون شغال)
-      }
-    }
-
-    function startPolling() {
-      stopPolling();
-      const period = (document.visibilityState === "visible") ? POLL_VISIBLE_MS : POLL_HIDDEN_MS;
-      pollTimer = setInterval(pollCurrentTicketOnce, period);
-      pollCurrentTicketOnce(); // فحص فوري
-    }
-
-    function stopPolling() {
-      if (pollTimer) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-      }
-    }
-
     async function startTrackingAndCheck() {
-      // تهيئة الصوت (محاولة)
       initAudioOnce();
 
-      // طلب إذن الإشعارات عند الضغط (أفضل للهواتف)
-      await requestNotificationPermission();
+      // هنا الفرق: لو لم تُفعّل الإشعارات سنخبرك بوضوح داخل البانر
+      await ensureNotificationsEnabled();
 
       if (!inputsAreValidOrShowMessage()) {
         setVerifyBtnActive(false);
@@ -637,11 +605,7 @@
       state.lastAlertedDiff = null;
 
       setVerifyBtnActive(true);
-
-      // شغّل polling كاحتياط + سيستمر SSE لو أمكن
       startPolling();
-
-      // فحص فوري
       checkUserAlert(state.current_ticket);
     }
 
@@ -694,9 +658,7 @@
         const ticket = await tRes.json();
         state.current_ticket = ticket;
         setTicket(ticket);
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
 
     /***********************
@@ -748,12 +710,11 @@
 
         es.addEventListener("put", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
         es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-
         es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
 
         es.onerror = () => {
           setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
-          scheduleReconnect(); // إعادة محاولة
+          scheduleReconnect();
         };
       } catch {
         setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
@@ -761,7 +722,6 @@
       }
     }
 
-    // عند الرجوع للصفحة: نعيد fetch + stream + polling (إن كان التتبع شغال)
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
         initialFetch();
