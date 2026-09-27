@@ -47,17 +47,6 @@
     }
     .number.updated { transform: scale(1.08); color: #198754; }
 
-    .console-info {
-      font-size: 18px;
-      color: #495057;
-      margin: 14px 0 18px;
-      background: #e7f1ff;
-      padding: 12px;
-      border-radius: 12px;
-      border: 1px solid #b6d4fe;
-    }
-    .console-num { font-weight: bold; color: #0d6efd; font-size: 22px; }
-
     .user-section {
       background: #f1f3f5;
       padding: 16px;
@@ -129,7 +118,7 @@
       color: #fff;
       font-size: 13px;
     }
-    button.secondary { background: #6c757d; }
+    button.secondary { background: #198754; }
 
     .status-container {
       display: inline-flex;
@@ -154,14 +143,6 @@
       background-color: #198754;
       box-shadow: 0 0 8px #198754;
     }
-
-    .hint {
-      margin-top: 14px;
-      font-size: 11px;
-      color: #6c757d;
-      line-height: 1.5;
-    }
-    code { background: #e9ecef; padding: 2px 6px; border-radius: 6px; }
   </style>
 </head>
 
@@ -171,10 +152,6 @@
 
     <div class="number-box">
       <div class="number" id="queueNum">--</div>
-    </div>
-
-    <div class="console-info">
-      Guichet : <span class="console-num" id="consoleNum">--</span>
     </div>
 
     <!-- Section de suivi du ticket utilisateur -->
@@ -197,14 +174,7 @@
     </div>
 
     <div class="row">
-      <button id="enableSoundBtn" class="secondary" type="button">Activer le son</button>
-      <button id="reconnectBtn" type="button">Régénérer la connexion</button>
-    </div>
-
-    <div class="hint">
-      Compatible avec ESP32 :
-      <br/>
-      <code>/queue/current_ticket</code> et <code>/queue/current_console</code>
+      <button id="enableSoundBtn" class="secondary" type="button">Son activé</button>
     </div>
   </div>
 
@@ -215,63 +185,70 @@
     const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
     const AUTH_QS = "";
 
-    const STREAM_URL  = `${DB_BASE}/queue.json?print=silent${AUTH_QS}`;
-    const TICKET_URL  = `${DB_BASE}/queue/current_ticket.json${AUTH_QS}`;
-    const CONSOLE_URL = `${DB_BASE}/queue/current_console.json${AUTH_QS}`;
+    const STREAM_URL = `${DB_BASE}/queue.json?print=silent${AUTH_QS}`;
+    const TICKET_URL = `${DB_BASE}/queue/current_ticket.json${AUTH_QS}`;
 
     const queueNumEl = document.getElementById('queueNum');
-    const consoleNumEl = document.getElementById('consoleNum');
     const statusContainer = document.getElementById('statusContainer');
     const statusText = document.getElementById('statusText');
     const enableSoundBtn = document.getElementById('enableSoundBtn');
-    const reconnectBtn = document.getElementById('reconnectBtn');
     const myTicketInput = document.getElementById('myTicketInput');
     const thresholdInput = document.getElementById('thresholdInput');
     const alertBanner = document.getElementById('alertBanner');
 
     const state = {
-      current_ticket: null,
-      current_console: null
+      current_ticket: null
     };
 
     /***********************
-     * Gestion de l'audio
+     * Gestion de l'audio (Activé par défaut)
      ***********************/
     let audioCtx = null;
-    let soundEnabled = false;
+    let soundEnabled = true;
 
     function ensureAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') return audioCtx.resume();
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        return audioCtx.resume();
+      }
       return Promise.resolve();
     }
 
+    // Autoriser la reprise audio au premier clic / frappe sur la page
+    window.addEventListener('click', () => ensureAudio(), { once: true });
+    window.addEventListener('keydown', () => ensureAudio(), { once: true });
+
     function playChime() {
-      if (!soundEnabled || !audioCtx) return;
+      if (!soundEnabled) return;
+      ensureAudio().then(() => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
 
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.7);
 
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.7);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
 
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      osc.start();
-      osc.stop(audioCtx.currentTime + 0.7);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.7);
+      }).catch(() => {});
     }
 
     enableSoundBtn.addEventListener('click', async () => {
-      try {
+      soundEnabled = !soundEnabled;
+      if (soundEnabled) {
         await ensureAudio();
-        soundEnabled = true;
         enableSoundBtn.textContent = "Son activé";
+        enableSoundBtn.classList.add('secondary');
+      } else {
+        enableSoundBtn.textContent = "Son désactivé";
         enableSoundBtn.classList.remove('secondary');
-      } catch (e) {
-        alert("Le navigateur a bloqué l'audio. Veuillez rééayer.");
       }
     });
 
@@ -331,11 +308,6 @@
       checkUserAlert(next);
     }
 
-    function setConsole(val) {
-      if (val === null || typeof val === "undefined") return;
-      consoleNumEl.textContent = String(val);
-    }
-
     function setOnline(isOnline, msg) {
       if (isOnline) statusContainer.classList.add('online');
       else statusContainer.classList.remove('online');
@@ -347,19 +319,14 @@
      ***********************/
     async function initialFetch() {
       try {
-        const [tRes, cRes] = await Promise.all([fetch(TICKET_URL), fetch(CONSOLE_URL)]);
-        if (!tRes.ok || !cRes.ok) throw new Error("Fetch failed");
+        const tRes = await fetch(TICKET_URL);
+        if (!tRes.ok) throw new Error("Fetch failed");
 
         const ticket = await tRes.json();
-        const cons = await cRes.json();
-
         state.current_ticket = ticket;
-        state.current_console = cons;
-
         setTicket(ticket);
-        setConsole(cons);
       } catch (e) {
-        // En cas d'erreur, le stream prendra le relais
+        // Le flux SSE prendra le relais
       }
     }
 
@@ -374,15 +341,9 @@
       const { path, data } = payload;
 
       if (path === "/") {
-        if (data && typeof data === "object") {
-          if ("current_ticket" in data) {
-            state.current_ticket = data.current_ticket;
-            setTicket(data.current_ticket);
-          }
-          if ("current_console" in data) {
-            state.current_console = data.current_console;
-            setConsole(data.current_console);
-          }
+        if (data && typeof data === "object" && "current_ticket" in data) {
+          state.current_ticket = data.current_ticket;
+          setTicket(data.current_ticket);
         }
         return;
       }
@@ -391,9 +352,6 @@
       if (key === "current_ticket") {
         state.current_ticket = data;
         setTicket(data);
-      } else if (key === "current_console") {
-        state.current_console = data;
-        setConsole(data);
       }
     }
 
@@ -427,11 +385,6 @@
         setOnline(false, "Hors ligne - Reconnexion...");
       };
     }
-
-    reconnectBtn.addEventListener('click', () => {
-      connectStream();
-      initialFetch();
-    });
 
     // Démarrage
     initialFetch();
