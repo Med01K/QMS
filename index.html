@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="fr" dir="ltr">
 <head>
   <meta charset="UTF-8" />
@@ -197,11 +197,27 @@
     const alertBanner = document.getElementById('alertBanner');
 
     const state = {
-      current_ticket: null
+      current_ticket: null,
+      lastAlertedDiff: null
     };
 
     /***********************
-     * Gestion de l'audio (Activé par défaut)
+     * Demande d'autorisation des Notifications
+     ***********************/
+    function requestNotificationPermission() {
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    }
+
+    function sendSystemNotification(title, body) {
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(title, { body, icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png" });
+      }
+    }
+
+    /***********************
+     * Gestion Audio
      ***********************/
     let audioCtx = null;
     let soundEnabled = true;
@@ -216,10 +232,10 @@
       return Promise.resolve();
     }
 
-    // Autoriser la reprise audio au premier clic / frappe sur la page
-    window.addEventListener('click', () => ensureAudio(), { once: true });
-    window.addEventListener('keydown', () => ensureAudio(), { once: true });
+    window.addEventListener('click', () => { ensureAudio(); requestNotificationPermission(); }, { once: true });
+    window.addEventListener('keydown', () => { ensureAudio(); requestNotificationPermission(); }, { once: true });
 
+    // Son de mise à jour standard
     function playChime() {
       if (!soundEnabled) return;
       ensureAudio().then(() => {
@@ -237,6 +253,31 @@
 
         osc.start();
         osc.stop(audioCtx.currentTime + 0.7);
+      }).catch(() => {});
+    }
+
+    // Son d'avertissement spécifique (double bip)
+    function playAlertBeep() {
+      if (!soundEnabled) return;
+      ensureAudio().then(() => {
+        if (!audioCtx) return;
+        
+        const playTone = (freq, time, duration) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, time);
+          gain.gain.setValueAtTime(0.25, time);
+          gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(time);
+          osc.stop(time + duration);
+        };
+
+        const now = audioCtx.currentTime;
+        playTone(987.77, now, 0.25);       // Note B5
+        playTone(1318.51, now + 0.3, 0.4); // Note E6
       }).catch(() => {});
     }
 
@@ -258,7 +299,7 @@
     }
 
     /***********************
-     * Vérification de l'alerte ticket
+     * Vérification de l'alerte ticket et déclenchement
      ***********************/
     function checkUserAlert(currentTicket) {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -266,25 +307,40 @@
 
       if (isNaN(myTicket) || currentTicket === null || isNaN(currentTicket)) {
         alertBanner.classList.remove('active', 'urgent');
+        state.lastAlertedDiff = null;
         return;
       }
 
       const diff = myTicket - currentTicket;
 
       if (diff === 0) {
-        alertBanner.textContent = "C'est votre tour ! Présentez-vous au guichet.";
+        const msg = "C'est votre tour ! Présentez-vous au guichet.";
+        alertBanner.textContent = msg;
         alertBanner.classList.add('active', 'urgent');
-        playChime();
+
+        if (state.lastAlertedDiff !== 0) {
+          playAlertBeep();
+          sendSystemNotification("File d'attente", msg);
+          state.lastAlertedDiff = 0;
+        }
       } else if (diff > 0 && diff <= threshold) {
-        alertBanner.textContent = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
+        const msg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
+        alertBanner.textContent = msg;
         alertBanner.classList.add('active');
         alertBanner.classList.remove('urgent');
-        playChime();
+
+        if (state.lastAlertedDiff !== diff) {
+          playAlertBeep();
+          sendSystemNotification("Alerte tour approche", msg);
+          state.lastAlertedDiff = diff;
+        }
       } else if (diff < 0) {
         alertBanner.textContent = "Votre tour est déjà passé.";
         alertBanner.classList.add('active', 'urgent');
+        state.lastAlertedDiff = diff;
       } else {
         alertBanner.classList.remove('active', 'urgent');
+        state.lastAlertedDiff = diff;
       }
     }
 
