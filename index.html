@@ -1,419 +1,949 @@
 <!DOCTYPE html> 
+
 <html lang="fr" dir="ltr">
+
 <head>
+
   <meta charset="UTF-8" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Système de gestion de file d'attente</title>
 
+
+
   <style>
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
+
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
       text-align: center;
+
       background-color: #f0f2f5;
+
       display: flex;
+
       justify-content: center;
+
       align-items: center;
+
       min-height: 100vh;
+
       padding: 16px;
+
     }
+
     .card {
+
       background: #ffffff;
+
       padding: 32px 24px;
+
       border-radius: 24px;
+
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+
       max-width: 480px;
+
       width: 100%;
+
     }
+
     h1 {
+
       color: #333;
+
       font-size: 22px;
+
       margin-bottom: 12px;
+
       font-weight: 700;
+
     }
+
     .number-box {
+
       background: #f8f9fa;
+
       border-radius: 16px;
+
       padding: 10px;
+
       margin: 15px 0 10px;
+
       border: 2px solid #e9ecef;
+
     }
+
     .number {
+
       font-size: 88px;
+
       color: #0d6efd;
+
       font-weight: 800;
+
       line-height: 1.1;
+
       transition: color 0.3s ease, transform 0.2s ease;
+
     }
+
     .number.updated { transform: scale(1.08); color: #198754; }
 
+
+
     .user-section {
+
       background: #f1f3f5;
+
       padding: 16px;
+
       border-radius: 16px;
+
       margin: 16px 0;
+
       text-align: left;
+
     }
+
     .user-section h3 {
+
       font-size: 15px;
+
       color: #333;
+
       margin-bottom: 10px;
+
       text-align: center;
+
     }
+
     .input-group {
+
       display: flex;
+
       flex-direction: column;
+
       gap: 8px;
+
       margin-bottom: 10px;
+
     }
+
     .input-group label {
+
       font-size: 12px;
+
       color: #495057;
+
       font-weight: 600;
+
     }
+
     .input-group input {
+
       padding: 10px;
+
       border-radius: 8px;
+
       border: 1px solid #ced4da;
+
       font-size: 14px;
+
       outline: none;
+
     }
+
     .input-group input:focus {
+
       border-color: #0d6efd;
+
     }
+
+
 
     .alert-banner {
+
       display: none;
+
       background-color: #fff3cd;
+
       color: #664d03;
+
       border: 1px solid #ffecb5;
+
       padding: 10px;
+
       border-radius: 10px;
+
       font-size: 13px;
+
       font-weight: bold;
+
       margin-top: 10px;
+
       text-align: center;
+
     }
+
     .alert-banner.active { display: block; }
+
     .alert-banner.urgent {
+
       background-color: #f8d7da;
+
       color: #842029;
+
       border-color: #f5c2c7;
+
     }
+
+
+
+    .row {
+
+      display: flex;
+
+      gap: 10px;
+
+      justify-content: center;
+
+      flex-wrap: wrap;
+
+      margin-top: 10px;
+
+    }
+
+    button {
+
+      border: 0;
+
+      padding: 10px 14px;
+
+      border-radius: 12px;
+
+      cursor: pointer;
+
+      font-weight: 700;
+
+      background: #0d6efd;
+
+      color: #fff;
+
+      font-size: 13px;
+
+    }
+
+    button.secondary { background: #198754; }
+
+
 
     .status-container {
+
       display: inline-flex;
+
       align-items: center;
+
       gap: 8px;
+
       font-size: 13px;
+
       font-weight: 700;
+
       padding: 8px 16px;
+
       border-radius: 20px;
+
       background-color: #f8d7da;
+
       color: #842029;
+
       margin-top: 12px;
+
       user-select: none;
+
     }
+
     .status-dot {
+
       width: 10px; height: 10px; border-radius: 50%;
+
       background-color: #dc3545;
+
       display: inline-block;
+
     }
+
     .status-container.online { background-color: #d1e7dd; color: #0f5132; }
+
     .status-container.online .status-dot {
+
       background-color: #198754;
+
       box-shadow: 0 0 8px #198754;
+
     }
+
   </style>
+
 </head>
 
+
+
 <body>
+
   <div class="card">
+
     <h1>Numéro de ticket actuel</h1>
 
+
+
     <div class="number-box">
+
       <div class="number" id="queueNum">--</div>
+
     </div>
+
+
 
     <!-- Section de suivi du ticket utilisateur -->
+
     <div class="user-section">
+
       <h3>Suivi de votre ticket</h3>
+
       <div class="input-group">
+
         <label for="myTicketInput">Votre numéro de ticket :</label>
+
         <input type="number" id="myTicketInput" placeholder="Ex: 45" min="1" />
+
       </div>
+
       <div class="input-group">
+
         <label for="thresholdInput">Marge d'alerte (personnes avant vous) :</label>
+
         <input type="number" id="thresholdInput" value="10" min="1" />
+
       </div>
+
       <div id="alertBanner" class="alert-banner"></div>
+
     </div>
+
+
 
     <div class="status-container" id="statusContainer">
+
       <span class="status-dot"></span>
+
       <span id="statusText">Connexion en cours...</span>
+
     </div>
+
+
+
+    <div class="row">
+
+      <button id="enableSoundBtn" class="secondary" type="button">Activer sons & notifications</button>
+
+    </div>
+
   </div>
 
+
+
   <script>
+
     /***********************
+
      * Configuration Firebase
+
      ***********************/
+
     const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
+
     const AUTH_QS = "";
 
+
+
     const STREAM_URL = `${DB_BASE}/queue.json?print=silent${AUTH_QS}`;
+
     const TICKET_URL = `${DB_BASE}/queue/current_ticket.json${AUTH_QS}`;
 
+
+
     const queueNumEl = document.getElementById('queueNum');
+
     const statusContainer = document.getElementById('statusContainer');
+
     const statusText = document.getElementById('statusText');
+
+    const enableSoundBtn = document.getElementById('enableSoundBtn');
+
     const myTicketInput = document.getElementById('myTicketInput');
+
     const thresholdInput = document.getElementById('thresholdInput');
+
     const alertBanner = document.getElementById('alertBanner');
 
+
+
     const state = {
+
       current_ticket: null,
+
       lastAlertedDiff: null
+
     };
 
+
+
     /***********************
-     * Gestion Audio & Notifications (Tél/PC)
+
+     * Demande d'autorisation des Notifications
+
      ***********************/
-    let audioCtx = null;
 
-    // تهيئة الصوت والطلب التلقائي للإشعارات عند أول تفاعل من المستخدم
-    function initAudioAndNotifications() {
-      if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          audioCtx = new AudioContextClass();
+    async function requestNotificationPermission() {
+
+      if (!("Notification" in window)) {
+
+        alert("Ce navigateur ne prend pas en charge les notifications de bureau.");
+
+        return;
+
+      }
+
+
+
+      if (Notification.permission === "default") {
+
+        const permission = await Notification.requestPermission();
+
+        if (permission === "granted") {
+
+          sendSystemNotification("Notifications activées", "Vous recevrez une alerte quand votre tour approche.");
+
         }
-      }
-      
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
+
+      } else if (Notification.permission === "denied") {
+
+        alert("Les notifications sont bloquées dans votre navigateur. Veuillez les autoriser dans les paramètres du site.");
+
       }
 
-      // طلب إذن الإشعارات تلقائياً
-      if ("Notification" in window && Notification.permission === "default") {
-        Notification.requestPermission().catch(() => {});
-      }
     }
 
-    // الاستماع لأي تفاعل أولي في الصفحة لتفعيل الصوت والإشعارات
-    ['click', 'touchstart', 'input', 'keydown'].forEach(eventType => {
-      window.addEventListener(eventType, initAudioAndNotifications, { once: true });
-    });
+
 
     function sendSystemNotification(title, body) {
-      // تفعيل الاهتزاز للهواتف الذكية عند توفره
-      if ("vibrate" in navigator) {
-        try { navigator.vibrate([300, 100, 300, 100, 300]); } catch (e) {}
-      }
 
-      // إرسال إشعار النظام
       if ("Notification" in window && Notification.permission === "granted") {
+
         try {
+
           new Notification(title, { 
+
             body: body, 
-            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png",
-            requireInteraction: true
+
+            icon: "https://cdn-icons-png.flaticon.com/512/3602/3602145.png" 
+
           });
+
         } catch (e) {
-          console.error("Erreur notification:", e);
+
+          console.error("Erreur d'envoi de notification:", e);
+
         }
+
       }
+
     }
 
-    // تشغيل صوت التحذير فقط
-    function playAlertBeep() {
-      if (!audioCtx) {
-        initAudioAndNotifications();
-      }
-      
-      if (!audioCtx) return;
 
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-
-      try {
-        const playTone = (freq, time, duration) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, time);
-          gain.gain.setValueAtTime(0.3, time);
-          gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(time);
-          osc.stop(time + duration);
-        };
-
-        const now = audioCtx.currentTime;
-        playTone(987.77, now, 0.25);       // Note B5
-        playTone(1318.51, now + 0.3, 0.4); // Note E6
-      } catch (e) {
-        console.error("Erreur lecture audio:", e);
-      }
-    }
-
-    function triggerUpdateAnimation() {
-      queueNumEl.classList.add('updated');
-      setTimeout(() => queueNumEl.classList.remove('updated'), 400);
-    }
 
     /***********************
-     * Vérification de l'alerte ticket
+
+     * Gestion Audio
+
      ***********************/
+
+    let audioCtx = null;
+
+    let soundEnabled = true;
+
+
+
+    function ensureAudio() {
+
+      if (!audioCtx) {
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      }
+
+      if (audioCtx.state === 'suspended') {
+
+        return audioCtx.resume();
+
+      }
+
+      return Promise.resolve();
+
+    }
+
+
+
+    // Son de mise à jour standard
+
+    function playChime() {
+
+      if (!soundEnabled) return;
+
+      ensureAudio().then(() => {
+
+        if (!audioCtx) return;
+
+        const osc = audioCtx.createOscillator();
+
+        const gain = audioCtx.createGain();
+
+
+
+        osc.type = 'sine';
+
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.7);
+
+
+
+        osc.connect(gain);
+
+        gain.connect(audioCtx.destination);
+
+
+
+        osc.start();
+
+        osc.stop(audioCtx.currentTime + 0.7);
+
+      }).catch(() => {});
+
+    }
+
+
+
+    // Son d'avertissement spécifique (double bip)
+
+    function playAlertBeep() {
+
+      if (!soundEnabled) return;
+
+      ensureAudio().then(() => {
+
+        if (!audioCtx) return;
+
+        
+
+        const playTone = (freq, time, duration) => {
+
+          const osc = audioCtx.createOscillator();
+
+          const gain = audioCtx.createGain();
+
+          osc.type = 'triangle';
+
+          osc.frequency.setValueAtTime(freq, time);
+
+          gain.gain.setValueAtTime(0.25, time);
+
+          gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
+
+          osc.connect(gain);
+
+          gain.connect(audioCtx.destination);
+
+          osc.start(time);
+
+          osc.stop(time + duration);
+
+        };
+
+
+
+        const now = audioCtx.currentTime;
+
+        playTone(987.77, now, 0.25);       // Note B5
+
+        playTone(1318.51, now + 0.3, 0.4); // Note E6
+
+      }).catch(() => {});
+
+    }
+
+
+
+    enableSoundBtn.addEventListener('click', async () => {
+
+      soundEnabled = !soundEnabled;
+
+      if (soundEnabled) {
+
+        await ensureAudio();
+
+        await requestNotificationPermission();
+
+        enableSoundBtn.textContent = "Sons & Notifications activés";
+
+        enableSoundBtn.classList.add('secondary');
+
+      } else {
+
+        enableSoundBtn.textContent = "Désactivé";
+
+        enableSoundBtn.classList.remove('secondary');
+
+      }
+
+    });
+
+
+
+    function triggerUpdateAnimation() {
+
+      queueNumEl.classList.add('updated');
+
+      setTimeout(() => queueNumEl.classList.remove('updated'), 400);
+
+    }
+
+
+
+    /***********************
+
+     * Vérification de l'alerte ticket et déclenchement
+
+     ***********************/
+
     function checkUserAlert(currentTicket) {
+
       const myTicket = parseInt(myTicketInput.value, 10);
+
       const threshold = parseInt(thresholdInput.value, 10) || 10;
 
+
+
       if (isNaN(myTicket) || currentTicket === null || isNaN(currentTicket)) {
+
         alertBanner.classList.remove('active', 'urgent');
+
         state.lastAlertedDiff = null;
-        return;
+
+        return false;
+
       }
+
+
 
       const diff = myTicket - currentTicket;
 
+      let alertTriggered = false;
+
+
+
       if (diff === 0) {
+
         const msg = "C'est votre tour ! Présentez-vous au guichet.";
+
         alertBanner.textContent = msg;
+
         alertBanner.classList.add('active', 'urgent');
+
+
 
         if (state.lastAlertedDiff !== 0) {
+
           playAlertBeep();
-          sendSystemNotification("File d'attente - Votre tour !", msg);
+
+          sendSystemNotification("File d'attente", msg);
+
           state.lastAlertedDiff = 0;
+
+          alertTriggered = true;
+
         }
+
       } else if (diff > 0 && diff <= threshold) {
+
         const msg = `Attention ! Il reste ${diff} personne(s) avant votre tour.`;
+
         alertBanner.textContent = msg;
+
         alertBanner.classList.add('active');
+
         alertBanner.classList.remove('urgent');
 
+
+
         if (state.lastAlertedDiff !== diff) {
+
           playAlertBeep();
+
           sendSystemNotification("Alerte tour approche", msg);
+
           state.lastAlertedDiff = diff;
+
+          alertTriggered = true;
+
         }
+
       } else if (diff < 0) {
+
         alertBanner.textContent = "Votre tour est déjà passé.";
+
         alertBanner.classList.add('active', 'urgent');
+
         state.lastAlertedDiff = diff;
+
       } else {
+
         alertBanner.classList.remove('active', 'urgent');
+
         state.lastAlertedDiff = diff;
+
       }
+
+
+
+      return alertTriggered;
+
     }
+
+
 
     myTicketInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
+
     thresholdInput.addEventListener('input', () => checkUserAlert(state.current_ticket));
 
+
+
     /***********************
+
      * Mise à jour de l'interface
+
      ***********************/
+
     function setTicket(val) {
+
       if (val === null || typeof val === "undefined") return;
 
+
+
       const old = queueNumEl.textContent;
+
       const next = Number(val);
+
       const isNumberChanged = (old !== '--' && old !== String(next));
 
+
+
       queueNumEl.textContent = String(next);
+
       
-      checkUserAlert(next);
+
+      const hasCustomAlert = checkUserAlert(next);
+
+
 
       if (isNumberChanged) {
+
         triggerUpdateAnimation();
+
+        if (!hasCustomAlert) {
+
+          playChime();
+
+        }
+
       }
+
     }
+
+
 
     function setOnline(isOnline, msg) {
+
       if (isOnline) statusContainer.classList.add('online');
+
       else statusContainer.classList.remove('online');
+
       statusText.textContent = msg || (isOnline ? "Système connecté" : "Hors ligne - Reconnexion...");
+
     }
 
+
+
     /***********************
+
      * Données initiales (Fetch)
+
      ***********************/
+
     async function initialFetch() {
+
       try {
+
         const tRes = await fetch(TICKET_URL);
+
         if (!tRes.ok) throw new Error("Fetch failed");
 
+
+
         const ticket = await tRes.json();
+
         state.current_ticket = ticket;
+
         setTicket(ticket);
+
       } catch (e) {
+
         // Le flux SSE prendra le relais
+
       }
+
     }
 
+
+
     /***********************
+
      * Flux en temps réel (SSE)
+
      ***********************/
+
     let es = null;
 
+
+
     function applyStreamPayload(payload) {
+
       if (!payload || typeof payload !== "object") return;
+
+
 
       const { path, data } = payload;
 
+
+
       if (path === "/") {
+
         if (data && typeof data === "object" && "current_ticket" in data) {
+
           state.current_ticket = data.current_ticket;
+
           setTicket(data.current_ticket);
+
         }
+
         return;
+
       }
+
+
 
       const key = path.replace("/", "");
+
       if (key === "current_ticket") {
+
         state.current_ticket = data;
+
         setTicket(data);
+
       }
+
     }
 
+
+
     function connectStream() {
+
       if (es) {
+
         try { es.close(); } catch {}
+
         es = null;
+
       }
+
+
 
       setOnline(false, "Connexion au système...");
 
+
+
       es = new EventSource(STREAM_URL);
 
+
+
       es.onopen = () => {
+
         setOnline(true, "Système connecté");
+
       };
+
+
 
       es.addEventListener("put", (e) => {
+
         try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+
       });
+
+
 
       es.addEventListener("patch", (e) => {
+
         try { applyStreamPayload(JSON.parse(e.data)); } catch {}
+
       });
+
+
 
       es.onmessage = (e) => {
+
         try { applyStreamPayload(JSON.parse(e.data)); } catch {}
-      });
+
+      };
+
+
 
       es.onerror = () => {
+
         setOnline(false, "Hors ligne - Reconnexion...");
+
       };
+
     }
 
+
+
     // Démarrage
+
     initialFetch();
+
     connectStream();
+
   </script>
+
 </body>
+
 </html>
