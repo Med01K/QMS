@@ -92,6 +92,7 @@
       letter-spacing: 1px;
     }
     .number.updated{ transform: scale(1.06); color: var(--success); }
+    .number.closed{ color: var(--muted); }
 
     .user-section{
       background:#f9fafb;
@@ -141,17 +142,10 @@
       transition: filter 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
     }
     .btn:hover{ filter: brightness(0.97); }
-
     .btn .bi .ar{ color:rgba(255,255,255,0.98); font-weight:900; font-size:16px; letter-spacing:0.2px; }
     .btn .bi .fr{ color:rgba(255,255,255,0.92); font-weight:800; font-size:12.5px; }
-
     .btn.active{ background:var(--success); border-color:rgba(0,0,0,0.08); filter:none; }
-
-    /* NEW: disabled button */
-    .btn:disabled{
-      opacity: 0.65;
-      cursor: not-allowed;
-    }
+    .btn:disabled{ opacity:0.65; cursor:not-allowed; }
     .btn:disabled:hover{ filter:none; }
 
     .alert-banner{
@@ -196,7 +190,7 @@
     .status-container.online{ background-color:var(--online-bg); color:var(--online-tx); }
     .status-container.online .status-dot{ background-color:var(--online-dot); box-shadow:0 0 0 4px rgba(22,163,74,0.12); }
 
-    /* NEW: closed overrides */
+    /* NEW: closed state UI */
     .status-container.closed{
       background-color: var(--closed-bg);
       color: var(--closed-tx);
@@ -273,23 +267,36 @@
 
   <script>
     /***********************
-     * Configuration Firebase (REST)
+     * Firebase REST config
      ***********************/
     const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
-    const AUTH_QS = "";
+    // ضع التوكن هنا إذا عندك Database Secret / Auth token (اختياري):
+    const AUTH_TOKEN = ""; // مثال: "xxxxx"
 
-    const STREAM_URL = `${DB_BASE}/queue.json?print=silent${AUTH_QS}`;
-    const TICKET_URL = `${DB_BASE}/queue/current_ticket.json${AUTH_QS}`;
+    function makeUrl(path, params = {}) {
+      const url = new URL(DB_BASE.replace(/\/$/, "") + "/" + path.replace(/^\//, "") + ".json");
+      Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
+      if (AUTH_TOKEN) url.searchParams.set("auth", AUTH_TOKEN);
+      return url.toString();
+    }
+
+    const STREAM_URL = makeUrl("queue", { print: "silent" });
+    const TICKET_URL = makeUrl("queue/current_ticket");
+    const QUEUE_URL  = makeUrl("queue");
+    const OFFSET_URL = makeUrl(".info/serverTimeOffset");
+
+    /***********************
+     * Auto-stop if ESP32 inactive (30 min)
+     * IMPORTANT:
+     * ESP32 لازم يحدّث هذا المسار كل مرة يرسل فيها طلب (أو كل دقيقة كـ heartbeat):
+     * queue/meta/esp32_last_seen_ms  = Server Timestamp
+     ***********************/
+    const AUTO_CLOSE_MINUTES = 30;
+    const AUTO_CLOSE_MS = AUTO_CLOSE_MINUTES * 60 * 1000;
+    const CLOSED_CHECK_MS = 30 * 1000;
 
     const POLL_VISIBLE_MS = 8000;
     const POLL_HIDDEN_MS  = 15000;
-
-    /***********************
-     * NEW: Auto-close if no ticket progress for X minutes
-     ***********************/
-    const AUTO_CLOSE_MINUTES = 0.1;                 // <- غيّرها كما تريد
-    const AUTO_CLOSE_IDLE_MS = AUTO_CLOSE_MINUTES * 60 * 1000;
-    const AUTO_CLOSE_CHECK_MS = 30 * 1000;
 
     const queueNumEl = document.getElementById('queueNum');
     const statusContainer = document.getElementById('statusContainer');
@@ -303,15 +310,22 @@
 
     const state = {
       current_ticket: null,
+      lastKnownTicket: null,
+
       lastAlertedDiff: null,
       trackingEnabled: false,
       userEditing: false,
 
-      // NEW
-      connectionOnline: false,
-      systemClosed: false,
-      lastTicketProgressAt: null,          // آخر مرة تغيّر فيها رقم التذكرة (محلياً)
-      trackingEnabledBeforeClosed: false
+      isOnline: false,
+
+      // NEW: server time sync
+      serverOffset: 0,
+
+      // NEW: heartbeat from ESP32 (server timestamp in ms)
+      esp32_last_seen_ms: null,
+
+      // NEW: closed state
+      systemClosed: false
     };
 
     function setVerifyBtnActive(isActive){
@@ -364,7 +378,100 @@
     }
 
     /***********************
-     * Threshold constraints (كما في الإصلاح السابق)
+     * Server time
+     ***********************/
+    async function fetchServerOffset() {
+      try {
+        const res = await fetch(OFFSET_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("offset fetch failed");
+        const offset = await res.json();
+        if (typeof offset === "number" && Number.isFinite(offset)) {
+          state.serverOffset = offset;
+        }
+      } catch {}
+    }
+    function serverNow() {
+      return Date.now() + (state.serverOffset || 0);
+    }
+
+    /***********************
+     * "Closed" mode (ESP32 inactive)
+     ***********************/
+    function renderTicketNumber() {
+      if (state.systemClosed) {
+        queueNumEl.textContent = "--";
+        queueNumEl.classList.add("closed");
+        return;
+      }
+      queueNumEl.classList.remove("closed");
+      queueNumEl.textContent = (state.lastKnownTicket === null) ? "--" : String(state.lastKnownTicket);
+    }
+
+    function setSystemClosed(isClosed) {
+      const next = !!isClosed;
+      if (state.systemClosed === next) return;
+      state.systemClosed = next;
+
+      // Stop tracking & polling when closed
+      if (next) {
+        state.trackingEnabled = false;
+        state.lastAlertedDiff = null;
+        clearBanner();
+        setVerifyBtnActive(false);
+        stopPolling();
+        verifyBtn.disabled = true;
+
+        setBanner(
+          `Système fermé (aucun signal ESP32 depuis > ${AUTO_CLOSE_MINUTES} min).`,
+          `النظام مغلق (لا إشارة من ESP32 منذ أكثر من ${AUTO_CLOSE_MINUTES} دقيقة).`,
+          { active: true, urgent: true }
+        );
+      } else {
+        verifyBtn.disabled = false;
+        clearBanner();
+      }
+
+      // Update status UI
+      renderTicketNumber();
+      updateStatusUI();
+    }
+
+    function updateClosedState() {
+      const lastSeen = Number(state.esp32_last_seen_ms);
+      if (!Number.isFinite(lastSeen)) {
+        // إذا ESP32 لا يرسل last_seen أصلاً: لا نغلق تلقائياً (حتى لا نغلق خطأ)
+        return;
+      }
+      const idle = serverNow() - lastSeen;
+      setSystemClosed(idle >= AUTO_CLOSE_MS);
+    }
+
+    function updateStatusUI() {
+      // priority: offline > closed > online
+      statusContainer.classList.remove("online", "closed");
+
+      if (!state.isOnline) {
+        setStatus("Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+        return;
+      }
+
+      if (state.systemClosed) {
+        statusContainer.classList.add("closed");
+        setStatus(
+          `Système fermé (ESP32 inactif > ${AUTO_CLOSE_MINUTES} min)`,
+          `النظام مغلق (ESP32 غير نشط لأكثر من ${AUTO_CLOSE_MINUTES} دقيقة)`
+        );
+        return;
+      }
+
+      statusContainer.classList.add("online");
+      setStatus("Système connecté", "النظام متصل");
+    }
+
+    setInterval(updateClosedState, CLOSED_CHECK_MS);
+
+    /***********************
+     * FIX: Threshold clamp
      ***********************/
     function getNumbersForDiff() {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -392,98 +499,10 @@
 
       const clampedValue = Math.min(Math.max(0, thr), maxAllowed);
       const clamped = clampedValue !== thr;
-
       if (clamped) thresholdInput.value = String(clampedValue);
 
       return { applied:true, clamped, maxAllowed, clampedValue };
     }
-
-    /***********************
-     * NEW: System closed/open helpers
-     ***********************/
-    function applyClosedStatusText(){
-      statusContainer.classList.add('closed');
-      setStatus(
-        `Système fermé (aucune mise à jour depuis ${AUTO_CLOSE_MINUTES} min).`,
-        `النظام مغلق (لا تحديث منذ ${AUTO_CLOSE_MINUTES} دقيقة).`
-      );
-    }
-
-    function setSystemClosed(isClosed){
-      const next = !!isClosed;
-      if (state.systemClosed === next) return;
-
-      state.systemClosed = next;
-
-      if (next) {
-        // احفظ حالة التتبع ثم أوقفه
-        state.trackingEnabledBeforeClosed = state.trackingEnabled;
-        state.trackingEnabled = false;
-        state.lastAlertedDiff = null;
-
-        stopPolling();
-        setVerifyBtnActive(false);
-        verifyBtn.disabled = true;
-
-        // رسالة واضحة للمستخدم
-        setBanner(
-          `Système fermé / توقف مؤقت.`,
-          `النظام مغلق / متوقف مؤقتًا.`,
-          { active:true, urgent:true }
-        );
-
-        // إن كنا Online اعرض "مغلق"
-        if (state.connectionOnline) applyClosedStatusText();
-      } else {
-        verifyBtn.disabled = false;
-        clearBanner();
-
-        // رجّع حالة Online العادية إذا كنا متصلين
-        if (state.connectionOnline) {
-          statusContainer.classList.remove('closed');
-          setStatus("Système connecté", "النظام متصل");
-        }
-
-        // (اختياري) إعادة تشغيل التتبع تلقائياً إذا كان شغال قبل الإغلاق
-        if (state.trackingEnabledBeforeClosed) {
-          state.trackingEnabledBeforeClosed = false;
-          // لا نعرض رسائل خطأ هنا، فقط نحاول إن كانت المدخلات صحيحة
-          const myTicket = parseInt(myTicketInput.value, 10);
-          const threshold = parseInt(thresholdInput.value, 10);
-          if (!Number.isNaN(myTicket) && myTicket >= 1 && !Number.isNaN(threshold) && threshold >= 0) {
-            updateThresholdConstraints({ clamp:true });
-            state.trackingEnabled = true;
-            setVerifyBtnActive(true);
-            startPolling();
-            checkUserAlert(state.current_ticket);
-          }
-        }
-      }
-    }
-
-    function noteTicketProgress(changed){
-      const now = Date.now();
-      if (state.lastTicketProgressAt === null) state.lastTicketProgressAt = now;
-      if (changed) state.lastTicketProgressAt = now;
-
-      // إذا وصل تحديث جديد بعد الإغلاق => افتح
-      if (changed && state.systemClosed) {
-        setSystemClosed(false);
-      }
-    }
-
-    function evaluateAutoClose(){
-      // لا نغلق إذا كنا Offline/Connecting
-      if (!state.connectionOnline) return;
-      if (state.systemClosed) return;
-      if (state.lastTicketProgressAt === null) return;
-
-      const idleMs = Date.now() - state.lastTicketProgressAt;
-      if (idleMs >= AUTO_CLOSE_IDLE_MS) {
-        setSystemClosed(true);
-      }
-    }
-    setInterval(evaluateAutoClose, AUTO_CLOSE_CHECK_MS);
 
     /***********************
      * Service Worker
@@ -512,7 +531,6 @@
         setBanner("Ouvrez en HTTPS.", "افتح الموقع عبر HTTPS.", { active:true, urgent:true });
         return false;
       }
-
       if (Notification.permission === "granted") return true;
 
       if (Notification.permission === "denied") {
@@ -525,12 +543,7 @@
       }
 
       let permission = "default";
-      try {
-        permission = await Notification.requestPermission();
-      } catch (e) {
-        console.warn("requestPermission failed:", e);
-      }
-
+      try { permission = await Notification.requestPermission(); } catch {}
       if (permission !== "granted") {
         setBanner(
           "Veuillez autoriser les notifications pour recevoir les alertes.",
@@ -565,11 +578,9 @@
             return;
           }
         }
-      } catch (e) {
-        console.warn("showNotification via SW failed, fallback to new Notification:", e);
-      }
+      } catch {}
 
-      try { new Notification(title, options); } catch (e) { console.error("new Notification failed:", e); }
+      try { new Notification(title, options); } catch {}
     }
 
     /***********************
@@ -629,10 +640,10 @@
     }
 
     /***********************
-     * Alerte utilisateur
+     * User alerts
      ***********************/
     function checkUserAlert(currentTicket) {
-      if (state.systemClosed) return false; // NEW: لا تنبيهات عندما النظام مغلق
+      if (state.systemClosed) return false; // NEW: stop alerts when closed
 
       if (!state.userEditing) updateThresholdConstraints({ clamp: true });
       else updateThresholdConstraints({ clamp: false });
@@ -691,12 +702,12 @@
     let pollTimer = null;
 
     async function pollCurrentTicketOnce() {
+      if (state.systemClosed) return; // NEW
       try {
         const res = await fetch(TICKET_URL, { cache: "no-store" });
         if (!res.ok) throw new Error("poll failed");
         const ticket = await res.json();
         state.current_ticket = ticket;
-        setOnline(true, "Système connecté", "النظام متصل");
         setTicket(ticket);
       } catch {}
     }
@@ -715,12 +726,16 @@
       }
     }
 
-    function disableTrackingWhileEditing() {
+    function stopTracking() {
       state.trackingEnabled = false;
       state.lastAlertedDiff = null;
       clearBanner();
       setVerifyBtnActive(false);
       stopPolling();
+    }
+
+    function disableTrackingWhileEditing() {
+      stopTracking();
     }
 
     function refreshUserEditingSoon(){
@@ -735,7 +750,7 @@
     myTicketInput.addEventListener('blur', () => { refreshUserEditingSoon(); updateThresholdConstraints({ clamp: true }); });
     thresholdInput.addEventListener('blur', () => { refreshUserEditingSoon(); updateThresholdConstraints({ clamp: true }); });
 
-    myTicketInput.addEventListener('input', () => { disableTrackingWhileEditing(); });
+    myTicketInput.addEventListener('input', disableTrackingWhileEditing);
     myTicketInput.addEventListener('change', () => { updateThresholdConstraints({ clamp: true }); });
 
     thresholdInput.addEventListener('input', () => { disableTrackingWhileEditing(); updateThresholdConstraints({ clamp: true }); });
@@ -761,8 +776,8 @@
     async function startTrackingAndCheck() {
       if (state.systemClosed) {
         setBanner(
-          `Système fermé. Réessayez quand le service reprend.`,
-          `النظام مغلق. أعد المحاولة عند استئناف الخدمة.`,
+          `Système fermé. Réessayez plus tard.`,
+          `النظام مغلق. حاول لاحقًا.`,
           { active:true, urgent:true }
         );
         setVerifyBtnActive(false);
@@ -818,15 +833,14 @@
     function setTicket(val) {
       if (val === null || typeof val === "undefined") return;
 
+      const oldShown = queueNumEl.textContent;
       const next = Number(val);
 
-      const oldText = queueNumEl.textContent;
-      const changedForProgress = (oldText === '--') || (oldText !== String(next));
-      noteTicketProgress(changedForProgress);
+      state.lastKnownTicket = next;
+      state.current_ticket = next;
 
-      const isNumberChangedForAnim = (oldText !== '--' && oldText !== String(next));
-
-      queueNumEl.textContent = String(next);
+      // إذا النظام مغلق: لا نعرض الرقم
+      renderTicketNumber();
 
       updateThresholdConstraints({ clamp: false });
 
@@ -834,51 +848,44 @@
         checkUserAlert(next);
       }
 
-      if (isNumberChangedForAnim) triggerUpdateAnimation();
+      // Animation فقط إذا كنا مفتوحين ونغير رقم معروض
+      if (!state.systemClosed && oldShown !== '--' && oldShown !== String(next)) {
+        triggerUpdateAnimation();
+      }
     }
 
-    function setOnline(isOnline, frMsg, arMsg) {
-      state.connectionOnline = !!isOnline;
-
-      if (isOnline) statusContainer.classList.add('online');
-      else statusContainer.classList.remove('online');
-
-      if (!isOnline) {
-        // عند الأوفلاين لا نعرض "مغلق" بصرياً
-        statusContainer.classList.remove('closed');
-        const fr = frMsg || "Hors ligne - Reconnexion...";
-        const ar = arMsg || "غير متصل - جارٍ إعادة الاتصال...";
-        setStatus(fr, ar);
-        return;
-      }
-
-      if (state.systemClosed) {
-        applyClosedStatusText();
-        return;
-      }
-
-      statusContainer.classList.remove('closed');
-      const fr = frMsg || "Système connecté";
-      const ar = arMsg || "النظام متصل";
-      setStatus(fr, ar);
+    function setOnline(isOnline) {
+      state.isOnline = !!isOnline;
+      updateStatusUI();
     }
 
     /***********************
-     * Fetch initial
+     * Initial fetch (queue + heartbeat)
      ***********************/
     async function initialFetch() {
       try {
-        const tRes = await fetch(TICKET_URL, { cache: "no-store" });
-        if (!tRes.ok) throw new Error("Fetch failed");
-        const ticket = await tRes.json();
-        state.current_ticket = ticket;
-        setOnline(true, "Système connecté", "النظام متصل");
-        setTicket(ticket);
+        const res = await fetch(QUEUE_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("Fetch failed");
+        const data = await res.json();
+
+        if (data && typeof data === "object") {
+          if ("current_ticket" in data) {
+            state.current_ticket = data.current_ticket;
+            state.lastKnownTicket = Number(data.current_ticket);
+          }
+
+          if (data.meta && typeof data.meta === "object" && "esp32_last_seen_ms" in data.meta) {
+            state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
+          }
+        }
+
+        updateClosedState();
+        renderTicketNumber();
       } catch {}
     }
 
     /***********************
-     * SSE stream + reconnect helper
+     * SSE stream
      ***********************/
     let es = null;
     let reconnectTimer = null;
@@ -896,18 +903,31 @@
 
       const { path, data } = payload;
 
+      // path is relative to "/queue"
       if (path === "/") {
-        if (data && typeof data === "object" && "current_ticket" in data) {
-          state.current_ticket = data.current_ticket;
-          setTicket(data.current_ticket);
+        if (data && typeof data === "object") {
+          if ("current_ticket" in data) {
+            setTicket(data.current_ticket);
+          }
+          if (data.meta && typeof data.meta === "object" && "esp32_last_seen_ms" in data.meta) {
+            state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
+            updateClosedState();
+          }
         }
         return;
       }
 
-      const key = path.replace("/", "");
-      if (key === "current_ticket") {
-        state.current_ticket = data;
+      const cleanPath = String(path || "");
+      if (cleanPath === "/current_ticket") {
         setTicket(data);
+        return;
+      }
+
+      // NEW: heartbeat from ESP32
+      if (cleanPath === "/meta/esp32_last_seen_ms") {
+        state.esp32_last_seen_ms = data;
+        updateClosedState();
+        return;
       }
     }
 
@@ -917,39 +937,49 @@
         es = null;
       }
 
-      setOnline(false, "Connexion au système...", "جارٍ الاتصال بالنظام...");
+      setOnline(false);
 
       try {
         es = new EventSource(STREAM_URL);
 
-        es.onopen = () => setOnline(true, "Système connecté", "النظام متصل");
+        es.onopen = () => {
+          setOnline(true);
+          // عند الاتصال/إعادة الاتصال: أعد التقييم فوراً
+          updateClosedState();
+        };
 
         es.addEventListener("put", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
         es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
         es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
 
         es.onerror = () => {
-          setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+          setOnline(false);
           scheduleReconnect();
         };
       } catch {
-        setOnline(false, "Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+        setOnline(false);
         scheduleReconnect();
       }
     }
 
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible") {
-        initialFetch();
+        await fetchServerOffset();
+        await initialFetch();
         connectStream();
       }
       if (state.trackingEnabled && !state.systemClosed) startPolling();
-      if (state.systemClosed) stopPolling();
+      else stopPolling();
     });
 
     // Start
-    initialFetch();
-    connectStream();
+    (async function start() {
+      await fetchServerOffset();
+      await initialFetch();
+      connectStream();
+      renderTicketNumber();
+      updateStatusUI();
+    })();
   </script>
 </body>
 </html>
