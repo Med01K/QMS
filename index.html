@@ -119,6 +119,12 @@
       box-shadow: 0 0 0 4px rgba(37,99,235,0.12);
     }
 
+    .input-group .hint{
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
     .btn{
       width:100%;
       max-width:280px;
@@ -202,7 +208,7 @@
     <div class="user-section">
       <h3>
         <div class="bi center">
-          <span class="ar" lang="ar">تتبُّع تذكرتك</span>
+          <span class="ar" lang="ar">تتبُّع تذكرتك</span>
           <span class="fr" lang="fr">Suivi de votre ticket</span>
         </div>
       </h3>
@@ -225,6 +231,7 @@
           </div>
         </label>
         <input type="number" id="thresholdInput" value="10" min="1" />
+        <span class="hint" id="thresholdHint"></span>
       </div>
 
       <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
@@ -266,6 +273,7 @@
     const statusText = document.getElementById('statusText');
     const myTicketInput = document.getElementById('myTicketInput');
     const thresholdInput = document.getElementById('thresholdInput');
+    const thresholdHint = document.getElementById('thresholdHint');
     const alertBanner = document.getElementById('alertBanner');
     const verifyBtn = document.getElementById('verifyBtn');
     const verifyBtnAr = document.getElementById('verifyBtnAr');
@@ -325,6 +333,40 @@
     function clearBanner() {
       alertBanner.classList.remove('active', 'urgent');
       alertBanner.innerHTML = "";
+    }
+
+    /***********************
+     * جديد: حساب الفرق الحالي (عدد الأشخاص قبلك) والحد الأقصى المسموح للهامش
+     ***********************/
+    function getCurrentDiff() {
+      const myTicket = parseInt(myTicketInput.value, 10);
+      const current = state.current_ticket;
+
+      if (isNaN(myTicket) || current === null || current === undefined || isNaN(Number(current))) {
+        return null;
+      }
+      return myTicket - Number(current);
+    }
+
+    // يحدّث سمة max لحقل الهامش ويعرض تلميحًا بالحد الأقصى المسموح
+    function updateThresholdMaxHint() {
+      const diff = getCurrentDiff();
+
+      if (diff === null) {
+        thresholdInput.removeAttribute('max');
+        thresholdHint.textContent = "";
+        return;
+      }
+
+      if (diff <= 0) {
+        // دورك حان أو فات، لا داعي لهامش
+        thresholdInput.removeAttribute('max');
+        thresholdHint.textContent = "";
+        return;
+      }
+
+      thresholdInput.setAttribute('max', String(diff));
+      thresholdHint.textContent = `الحد الأقصى المسموح للهامش حاليًا: ${diff} — Marge maximale autorisée : ${diff}`;
     }
 
     /***********************
@@ -571,9 +613,15 @@
     myTicketInput.addEventListener('blur', () => { state.userEditing = false; });
     thresholdInput.addEventListener('blur', () => { state.userEditing = false; });
 
-    myTicketInput.addEventListener('input', disableTrackingWhileEditing);
+    myTicketInput.addEventListener('input', () => {
+      disableTrackingWhileEditing();
+      updateThresholdMaxHint();
+    });
     thresholdInput.addEventListener('input', disableTrackingWhileEditing);
 
+    /***********************
+     * جديد: التحقق الكامل من صحة المدخلات + قيد الهامش الأقصى
+     ***********************/
     function inputsAreValidOrShowMessage(){
       const myTicket = parseInt(myTicketInput.value, 10);
       const threshold = parseInt(thresholdInput.value, 10);
@@ -586,6 +634,25 @@
         setBanner("Veuillez saisir une marge d'alerte valide (>= 1).", "يرجى إدخال هامش تنبيه صحيح (>= 1).", { active: true, urgent: true });
         return false;
       }
+
+      // --- الإصلاح الأساسي ---
+      // الهامش (threshold) يجب ألا يتجاوز عدد الأشخاص الفعلي المتبقي قبل تذكرتك (diff)
+      const current = state.current_ticket;
+      if (current !== null && current !== undefined && !isNaN(Number(current))) {
+        const diff = myTicket - Number(current);
+
+        if (diff > 0 && threshold > diff) {
+          setBanner(
+            `La marge d'alerte (${threshold}) ne peut pas dépasser le nombre de personnes restantes avant votre tour (${diff}). Veuillez saisir une marge ≤ ${diff}.`,
+            `هامش التنبيه (${threshold}) لا يمكن أن يتجاوز عدد الأشخاص المتبقين فعليًا قبل دورك (${diff}). يرجى إدخال هامش أصغر من أو يساوي ${diff}.`,
+            { active: true, urgent: true }
+          );
+          thresholdInput.focus();
+          return false;
+        }
+      }
+      // --- نهاية الإصلاح ---
+
       return true;
     }
 
@@ -631,6 +698,9 @@
       const isNumberChanged = (old !== '--' && old !== String(next));
 
       queueNumEl.textContent = String(next);
+
+      // تحديث الحد الأقصى للهامش كل مرة يتغير فيها رقم التذكرة الحالي
+      updateThresholdMaxHint();
 
       if (state.trackingEnabled && !state.userEditing) {
         checkUserAlert(next);
