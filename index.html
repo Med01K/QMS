@@ -36,6 +36,11 @@
       --offline-bg: #fef2f2;
       --offline-tx: #991b1b;
       --offline-dot: #dc2626;
+
+      /* NEW: closed */
+      --closed-bg: #fffbeb;
+      --closed-tx: #92400e;
+      --closed-dot: #f59e0b;
     }
 
     body {
@@ -142,6 +147,13 @@
 
     .btn.active{ background:var(--success); border-color:rgba(0,0,0,0.08); filter:none; }
 
+    /* NEW: disabled button */
+    .btn:disabled{
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+    .btn:disabled:hover{ filter:none; }
+
     .alert-banner{
       display:none;
       background-color:var(--warn-bg);
@@ -183,6 +195,17 @@
     }
     .status-container.online{ background-color:var(--online-bg); color:var(--online-tx); }
     .status-container.online .status-dot{ background-color:var(--online-dot); box-shadow:0 0 0 4px rgba(22,163,74,0.12); }
+
+    /* NEW: closed overrides */
+    .status-container.closed{
+      background-color: var(--closed-bg);
+      color: var(--closed-tx);
+      border-color: rgba(245,158,11,0.35);
+    }
+    .status-container.closed .status-dot{
+      background-color: var(--closed-dot);
+      box-shadow: 0 0 0 4px rgba(245,158,11,0.14);
+    }
   </style>
 </head>
 
@@ -224,7 +247,6 @@
             <span class="fr" lang="fr">Marge d'alerte (personnes avant vous)</span>
           </div>
         </label>
-        <!-- FIX: السماح بـ 0، لأن عدد الأشخاص قبلك قد يكون 0 -->
         <input type="number" id="thresholdInput" value="10" min="0" />
       </div>
 
@@ -262,6 +284,13 @@
     const POLL_VISIBLE_MS = 8000;
     const POLL_HIDDEN_MS  = 15000;
 
+    /***********************
+     * NEW: Auto-close if no ticket progress for X minutes
+     ***********************/
+    const AUTO_CLOSE_MINUTES = 30;                 // <- غيّرها كما تريد
+    const AUTO_CLOSE_IDLE_MS = AUTO_CLOSE_MINUTES * 60 * 1000;
+    const AUTO_CLOSE_CHECK_MS = 30 * 1000;
+
     const queueNumEl = document.getElementById('queueNum');
     const statusContainer = document.getElementById('statusContainer');
     const statusText = document.getElementById('statusText');
@@ -276,7 +305,13 @@
       current_ticket: null,
       lastAlertedDiff: null,
       trackingEnabled: false,
-      userEditing: false
+      userEditing: false,
+
+      // NEW
+      connectionOnline: false,
+      systemClosed: false,
+      lastTicketProgressAt: null,          // آخر مرة تغيّر فيها رقم التذكرة (محلياً)
+      trackingEnabledBeforeClosed: false
     };
 
     function setVerifyBtnActive(isActive){
@@ -329,10 +364,7 @@
     }
 
     /***********************
-     * FIX (الجزء الأساسي):
-     * منع "الهامش" من تجاوز عدد الأشخاص قبلك = (رقم تذكرتك - رقم التذكرة الحالية)
-     * - نحدّث max في الحقل
-     * - ونقوم بعمل clamp للقيمة إن كانت أكبر من المسموح
+     * Threshold constraints (كما في الإصلاح السابق)
      ***********************/
     function getNumbersForDiff() {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -345,16 +377,12 @@
     function updateThresholdConstraints({ clamp = false } = {}) {
       const info = getNumbersForDiff();
       if (!info.ok) {
-        // لا يمكن حساب الفرق الآن
         thresholdInput.removeAttribute("max");
         return { applied:false, clamped:false, maxAllowed:null };
       }
 
       const diff = info.myTicket - info.currentTicket;
-      // عدد الأشخاص قبلك لا يمكن أن يكون سالباً => 0
       const maxAllowed = Math.max(0, diff);
-
-      // تحديث max في input (يساعد على منع الزيادة عبر الأسهم)
       thresholdInput.max = String(maxAllowed);
 
       if (!clamp) return { applied:true, clamped:false, maxAllowed };
@@ -369,6 +397,93 @@
 
       return { applied:true, clamped, maxAllowed, clampedValue };
     }
+
+    /***********************
+     * NEW: System closed/open helpers
+     ***********************/
+    function applyClosedStatusText(){
+      statusContainer.classList.add('closed');
+      setStatus(
+        `Système fermé (aucune mise à jour depuis ${AUTO_CLOSE_MINUTES} min).`,
+        `النظام مغلق (لا تحديث منذ ${AUTO_CLOSE_MINUTES} دقيقة).`
+      );
+    }
+
+    function setSystemClosed(isClosed){
+      const next = !!isClosed;
+      if (state.systemClosed === next) return;
+
+      state.systemClosed = next;
+
+      if (next) {
+        // احفظ حالة التتبع ثم أوقفه
+        state.trackingEnabledBeforeClosed = state.trackingEnabled;
+        state.trackingEnabled = false;
+        state.lastAlertedDiff = null;
+
+        stopPolling();
+        setVerifyBtnActive(false);
+        verifyBtn.disabled = true;
+
+        // رسالة واضحة للمستخدم
+        setBanner(
+          `Système fermé / توقف مؤقت.`,
+          `النظام مغلق / متوقف مؤقتًا.`,
+          { active:true, urgent:true }
+        );
+
+        // إن كنا Online اعرض "مغلق"
+        if (state.connectionOnline) applyClosedStatusText();
+      } else {
+        verifyBtn.disabled = false;
+        clearBanner();
+
+        // رجّع حالة Online العادية إذا كنا متصلين
+        if (state.connectionOnline) {
+          statusContainer.classList.remove('closed');
+          setStatus("Système connecté", "النظام متصل");
+        }
+
+        // (اختياري) إعادة تشغيل التتبع تلقائياً إذا كان شغال قبل الإغلاق
+        if (state.trackingEnabledBeforeClosed) {
+          state.trackingEnabledBeforeClosed = false;
+          // لا نعرض رسائل خطأ هنا، فقط نحاول إن كانت المدخلات صحيحة
+          const myTicket = parseInt(myTicketInput.value, 10);
+          const threshold = parseInt(thresholdInput.value, 10);
+          if (!Number.isNaN(myTicket) && myTicket >= 1 && !Number.isNaN(threshold) && threshold >= 0) {
+            updateThresholdConstraints({ clamp:true });
+            state.trackingEnabled = true;
+            setVerifyBtnActive(true);
+            startPolling();
+            checkUserAlert(state.current_ticket);
+          }
+        }
+      }
+    }
+
+    function noteTicketProgress(changed){
+      const now = Date.now();
+      if (state.lastTicketProgressAt === null) state.lastTicketProgressAt = now;
+      if (changed) state.lastTicketProgressAt = now;
+
+      // إذا وصل تحديث جديد بعد الإغلاق => افتح
+      if (changed && state.systemClosed) {
+        setSystemClosed(false);
+      }
+    }
+
+    function evaluateAutoClose(){
+      // لا نغلق إذا كنا Offline/Connecting
+      if (!state.connectionOnline) return;
+      if (state.systemClosed) return;
+      if (state.lastTicketProgressAt === null) return;
+
+      const idleMs = Date.now() - state.lastTicketProgressAt;
+      if (idleMs >= AUTO_CLOSE_IDLE_MS) {
+        setSystemClosed(true);
+      }
+    }
+    setInterval(evaluateAutoClose, AUTO_CLOSE_CHECK_MS);
 
     /***********************
      * Service Worker
@@ -454,11 +569,7 @@
         console.warn("showNotification via SW failed, fallback to new Notification:", e);
       }
 
-      try {
-        new Notification(title, options);
-      } catch (e) {
-        console.error("new Notification failed:", e);
-      }
+      try { new Notification(title, options); } catch (e) { console.error("new Notification failed:", e); }
     }
 
     /***********************
@@ -521,14 +632,12 @@
      * Alerte utilisateur
      ***********************/
     function checkUserAlert(currentTicket) {
-      // FIX: قبل الحساب، تأكد أن threshold لا يتجاوز diff (إن أمكن)
-      // لا نُغيّر قيمة المستخدم أثناء الكتابة داخل الحقول
+      if (state.systemClosed) return false; // NEW: لا تنبيهات عندما النظام مغلق
+
       if (!state.userEditing) updateThresholdConstraints({ clamp: true });
       else updateThresholdConstraints({ clamp: false });
 
       const myTicket = parseInt(myTicketInput.value, 10);
-
-      // FIX: لا تستخدم || 10 لأن 0 قيمة صحيحة
       const thresholdParsed = parseInt(thresholdInput.value, 10);
       const threshold = Number.isNaN(thresholdParsed) ? 10 : thresholdParsed;
 
@@ -577,7 +686,7 @@
     }
 
     /***********************
-     * زر التتبع + Polling fallback
+     * Polling
      ***********************/
     let pollTimer = null;
 
@@ -587,6 +696,7 @@
         if (!res.ok) throw new Error("poll failed");
         const ticket = await res.json();
         state.current_ticket = ticket;
+        setOnline(true, "Système connecté", "النظام متصل");
         setTicket(ticket);
       } catch {}
     }
@@ -625,11 +735,9 @@
     myTicketInput.addEventListener('blur', () => { refreshUserEditingSoon(); updateThresholdConstraints({ clamp: true }); });
     thresholdInput.addEventListener('blur', () => { refreshUserEditingSoon(); updateThresholdConstraints({ clamp: true }); });
 
-    // عند تغيير رقم التذكرة لا نعمل clamp فورًا أثناء الكتابة (لتجنب قيم وسيطة خاطئة)
     myTicketInput.addEventListener('input', () => { disableTrackingWhileEditing(); });
     myTicketInput.addEventListener('change', () => { updateThresholdConstraints({ clamp: true }); });
 
-    // FIX: عند تعديل الهامش، نعمل clamp مباشرة حتى لا يتجاوز diff
     thresholdInput.addEventListener('input', () => { disableTrackingWhileEditing(); updateThresholdConstraints({ clamp: true }); });
     thresholdInput.addEventListener('change', () => { updateThresholdConstraints({ clamp: true }); });
 
@@ -641,24 +749,29 @@
         setBanner("Veuillez saisir un numéro de ticket valide.", "يرجى إدخال رقم تذكرة صحيح.", { active: true, urgent: true });
         return false;
       }
-      // FIX: السماح بـ 0
       if (isNaN(threshold) || threshold < 0) {
         setBanner("Veuillez saisir une marge d'alerte valide (>= 0).", "يرجى إدخال هامش تنبيه صحيح (>= 0).", { active: true, urgent: true });
         return false;
       }
 
-      // FIX: enforce threshold <= diff (ويتم تعديل قيمة الحقل إن لزم)
       updateThresholdConstraints({ clamp: true });
-
       return true;
     }
 
     async function startTrackingAndCheck() {
-      initAudioOnce();
+      if (state.systemClosed) {
+        setBanner(
+          `Système fermé. Réessayez quand le service reprend.`,
+          `النظام مغلق. أعد المحاولة عند استئناف الخدمة.`,
+          { active:true, urgent:true }
+        );
+        setVerifyBtnActive(false);
+        return;
+      }
 
+      initAudioOnce();
       await ensureNotificationsEnabled();
 
-      // FIX: تأكد من وجود current_ticket حتى نستطيع حساب diff بشكل صحيح
       if (!Number.isFinite(Number(state.current_ticket))) {
         await pollCurrentTicketOnce();
       }
@@ -672,7 +785,6 @@
         return;
       }
 
-      // FIX: تحديث max + clamp قبل التحقق
       updateThresholdConstraints({ clamp: true });
 
       if (!inputsAreValidOrShowMessage()) {
@@ -706,28 +818,48 @@
     function setTicket(val) {
       if (val === null || typeof val === "undefined") return;
 
-      const old = queueNumEl.textContent;
       const next = Number(val);
-      const isNumberChanged = (old !== '--' && old !== String(next));
+
+      const oldText = queueNumEl.textContent;
+      const changedForProgress = (oldText === '--') || (oldText !== String(next));
+      noteTicketProgress(changedForProgress);
+
+      const isNumberChangedForAnim = (oldText !== '--' && oldText !== String(next));
 
       queueNumEl.textContent = String(next);
 
-      // FIX: تحديث max للهامش حسب الفرق الحالي (بدون تغيير القيمة أثناء البث)
       updateThresholdConstraints({ clamp: false });
 
-      if (state.trackingEnabled && !state.userEditing) {
+      if (state.trackingEnabled && !state.userEditing && !state.systemClosed) {
         checkUserAlert(next);
       }
 
-      if (isNumberChanged) triggerUpdateAnimation();
+      if (isNumberChangedForAnim) triggerUpdateAnimation();
     }
 
     function setOnline(isOnline, frMsg, arMsg) {
+      state.connectionOnline = !!isOnline;
+
       if (isOnline) statusContainer.classList.add('online');
       else statusContainer.classList.remove('online');
 
-      const fr = frMsg || (isOnline ? "Système connecté" : "Hors ligne - Reconnexion...");
-      const ar = arMsg || (isOnline ? "النظام متصل" : "غير متصل - جارٍ إعادة الاتصال...");
+      if (!isOnline) {
+        // عند الأوفلاين لا نعرض "مغلق" بصرياً
+        statusContainer.classList.remove('closed');
+        const fr = frMsg || "Hors ligne - Reconnexion...";
+        const ar = arMsg || "غير متصل - جارٍ إعادة الاتصال...";
+        setStatus(fr, ar);
+        return;
+      }
+
+      if (state.systemClosed) {
+        applyClosedStatusText();
+        return;
+      }
+
+      statusContainer.classList.remove('closed');
+      const fr = frMsg || "Système connecté";
+      const ar = arMsg || "النظام متصل";
       setStatus(fr, ar);
     }
 
@@ -740,6 +872,7 @@
         if (!tRes.ok) throw new Error("Fetch failed");
         const ticket = await tRes.json();
         state.current_ticket = ticket;
+        setOnline(true, "Système connecté", "النظام متصل");
         setTicket(ticket);
       } catch {}
     }
@@ -810,7 +943,8 @@
         initialFetch();
         connectStream();
       }
-      if (state.trackingEnabled) startPolling();
+      if (state.trackingEnabled && !state.systemClosed) startPolling();
+      if (state.systemClosed) stopPolling();
     });
 
     // Start
