@@ -286,7 +286,7 @@
      * ESP32 must update:
      * queue/meta/esp32_last_seen_ms  (server timestamp in ms)
      ***********************/
-    const AUTO_CLOSE_MINUTES = 0.1; // ضع 30 في الإنتاج
+    const AUTO_CLOSE_MINUTES = 0.2; // ضع 30 في الإنتاج
     const AUTO_CLOSE_MS = AUTO_CLOSE_MINUTES * 60 * 1000;
     const CLOSED_CHECK_MS = Math.max(1000, Math.min(30000, Math.floor(AUTO_CLOSE_MS / 2) || 1000));
 
@@ -399,7 +399,7 @@
      * ولن تظهر في banner لتجنب التكرار.
      ***********************/
     function closedMessage() {
-      const fr = `Système fermé (aucun signal ESP32 depuis > ${AUTO_CLOSE_MINUTES} min)`;
+      const fr = `Système fermé`;
       const ar = `النظام مغلق`;
       return { fr, ar };
     }
