@@ -231,6 +231,9 @@
     const TICKET_URL  = makeUrl("queue/current_ticket");
     const OFFSET_URL  = makeUrl(".info/serverTimeOffset");
 
+    // MOD: one meta endpoint instead of two
+    const META_URL = makeUrl("queue/meta");
+
     const ESP32_LAST_SEEN_URL = makeUrl("queue/meta/esp32_last_seen_ms");
     const LAST_REQUEST_URL    = makeUrl("queue/meta/last_request_ms");
 
@@ -252,14 +255,13 @@
     /***********************
      * FIX for Online/Offline flicker (Debounce)
      ***********************/
-    const OFFLINE_GRACE_MS = 2500; // لا نعرض "أوفلاين" إلا إذا استمر الانقطاع أكثر من 2.5 ثانية
+    const OFFLINE_GRACE_MS = 2500;
     let offlineUiTimer = null;
 
     function requestOfflineUI() {
       if (offlineUiTimer) return;
       offlineUiTimer = setTimeout(() => {
         offlineUiTimer = null;
-        // إذا لم يعد الاتصال OPEN بعد فترة السماح => اعتبره Offline
         if (!es || es.readyState !== 1) {
           setOnline(false);
         }
@@ -316,6 +318,7 @@
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
     }
+
     function biHTML(frText, arText, extraClass = "small") {
       return `
         <span class="bi center ${extraClass}">
@@ -324,14 +327,17 @@
         </span>
       `;
     }
+
     function setStatus(frText, arText) {
       statusText.innerHTML = biHTML(frText, arText, "small");
     }
+
     function setBanner(frText, arText, { active = true, urgent = false } = {}) {
       alertBanner.innerHTML = biHTML(frText, arText, "small");
       alertBanner.classList.toggle('active', !!active);
       alertBanner.classList.toggle('urgent', !!urgent);
     }
+
     function clearBanner() {
       alertBanner.classList.remove('active', 'urgent');
       alertBanner.innerHTML = "";
@@ -376,6 +382,7 @@
         if (typeof offset === "number" && Number.isFinite(offset)) state.serverOffset = offset;
       } catch {}
     }
+
     function serverNow() {
       return Date.now() + (state.serverOffset || 0);
     }
@@ -427,6 +434,8 @@
         queueNumEl.textContent = Number.isFinite(v) ? String(v) : "--";
       }
     }
+
+    let pollTimer = null;
 
     function stopPolling() {
       if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
@@ -516,6 +525,7 @@
       if (audioCtx.state === 'suspended') return audioCtx.resume();
       return Promise.resolve();
     }
+
     function playAlertBeep() {
       ensureAudio().then(() => {
         if (!audioCtx) return;
@@ -536,6 +546,7 @@
         playTone(1318.51, now + 0.3, 0.4);
       }).catch(() => {});
     }
+
     ["pointerdown","touchstart","mousedown","keydown"].forEach(evt => {
       window.addEventListener(evt, () => ensureAudio().catch(()=>{}), { once:true, passive:true });
     });
@@ -584,8 +595,6 @@
     /***********************
      * Polling
      ***********************/
-    let pollTimer = null;
-
     async function pollCurrentTicketOnce() {
       if (state.systemClosed) return;
       try {
@@ -668,15 +677,18 @@
     /***********************
      * Fetch meta once + close checks
      ***********************/
+    // MOD: single request to /queue/meta.json
     async function fetchMetaOnce() {
       try {
-        const [hbRes, reqRes] = await Promise.all([
-          fetch(ESP32_LAST_SEEN_URL, { cache:"no-store" }),
-          fetch(LAST_REQUEST_URL, { cache:"no-store" })
-        ]);
-        if (hbRes.ok) state.esp32_last_seen_ms = await hbRes.json();
-        if (reqRes.ok) state.last_request_ms = await reqRes.json();
-        state.metaLoaded = true;
+        const res = await fetch(META_URL, { cache:"no-store" });
+        if (res.ok) {
+          const meta = await res.json();
+          if (meta && typeof meta === "object") {
+            if ("esp32_last_seen_ms" in meta) state.esp32_last_seen_ms = meta.esp32_last_seen_ms;
+            if ("last_request_ms" in meta) state.last_request_ms = meta.last_request_ms;
+            state.metaLoaded = true;
+          }
+        }
       } catch {}
       await evaluateClosedState();
     }
@@ -718,6 +730,17 @@
         return;
       }
 
+      // MOD: handle /meta object updates (when backend patches /queue/meta)
+      if (path === "/meta") {
+        if (data && typeof data === "object") {
+          if ("esp32_last_seen_ms" in data) state.esp32_last_seen_ms = data.esp32_last_seen_ms;
+          if ("last_request_ms" in data) state.last_request_ms = data.last_request_ms;
+          state.metaLoaded = true;
+          await evaluateClosedState();
+        }
+        return;
+      }
+
       if (path === "/meta/esp32_last_seen_ms") {
         state.esp32_last_seen_ms = data;
         state.metaLoaded = true;
@@ -734,14 +757,11 @@
     }
 
     function connectStream() {
-      // لا تُظهر Offline فورًا عند محاولة إعادة الاتصال
-      // (هذا هو سبب الوميض سابقًا)
       if (es) {
         try { es.close(); } catch {}
         es = null;
       }
 
-      // إذا لم نكن Online أصلًا (أول تشغيل)، اعرض "جارٍ الاتصال"
       if (!state.isOnline) {
         setStatus("Connexion au système...", "جارٍ الاتصال بالنظام...");
       }
@@ -750,7 +770,7 @@
         es = new EventSource(STREAM_URL);
 
         es.onopen = () => {
-          cancelOfflineUI();         // مهم: إلغاء مؤقت الأوفلاين
+          cancelOfflineUI();
           setOnline(true);
         };
 
@@ -759,7 +779,6 @@
         es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
 
         es.onerror = () => {
-          // FIX: لا نضع Offline فورًا. ننتظر قليلًا، إذا استمر الانقطاع فقط عندها نُظهر Offline
           requestOfflineUI();
           scheduleReconnect();
         };
@@ -787,7 +806,10 @@
           }
         }
       } catch {}
-      await fetchMetaOnce();
+
+      // MOD: only fetch meta if not already loaded from /queue
+      if (!state.metaLoaded) await fetchMetaOnce();
+      else await evaluateClosedState();
     }
 
     setInterval(() => {
