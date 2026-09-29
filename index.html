@@ -235,7 +235,7 @@
     const HEARTBEAT_MISSED_LIMIT = 2;                 // إذا ضاعت مرتين => إغلاق
     const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000; // 10 دقائق
 
-    const REQUEST_INACTIVITY_MIN = 30;                // لا طلب لمدة 30 دقيقة => إغلاق
+    const REQUEST_INACTIVITY_MIN = 1;                // لا طلب لمدة 30 دقيقة => إغلاق
     const REQUEST_CLOSE_MS = REQUEST_INACTIVITY_MIN * 60 * 1000;
 
     const CHECK_MS = 30 * 1000;                       // فحص كل 30 ثانية
