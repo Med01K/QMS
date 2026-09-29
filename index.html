@@ -89,6 +89,15 @@
       box-shadow:0 0 0 4px rgba(37,99,235,0.12);
     }
 
+    /* NEW: شكل الحقول عندما النظام مغلق */
+    .input-group input:disabled{
+      background:#f3f4f6;
+      color:var(--muted);
+      border-color:#e5e7eb;
+      cursor:not-allowed;
+      box-shadow:none !important;
+    }
+
     .btn{
       width:100%; max-width:280px; margin:8px auto 0; display:block;
       border:1px solid rgba(0,0,0,0.06);
@@ -224,21 +233,20 @@
     const TICKET_URL  = makeUrl("queue/current_ticket");
     const OFFSET_URL  = makeUrl(".info/serverTimeOffset");
 
-    // meta fields
     const ESP32_LAST_SEEN_URL = makeUrl("queue/meta/esp32_last_seen_ms");
     const LAST_REQUEST_URL    = makeUrl("queue/meta/last_request_ms");
 
     /***********************
-     * Policy (كما طلبت)
+     * Policy
      ***********************/
-    const HEARTBEAT_INTERVAL_MIN = 5;                 // ESP32 يرسل كل 5 دقائق
-    const HEARTBEAT_MISSED_LIMIT = 2;                 // إذا ضاعت مرتين => إغلاق
+    const HEARTBEAT_INTERVAL_MIN = 5;
+    const HEARTBEAT_MISSED_LIMIT = 2;
     const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000; // 10 دقائق
 
-    const REQUEST_INACTIVITY_MIN = 1;                // لا طلب لمدة 30 دقيقة => إغلاق
+    const REQUEST_INACTIVITY_MIN = 30;
     const REQUEST_CLOSE_MS = REQUEST_INACTIVITY_MIN * 60 * 1000;
 
-    const CHECK_MS = 30 * 1000;                       // فحص كل 30 ثانية
+    const CHECK_MS = 30 * 1000;
 
     const POLL_VISIBLE_MS = 8000;
     const POLL_HIDDEN_MS  = 15000;
@@ -327,6 +335,22 @@
     }
 
     /***********************
+     * NEW: تجميد/إلغاء تجميد حقول الإدخال عند الإغلاق/الفتح
+     ***********************/
+    function setInputsFrozen(frozen) {
+      const f = !!frozen;
+
+      // إذا كان المستخدم يكتب لحظة الإغلاق: اخرج من الحقول
+      if (f) {
+        try { myTicketInput.blur(); } catch {}
+        try { thresholdInput.blur(); } catch {}
+      }
+
+      myTicketInput.disabled = f;
+      thresholdInput.disabled = f;
+    }
+
+    /***********************
      * Server time
      ***********************/
     async function fetchServerOffset() {
@@ -342,9 +366,7 @@
     }
 
     /***********************
-     * Closed logic
-     * - الرسالة فقط في الشريط السفلي (status)
-     * - لا Banner لموضوع "مغلق"
+     * Closed logic (Status فقط)
      ***********************/
     function computeClosedReasons() {
       const now = serverNow();
@@ -368,7 +390,6 @@
 
       if (state.systemClosed) {
         statusContainer.classList.add("closed");
-        // رسالة واحدة فقط هنا
         setStatus("Système fermé", "النظام مغلق");
         return;
       }
@@ -406,10 +427,21 @@
       state.systemClosed = next;
 
       if (next) {
+        // اغلاق
         stopTrackingHard();
         verifyBtn.disabled = true;
+
+        // NEW: تجميد الحقول عند الإغلاق
+        setInputsFrozen(true);
       } else {
+        // فتح
         verifyBtn.disabled = false;
+
+        // NEW: إعادة تفعيل الحقول عند الفتح
+        setInputsFrozen(false);
+
+        // اعادة ضبط max/clamp بعد الفتح (اختياري)
+        updateThresholdConstraints({ clamp: true });
       }
 
       renderTicketNumber();
@@ -418,7 +450,6 @@
 
     async function evaluateClosedState() {
       if (!state.metaLoaded) return;
-
       const { hbStale, reqStale } = computeClosedReasons();
       setSystemClosed(hbStale || reqStale);
     }
@@ -455,7 +486,7 @@
     }
 
     /***********************
-     * Notifications (كما عندك باختصار)
+     * Notifications (مختصر)
      ***********************/
     async function ensureNotificationsEnabled() {
       if (!("Notification" in window)) return false;
@@ -495,8 +526,8 @@
         playTone(1318.51, now + 0.3, 0.4);
       }).catch(() => {});
     }
-    ["pointerdown", "touchstart", "mousedown", "keydown"].forEach(evt => {
-      window.addEventListener(evt, () => ensureAudio().catch(()=>{}), { once: true, passive: true });
+    ["pointerdown","touchstart","mousedown","keydown"].forEach(evt => {
+      window.addEventListener(evt, () => ensureAudio().catch(()=>{}), { once:true, passive:true });
     });
 
     /***********************
@@ -582,7 +613,7 @@
     }
 
     async function startTrackingAndCheck() {
-      if (state.systemClosed) return; // "مغلق" يظهر فقط في الشريط السفلي
+      if (state.systemClosed) return;
 
       await ensureNotificationsEnabled();
 
@@ -625,7 +656,7 @@
     }
 
     /***********************
-     * Fetch meta once (fallback) + close checks
+     * Fetch meta once + close checks
      ***********************/
     async function fetchMetaOnce() {
       try {
@@ -636,14 +667,12 @@
         if (hbRes.ok) state.esp32_last_seen_ms = await hbRes.json();
         if (reqRes.ok) state.last_request_ms = await reqRes.json();
         state.metaLoaded = true;
-      } catch {
-        // لو فشل، لا نجبر الإغلاق
-      }
+      } catch {}
       await evaluateClosedState();
     }
 
     /***********************
-     * SSE stream (queue root) لاستقبال ticket + meta لحظياً
+     * SSE stream
      ***********************/
     let es = null;
     let reconnectTimer = null;
@@ -741,11 +770,10 @@
           }
         }
       } catch {}
-      // fallback meta fetch (حتى لو stream تأخر)
       await fetchMetaOnce();
     }
 
-    // periodic check (حتى لو SSE لم يوصّل)
+    // periodic check
     setInterval(() => {
       if (!state.metaLoaded) return;
       evaluateClosedState();
@@ -769,6 +797,9 @@
       connectStream();
       renderTicketNumber();
       updateStatusUI();
+
+      // NEW: طبّق تجميد الحقول حسب الحالة الحالية بعد بدء التشغيل
+      setInputsFrozen(state.systemClosed);
     })();
   </script>
 </body>
