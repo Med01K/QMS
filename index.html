@@ -19,7 +19,6 @@
       --online-bg:#ecfdf5; --online-tx:#065f46; --online-dot:#16a34a;
       --offline-bg:#fef2f2; --offline-tx:#991b1b; --offline-dot:#dc2626;
 
-      /* closed */
       --closed-bg:#fffbeb; --closed-tx:#92400e; --closed-dot:#f59e0b;
     }
 
@@ -89,7 +88,6 @@
       box-shadow:0 0 0 4px rgba(37,99,235,0.12);
     }
 
-    /* NEW: شكل الحقول عندما النظام مغلق */
     .input-group input:disabled{
       background:#f3f4f6;
       color:var(--muted);
@@ -219,7 +217,7 @@
      * Firebase REST
      ***********************/
     const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
-    const AUTH_TOKEN = ""; // اتركه فارغ إذا DB public، أو ضع التوكن
+    const AUTH_TOKEN = "";
 
     function makeUrl(path, params = {}) {
       const url = new URL(DB_BASE.replace(/\/$/, "") + "/" + path.replace(/^\//, "") + ".json");
@@ -241,15 +239,38 @@
      ***********************/
     const HEARTBEAT_INTERVAL_MIN = 5;
     const HEARTBEAT_MISSED_LIMIT = 2;
-    const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000; // 10 دقائق
+    const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000;
 
-    const REQUEST_INACTIVITY_MIN = 0.1;
+    const REQUEST_INACTIVITY_MIN = 30;
     const REQUEST_CLOSE_MS = REQUEST_INACTIVITY_MIN * 60 * 1000;
 
     const CHECK_MS = 30 * 1000;
 
     const POLL_VISIBLE_MS = 8000;
     const POLL_HIDDEN_MS  = 15000;
+
+    /***********************
+     * FIX for Online/Offline flicker (Debounce)
+     ***********************/
+    const OFFLINE_GRACE_MS = 2500; // لا نعرض "أوفلاين" إلا إذا استمر الانقطاع أكثر من 2.5 ثانية
+    let offlineUiTimer = null;
+
+    function requestOfflineUI() {
+      if (offlineUiTimer) return;
+      offlineUiTimer = setTimeout(() => {
+        offlineUiTimer = null;
+        // إذا لم يعد الاتصال OPEN بعد فترة السماح => اعتبره Offline
+        if (!es || es.readyState !== 1) {
+          setOnline(false);
+        }
+      }, OFFLINE_GRACE_MS);
+    }
+
+    function cancelOfflineUI() {
+      if (!offlineUiTimer) return;
+      clearTimeout(offlineUiTimer);
+      offlineUiTimer = null;
+    }
 
     /***********************
      * Elements
@@ -334,18 +355,12 @@
       setTimeout(() => queueNumEl.classList.remove('updated'), 350);
     }
 
-    /***********************
-     * NEW: تجميد/إلغاء تجميد حقول الإدخال عند الإغلاق/الفتح
-     ***********************/
     function setInputsFrozen(frozen) {
       const f = !!frozen;
-
-      // إذا كان المستخدم يكتب لحظة الإغلاق: اخرج من الحقول
       if (f) {
         try { myTicketInput.blur(); } catch {}
         try { thresholdInput.blur(); } catch {}
       }
-
       myTicketInput.disabled = f;
       thresholdInput.disabled = f;
     }
@@ -366,11 +381,10 @@
     }
 
     /***********************
-     * Closed logic (Status فقط)
+     * Closed logic (Status only)
      ***********************/
     function computeClosedReasons() {
       const now = serverNow();
-
       const lastSeen = Number(state.esp32_last_seen_ms);
       const lastReq  = Number(state.last_request_ms);
 
@@ -396,6 +410,11 @@
 
       statusContainer.classList.add("online");
       setStatus("Système connecté", "النظام متصل");
+    }
+
+    function setOnline(isOnline) {
+      state.isOnline = !!isOnline;
+      updateStatusUI();
     }
 
     function renderTicketNumber() {
@@ -427,20 +446,12 @@
       state.systemClosed = next;
 
       if (next) {
-        // اغلاق
         stopTrackingHard();
         verifyBtn.disabled = true;
-
-        // NEW: تجميد الحقول عند الإغلاق
         setInputsFrozen(true);
       } else {
-        // فتح
         verifyBtn.disabled = false;
-
-        // NEW: إعادة تفعيل الحقول عند الفتح
         setInputsFrozen(false);
-
-        // اعادة ضبط max/clamp بعد الفتح (اختياري)
         updateThresholdConstraints({ clamp: true });
       }
 
@@ -455,7 +466,7 @@
     }
 
     /***********************
-     * Threshold clamp (fix)
+     * Threshold clamp
      ***********************/
     function getNumbersForDiff() {
       const myTicket = parseInt(myTicketInput.value, 10);
@@ -471,7 +482,6 @@
         thresholdInput.removeAttribute("max");
         return;
       }
-
       const diff = info.myTicket - info.currentTicket;
       const maxAllowed = Math.max(0, diff);
       thresholdInput.max = String(maxAllowed);
@@ -486,7 +496,7 @@
     }
 
     /***********************
-     * Notifications (مختصر)
+     * Notifications (minimal)
      ***********************/
     async function ensureNotificationsEnabled() {
       if (!("Notification" in window)) return false;
@@ -498,7 +508,7 @@
     }
 
     /***********************
-     * Audio (كما عندك)
+     * Audio
      ***********************/
     let audioCtx = null;
     function ensureAudio() {
@@ -531,7 +541,7 @@
     });
 
     /***********************
-     * Ticket alerts (Banner فقط للتذاكر)
+     * Alerts (Banner only)
      ***********************/
     function checkUserAlert(currentTicket) {
       if (state.systemClosed) return;
@@ -672,7 +682,7 @@
     }
 
     /***********************
-     * SSE stream
+     * SSE stream (FIXED: no offline flicker)
      ***********************/
     let es = null;
     let reconnectTimer = null;
@@ -683,11 +693,6 @@
         reconnectTimer = null;
         connectStream();
       }, 4000);
-    }
-
-    function setOnline(isOnline) {
-      state.isOnline = !!isOnline;
-      updateStatusUI();
     }
 
     async function applyStreamPayload(payload) {
@@ -729,25 +734,37 @@
     }
 
     function connectStream() {
-      if (es) { try { es.close(); } catch {} es = null; }
+      // لا تُظهر Offline فورًا عند محاولة إعادة الاتصال
+      // (هذا هو سبب الوميض سابقًا)
+      if (es) {
+        try { es.close(); } catch {}
+        es = null;
+      }
 
-      setOnline(false);
+      // إذا لم نكن Online أصلًا (أول تشغيل)، اعرض "جارٍ الاتصال"
+      if (!state.isOnline) {
+        setStatus("Connexion au système...", "جارٍ الاتصال بالنظام...");
+      }
 
       try {
         es = new EventSource(STREAM_URL);
 
-        es.onopen = () => setOnline(true);
+        es.onopen = () => {
+          cancelOfflineUI();         // مهم: إلغاء مؤقت الأوفلاين
+          setOnline(true);
+        };
 
         es.addEventListener("put",   (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
         es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
         es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
 
         es.onerror = () => {
-          setOnline(false);
+          // FIX: لا نضع Offline فورًا. ننتظر قليلًا، إذا استمر الانقطاع فقط عندها نُظهر Offline
+          requestOfflineUI();
           scheduleReconnect();
         };
       } catch {
-        setOnline(false);
+        requestOfflineUI();
         scheduleReconnect();
       }
     }
@@ -773,7 +790,6 @@
       await fetchMetaOnce();
     }
 
-    // periodic check
     setInterval(() => {
       if (!state.metaLoaded) return;
       evaluateClosedState();
@@ -797,8 +813,6 @@
       connectStream();
       renderTicketNumber();
       updateStatusUI();
-
-      // NEW: طبّق تجميد الحقول حسب الحالة الحالية بعد بدء التشغيل
       setInputsFrozen(state.systemClosed);
     })();
   </script>
