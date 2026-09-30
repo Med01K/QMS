@@ -677,7 +677,6 @@
     /***********************
      * Fetch meta once + close checks
      ***********************/
-    // MOD: single request to /queue/meta.json
     async function fetchMetaOnce() {
       try {
         const res = await fetch(META_URL, { cache:"no-store" });
@@ -730,7 +729,6 @@
         return;
       }
 
-      // MOD: handle /meta object updates (when backend patches /queue/meta)
       if (path === "/meta") {
         if (data && typeof data === "object") {
           if ("esp32_last_seen_ms" in data) state.esp32_last_seen_ms = data.esp32_last_seen_ms;
@@ -807,7 +805,6 @@
         }
       } catch {}
 
-      // MOD: only fetch meta if not already loaded from /queue
       if (!state.metaLoaded) await fetchMetaOnce();
       else await evaluateClosedState();
     }
@@ -827,7 +824,6 @@
       else stopPolling();
     });
 
-    // Start
     (async function start() {
       setStatus("Connexion en cours...", "جارٍ الاتصال...");
       await fetchServerOffset();
