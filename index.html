@@ -1,863 +1,838 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Système de gestion de file d'attente / نظام إدارة طابور الانتظار</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Système de gestion de file d'attente / نظام إدارة طابور الانتظار</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
 
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    :root{
-      --bg:#f3f4f6; --card:#fff; --text:#111827; --muted:#6b7280; --border:#e5e7eb;
-      --primary:#2563eb; --success:#16a34a;
-      --warn-bg:#fffbeb; --warn-bd:#fde68a; --warn-tx:#92400e;
-      --danger-bg:#fef2f2; --danger-bd:#fecaca; --danger-tx:#991b1b;
-      --online-bg:#ecfdf5; --online-tx:#065f46; --online-dot:#16a34a;
-      --offline-bg:#fef2f2; --offline-tx:#991b1b; --offline-dot:#dc2626;
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root{
+      --bg:#f3f4f6; --card:#fff; --text:#111827; --muted:#6b7280; --border:#e5e7eb;
+      --primary:#2563eb; --success:#16a34a;
+      --warn-bg:#fffbeb; --warn-bd:#fde68a; --warn-tx:#92400e;
+      --danger-bg:#fef2f2; --danger-bd:#fecaca; --danger-tx:#991b1b;
+      --online-bg:#ecfdf5; --online-tx:#065f46; --online-dot:#16a34a;
+      --offline-bg:#fef2f2; --offline-tx:#991b1b; --offline-dot:#dc2626;
 
-      --closed-bg:#fffbeb; --closed-tx:#92400e; --closed-dot:#f59e0b;
-    }
+      --closed-bg:#fffbeb; --closed-tx:#92400e; --closed-dot:#f59e0b;
+    }
 
-    body{
-      font-family: Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align:center;
-      background: radial-gradient(1200px 600px at 50% -10%, #e8f0ff, var(--bg));
-      display:flex; justify-content:center; align-items:center;
-      min-height:100vh; padding:16px; color:var(--text);
-    }
+    body{
+      font-family: Inter, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align:center;
+      background: radial-gradient(1200px 600px at 50% -10%, #e8f0ff, var(--bg));
+      display:flex; justify-content:center; align-items:center;
+      min-height:100vh; padding:16px; color:var(--text);
+    }
 
-    .card{
-      background:var(--card);
-      padding:28px 22px;
-      border-radius:22px;
-      box-shadow:0 18px 50px rgba(17,24,39,0.10);
-      max-width:560px; width:100%;
-      border:1px solid rgba(229,231,235,0.7);
-    }
+    .card{
+      background:var(--card);
+      padding:28px 22px;
+      border-radius:22px;
+      box-shadow:0 18px 50px rgba(17,24,39,0.10);
+      max-width:560px; width:100%;
+      border:1px solid rgba(229,231,235,0.7);
+    }
 
-    .bi{ display:flex; flex-direction:column; gap:4px; }
-    .bi .fr,.bi .ar{ display:block; line-height:1.2; unicode-bidi:isolate; }
-    .bi .fr{ direction:ltr; text-align:left; font-family:Inter, sans-serif; }
-    .bi .ar{ direction:rtl; text-align:right; font-family:Tajawal, Tahoma, Arial, sans-serif; }
-    .bi.center .fr,.bi.center .ar{ text-align:center; }
-    .bi.small .fr,.bi.small .ar{ font-size:12.5px; font-weight:700; color:var(--muted); }
+    .bi{ display:flex; flex-direction:column; gap:4px; }
+    .bi .fr,.bi .ar{ display:block; line-height:1.2; unicode-bidi:isolate; }
+    .bi .fr{ direction:ltr; text-align:left; font-family:Inter, sans-serif; }
+    .bi .ar{ direction:rtl; text-align:right; font-family:Tajawal, Tahoma, Arial, sans-serif; }
+    .bi.center .fr,.bi.center .ar{ text-align:center; }
+    .bi.small .fr,.bi.small .ar{ font-size:12.5px; font-weight:700; color:var(--muted); }
 
-    .page-title{ margin-bottom:12px; }
-    .page-title .ar{ font-size:20px; font-weight:800; }
-    .page-title .fr{ font-size:12.5px; font-weight:700; color:var(--muted); }
+    .page-title{ margin-bottom:12px; }
+    .page-title .ar{ font-size:20px; font-weight:800; }
+    .page-title .fr{ font-size:12.5px; font-weight:700; color:var(--muted); }
 
-    .number-box{
-      background:linear-gradient(180deg,#f8fafc,#fff);
-      border-radius:18px; padding:14px 12px;
-      margin:14px 0 10px; border:1px solid var(--border);
-    }
-    .number{
-      font-size:92px; color:var(--primary);
-      font-weight:800; line-height:1;
-      transition: color .25s ease, transform .18s ease;
-      letter-spacing:1px;
-    }
-    .number.updated{ transform:scale(1.06); color:var(--success); }
-    .number.closed{ color:var(--muted); }
+    .number-box{
+      background:linear-gradient(180deg,#f8fafc,#fff);
+      border-radius:18px; padding:14px 12px;
+      margin:14px 0 10px; border:1px solid var(--border);
+    }
+    .number{
+      font-size:92px; color:var(--primary);
+      font-weight:800; line-height:1;
+      transition: color .25s ease, transform .18s ease;
+      letter-spacing:1px;
+    }
+    .number.updated{ transform:scale(1.06); color:var(--success); }
+    .number.closed{ color:var(--muted); }
 
-    .user-section{
-      background:#f9fafb; padding:16px;
-      border-radius:16px; margin:16px 0;
-      border:1px solid var(--border); text-align:initial;
-    }
-    .user-section h3{ margin-bottom:10px; }
-    .user-section h3 .ar{ font-size:15px; font-weight:800; text-align:center; }
-    .user-section h3 .fr{ font-size:12.5px; font-weight:700; color:var(--muted); text-align:center; }
+    .user-section{
+      background:#f9fafb; padding:16px;
+      border-radius:16px; margin:16px 0;
+      border:1px solid var(--border); text-align:initial;
+    }
+    .user-section h3{ margin-bottom:10px; }
+    .user-section h3 .ar{ font-size:15px; font-weight:800; text-align:center; }
+    .user-section h3 .fr{ font-size:12.5px; font-weight:700; color:var(--muted); text-align:center; }
 
-    .input-group{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
-    .input-group label .ar{ font-size:13px; font-weight:800; }
-    .input-group label .fr{ font-size:12.5px; font-weight:700; color:var(--muted); }
+    .input-group{ display:flex; flex-direction:column; gap:8px; margin-bottom:12px; }
+    .input-group label .ar{ font-size:13px; font-weight:800; }
+    .input-group label .fr{ font-size:12.5px; font-weight:700; color:var(--muted); }
 
-    .input-group input{
-      padding:11px 12px; border-radius:10px;
-      border:1px solid var(--border); font-size:14px;
-      outline:none; background:#fff;
-      transition:border-color .2s ease, box-shadow .2s ease;
-    }
-    .input-group input:focus{
-      border-color:rgba(37,99,235,0.55);
-      box-shadow:0 0 0 4px rgba(37,99,235,0.12);
-    }
+    .input-group input{
+      padding:11px 12px; border-radius:10px;
+      border:1px solid var(--border); font-size:14px;
+      outline:none; background:#fff;
+      transition:border-color .2s ease, box-shadow .2s ease;
+    }
+    .input-group input:focus{
+      border-color:rgba(37,99,235,0.55);
+      box-shadow:0 0 0 4px rgba(37,99,235,0.12);
+    }
 
-    .input-group input:disabled{
-      background:#f3f4f6;
-      color:var(--muted);
-      border-color:#e5e7eb;
-      cursor:not-allowed;
-      box-shadow:none !important;
-    }
+    .input-group input:disabled{
+      background:#f3f4f6;
+      color:var(--muted);
+      border-color:#e5e7eb;
+      cursor:not-allowed;
+      box-shadow:none !important;
+    }
 
-    .btn{
-      width:100%; max-width:280px; margin:8px auto 0; display:block;
-      border:1px solid rgba(0,0,0,0.06);
-      border-radius:12px; background:var(--primary); color:#fff;
-      padding:12px 14px; cursor:pointer;
-      transition:filter .15s ease, background-color .2s ease, border-color .2s ease;
-    }
-    .btn:hover{ filter:brightness(.97); }
-    .btn .bi .ar{ color:rgba(255,255,255,0.98); font-weight:900; font-size:16px; }
-    .btn .bi .fr{ color:rgba(255,255,255,0.92); font-weight:800; font-size:12.5px; }
-    .btn.active{ background:var(--success); }
-    .btn:disabled{ opacity:.65; cursor:not-allowed; }
-    .btn:disabled:hover{ filter:none; }
+    .btn{
+      width:100%; max-width:280px; margin:8px auto 0; display:block;
+      border:1px solid rgba(0,0,0,0.06);
+      border-radius:12px; background:var(--primary); color:#fff;
+      padding:12px 14px; cursor:pointer;
+      transition:filter .15s ease, background-color .2s ease, border-color .2s ease;
+    }
+    .btn:hover{ filter:brightness(.97); }
+    .btn .bi .ar{ color:rgba(255,255,255,0.98); font-weight:900; font-size:16px; }
+    .btn .bi .fr{ color:rgba(255,255,255,0.92); font-weight:800; font-size:12.5px; }
+    .btn.active{ background:var(--success); }
+    .btn:disabled{ opacity:.65; cursor:not-allowed; }
+    .btn:disabled:hover{ filter:none; }
 
-    .alert-banner{
-      display:none;
-      background-color:var(--warn-bg);
-      color:var(--warn-tx);
-      border:1px solid var(--warn-bd);
-      padding:12px 12px; border-radius:12px; margin-top:10px;
-      text-align:center;
-    }
-    .alert-banner.active{ display:block; }
-    .alert-banner.urgent{
-      background-color:var(--danger-bg);
-      color:var(--danger-tx);
-      border-color:var(--danger-bd);
-    }
-    .alert-banner .bi.small .fr,.alert-banner .bi.small .ar{ color:inherit; font-weight:800; }
+    .alert-banner{
+      display:none;
+      background-color:var(--warn-bg);
+      color:var(--warn-tx);
+      border:1px solid var(--warn-bd);
+      padding:12px 12px; border-radius:12px; margin-top:10px;
+      text-align:center;
+    }
+    .alert-banner.active{ display:block; }
+    .alert-banner.urgent{
+      background-color:var(--danger-bg);
+      color:var(--danger-tx);
+      border-color:var(--danger-bd);
+    }
+    .alert-banner .bi.small .fr,.alert-banner .bi.small .ar{ color:inherit; font-weight:800; }
 
-    .status-container{
-      display:inline-flex; align-items:center; gap:10px;
-      padding:10px 14px; border-radius:16px;
-      user-select:none; width:100%; justify-content:center;
-      border:1px solid rgba(0,0,0,0.05);
-      background-color:var(--offline-bg);
-      color:var(--offline-tx);
-    }
-    .status-dot{
-      width:10px; height:10px; border-radius:50%;
-      background-color:var(--offline-dot);
-      display:inline-block; flex:0 0 auto;
-      box-shadow:0 0 0 4px rgba(220,38,38,0.10);
-    }
-    .status-container.online{ background-color:var(--online-bg); color:var(--online-tx); }
-    .status-container.online .status-dot{ background-color:var(--online-dot); box-shadow:0 0 0 4px rgba(22,163,74,0.12); }
+    .status-container{
+      display:inline-flex; align-items:center; gap:10px;
+      padding:10px 14px; border-radius:16px;
+      user-select:none; width:100%; justify-content:center;
+      border:1px solid rgba(0,0,0,0.05);
+      background-color:var(--offline-bg);
+      color:var(--offline-tx);
+    }
+    .status-dot{
+      width:10px; height:10px; border-radius:50%;
+      background-color:var(--offline-dot);
+      display:inline-block; flex:0 0 auto;
+      box-shadow:0 0 0 4px rgba(220,38,38,0.10);
+    }
+    .status-container.online{ background-color:var(--online-bg); color:var(--online-tx); }
+    .status-container.online .status-dot{ background-color:var(--online-dot); box-shadow:0 0 0 4px rgba(22,163,74,0.12); }
 
-    .status-container.closed{
-      background-color:var(--closed-bg);
-      color:var(--closed-tx);
-      border-color:rgba(245,158,11,0.35);
-    }
-    .status-container.closed .status-dot{
-      background-color:var(--closed-dot);
-      box-shadow:0 0 0 4px rgba(245,158,11,0.14);
-    }
-
-    /* إضافة تنسيق خاص لرسالة أبولبابة */
-    .abolouhaba-banner {
-      background: linear-gradient(135deg, #eff6ff, #dbeafe);
-      color: #1e40af;
-      border: 1px solid #bfdbfe;
-      padding: 10px 14px;
-      border-radius: 14px;
-      margin-bottom: 14px;
-      font-weight: 700;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
-      animation: pulse-soft 2s infinite;
-    }
-    @keyframes pulse-soft {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.01); }
-      100% { transform: scale(1); }
-    }
-  </style>
+    .status-container.closed{
+      background-color:var(--closed-bg);
+      color:var(--closed-tx);
+      border-color:rgba(245,158,11,0.35);
+    }
+    .status-container.closed .status-dot{
+      background-color:var(--closed-dot);
+      box-shadow:0 0 0 4px rgba(245,158,11,0.14);
+    }
+  </style>
 </head>
 
 <body>
-  <div class="card">
-    <!-- رسالة مخصصة لأبولبابة -->
-    <div class="abolouhaba-banner">
-      <div class="bi center">
-        <span class="ar" lang="ar">برا أرقد يا بلبابة راك تقرى! 📚😂</span>
-        <span class="fr" lang="fr">Va dormir ô Lababa, tu as cours demain !</span>
-      </div>
-    </div>
-
-    <h1 class="page-title">
-      <div class="bi center">
-        <span class="ar" lang="ar">رقم التذكرة الحالي</span>
-        <span class="fr" lang="fr">Numéro de ticket actuel</span>
-      </div>
-    </h1>
-
-    <div class="number-box">
-      <div class="number" id="queueNum">--</div>
-    </div>
-
-    <div class="user-section">
-      <h3>
-        <div class="bi center">
-          <span class="ar" lang="ar">تتبُّع تذكرتك</span>
-          <span class="fr" lang="fr">Suivi de votre ticket</span>
-        </div>
-      </h3>
-
-      <div class="input-group">
-        <label for="myTicketInput">
-          <div class="bi">
-            <span class="ar" lang="ar">رقم تذكرتك</span>
-            <span class="fr" lang="fr">Votre numéro de ticket</span>
-          </div>
-        </label>
-        <input type="number" id="myTicketInput" placeholder="Ex : 45 — مثال: 45" min="1" />
-      </div>
-
-      <div class="input-group">
-        <label for="thresholdInput">
-          <div class="bi">
-            <span class="ar" lang="ar">هامش التنبيه (عدد الأشخاص قبلك)</span>
-            <span class="fr" lang="fr">Marge d'alerte (personnes avant vous)</span>
-          </div>
-        </label>
-        <input type="number" id="thresholdInput" value="10" min="0" />
-      </div>
-
-      <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
-        <span class="bi center">
-          <span class="ar" id="verifyBtnAr" lang="ar">تتبّع</span>
-          <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
-        </span>
-      </button>
-
-      <div id="alertBanner" class="alert-banner"></div>
-    </div>
-
-    <div class="status-container" id="statusContainer">
-      <span class="status-dot"></span>
-      <span id="statusText" style="width:100%;"></span>
-    </div>
-  </div>
-
-  <script>
-    /***********************
-     * Firebase REST
-     ***********************/
-    const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
-    const AUTH_TOKEN = "";
-
-    function makeUrl(path, params = {}) {
-      const url = new URL(DB_BASE.replace(/\/$/, "") + "/" + path.replace(/^\//, "") + ".json");
-      Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
-      if (AUTH_TOKEN) url.searchParams.set("auth", AUTH_TOKEN);
-      return url.toString();
-    }
-
-    const STREAM_URL  = makeUrl("queue", { print: "silent" });
-    const QUEUE_URL    = makeUrl("queue");
-    const TICKET_URL   = makeUrl("queue/current_ticket");
-    const OFFSET_URL   = makeUrl(".info/serverTimeOffset");
-
-    const META_URL = makeUrl("queue/meta");
-
-    const ESP32_LAST_SEEN_URL = makeUrl("queue/meta/esp32_last_seen_ms");
-    const LAST_REQUEST_URL    = makeUrl("queue/meta/last_request_ms");
-
-    /***********************
-     * Policy
-     ***********************/
-    const HEARTBEAT_INTERVAL_MIN = 5;
-    const HEARTBEAT_MISSED_LIMIT = 2;
-    const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000;
-
-    const REQUEST_INACTIVITY_MIN = 30;
-    const REQUEST_CLOSE_MS = REQUEST_INACTIVITY_MIN * 60 * 1000;
-
-    const CHECK_MS = 30 * 1000;
-
-    const POLL_VISIBLE_MS = 8000;
-    const POLL_HIDDEN_MS  = 15000;
-
-    /***********************
-     * FIX for Online/Offline flicker (Debounce)
-     ***********************/
-    const OFFLINE_GRACE_MS = 2500;
-    let offlineUiTimer = null;
-
-    function requestOfflineUI() {
-      if (offlineUiTimer) return;
-      offlineUiTimer = setTimeout(() => {
-        offlineUiTimer = null;
-        if (!es || es.readyState !== 1) {
-          setOnline(false);
-        }
-      }, OFFLINE_GRACE_MS);
-    }
-
-    function cancelOfflineUI() {
-      if (!offlineUiTimer) return;
-      clearTimeout(offlineUiTimer);
-      offlineUiTimer = null;
-    }
-
-    /***********************
-     * Elements
-     ***********************/
-    const queueNumEl = document.getElementById('queueNum');
-    const statusContainer = document.getElementById('statusContainer');
-    const statusText = document.getElementById('statusText');
-    const myTicketInput = document.getElementById('myTicketInput');
-    const thresholdInput = document.getElementById('thresholdInput');
-    const alertBanner = document.getElementById('alertBanner');
-    const verifyBtn = document.getElementById('verifyBtn');
-    const verifyBtnAr = document.getElementById('verifyBtnAr');
-    const verifyBtnFr = document.getElementById('verifyBtnFr');
-
-    /***********************
-     * State
-     ***********************/
-    const state = {
-      current_ticket: null,
-      lastAlertedDiff: null,
-      trackingEnabled: false,
-      userEditing: false,
-
-      isOnline: false,
-      systemClosed: false,
-
-      serverOffset: 0,
-
-      esp32_last_seen_ms: null,
-      last_request_ms: null,
-
-      metaLoaded: false
-    };
-
-    /***********************
-     * UI helpers
-     ***********************/
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
-    function biHTML(frText, arText, extraClass = "small") {
-      return `
-        <span class="bi center ${extraClass}">
-          <span class="ar" lang="ar">${escapeHtml(arText)}</span>
-          <span class="fr" lang="fr">${escapeHtml(frText)}</span>
-        </span>
-      `;
-    }
-
-    function setStatus(frText, arText) {
-      statusText.innerHTML = biHTML(frText, arText, "small");
-    }
-
-    function setBanner(frText, arText, { active = true, urgent = false } = {}) {
-      alertBanner.innerHTML = biHTML(frText, arText, "small");
-      alertBanner.classList.toggle('active', !!active);
-      alertBanner.classList.toggle('urgent', !!urgent);
-    }
-
-    function clearBanner() {
-      alertBanner.classList.remove('active', 'urgent');
-      alertBanner.innerHTML = "";
-    }
-
-    function setVerifyBtnActive(isActive){
-      verifyBtn.classList.toggle('active', !!isActive);
-      verifyBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-      if (isActive) {
-        verifyBtnAr.textContent = "يتم التتبع الآن";
-        verifyBtnFr.textContent = "Suivi en cours";
-      } else {
-        verifyBtnAr.textContent = "تتبّع";
-        verifyBtnFr.textContent = "Suivi";
-      }
-    }
-    setVerifyBtnActive(false);
-
-    function triggerUpdateAnimation() {
-      queueNumEl.classList.add('updated');
-      setTimeout(() => queueNumEl.classList.remove('updated'), 350);
-    }
-
-    function setInputsFrozen(frozen) {
-      const f = !!frozen;
-      if (f) {
-        try { myTicketInput.blur(); } catch {}
-        try { thresholdInput.blur(); } catch {}
-      }
-      myTicketInput.disabled = f;
-      thresholdInput.disabled = f;
-    }
-
-    /***********************
-     * Server time
-     ***********************/
-    async function fetchServerOffset() {
-      try {
-        const res = await fetch(OFFSET_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error("offset fetch failed");
-        const offset = await res.json();
-        if (typeof offset === "number" && Number.isFinite(offset)) state.serverOffset = offset;
-      } catch {}
-    }
-
-    function serverNow() {
-      return Date.now() + (state.serverOffset || 0);
-    }
-
-    /***********************
-     * Closed logic (Status only)
-     ***********************/
-    function computeClosedReasons() {
-      const now = serverNow();
-      const lastSeen = Number(state.esp32_last_seen_ms);
-      const lastReq  = Number(state.last_request_ms);
-
-      const hbStale  = !Number.isFinite(lastSeen) ? true : (now - lastSeen >= HEARTBEAT_CLOSE_MS);
-      const reqStale = !Number.isFinite(lastReq)  ? true : (now - lastReq  >= REQUEST_CLOSE_MS);
-
-      return { hbStale, reqStale };
-    }
-
-    function updateStatusUI() {
-      statusContainer.classList.remove("online", "closed");
-
-      if (!state.isOnline) {
-        setStatus("Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
-        return;
-      }
-
-      if (state.systemClosed) {
-        statusContainer.classList.add("closed");
-        setStatus("Système fermé", "النظام مغلق");
-        return;
-      }
-
-      statusContainer.classList.add("online");
-      setStatus("Système connecté", "النظام متصل");
-    }
-
-    function setOnline(isOnline) {
-      state.isOnline = !!isOnline;
-      updateStatusUI();
-    }
-
-    function renderTicketNumber() {
-      if (state.systemClosed) {
-        queueNumEl.textContent = "--";
-        queueNumEl.classList.add("closed");
-      } else {
-        queueNumEl.classList.remove("closed");
-        const v = Number(state.current_ticket);
-        queueNumEl.textContent = Number.isFinite(v) ? String(v) : "--";
-      }
-    }
-
-    let pollTimer = null;
-
-    function stopPolling() {
-      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-    }
-
-    function stopTrackingHard() {
-      state.trackingEnabled = false;
-      state.lastAlertedDiff = null;
-      clearBanner();
-      setVerifyBtnActive(false);
-      stopPolling();
-    }
-
-    function setSystemClosed(isClosed) {
-      const next = !!isClosed;
-      if (state.systemClosed === next) return;
-      state.systemClosed = next;
-
-      if (next) {
-        stopTrackingHard();
-        verifyBtn.disabled = true;
-        setInputsFrozen(true);
-      } else {
-        verifyBtn.disabled = false;
-        setInputsFrozen(false);
-        updateThresholdConstraints({ clamp: true });
-      }
-
-      renderTicketNumber();
-      updateStatusUI();
-    }
-
-    async function evaluateClosedState() {
-      if (!state.metaLoaded) return;
-      const { hbStale, reqStale } = computeClosedReasons();
-      setSystemClosed(hbStale || reqStale);
-    }
-
-    /***********************
-     * Threshold clamp
-     ***********************/
-    function getNumbersForDiff() {
-      const myTicket = parseInt(myTicketInput.value, 10);
-      const currentTicket = Number(state.current_ticket);
-      if (!Number.isFinite(currentTicket)) return { ok:false };
-      if (Number.isNaN(myTicket) || myTicket < 1) return { ok:false };
-      return { ok:true, myTicket, currentTicket };
-    }
-
-    function updateThresholdConstraints({ clamp = false } = {}) {
-      const info = getNumbersForDiff();
-      if (!info.ok) {
-        thresholdInput.removeAttribute("max");
-        return;
-      }
-      const diff = info.myTicket - info.currentTicket;
-      const maxAllowed = Math.max(0, diff);
-      thresholdInput.max = String(maxAllowed);
-
-      if (!clamp) return;
-
-      const thr = parseInt(thresholdInput.value, 10);
-      if (Number.isNaN(thr)) return;
-
-      const clampedValue = Math.min(Math.max(0, thr), maxAllowed);
-      if (clampedValue !== thr) thresholdInput.value = String(clampedValue);
-    }
-
-    /***********************
-     * Notifications (minimal)
-     ***********************/
-    async function ensureNotificationsEnabled() {
-      if (!("Notification" in window)) return false;
-      if (!window.isSecureContext) return false;
-      if (Notification.permission === "granted") return true;
-      if (Notification.permission === "denied") return false;
-      const p = await Notification.requestPermission().catch(() => "denied");
-      return p === "granted";
-    }
-
-    /***********************
-     * Audio
-     ***********************/
-    let audioCtx = null;
-    function ensureAudio() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') return audioCtx.resume();
-      return Promise.resolve();
-    }
-
-    function playAlertBeep() {
-      ensureAudio().then(() => {
-        if (!audioCtx) return;
-        const playTone = (freq, time, duration) => {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(freq, time);
-          gain.gain.setValueAtTime(0.25, time);
-          gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start(time);
-          osc.stop(time + duration);
-        };
-        const now = audioCtx.currentTime;
-        playTone(987.77, now, 0.25);
-        playTone(1318.51, now + 0.3, 0.4);
-      }).catch(() => {});
-    }
-
-    ["pointerdown","touchstart","mousedown","keydown"].forEach(evt => {
-      window.addEventListener(evt, () => ensureAudio().catch(()=>{}), { once:true, passive:true });
-    });
-
-    /***********************
-     * Alerts (Banner only)
-     ***********************/
-    function checkUserAlert(currentTicket) {
-      if (state.systemClosed) return;
-
-      if (!state.userEditing) updateThresholdConstraints({ clamp: true });
-
-      const myTicket = parseInt(myTicketInput.value, 10);
-      const thresholdParsed = parseInt(thresholdInput.value, 10);
-      const threshold = Number.isNaN(thresholdParsed) ? 10 : thresholdParsed;
-
-      if (isNaN(myTicket) || currentTicket === null || isNaN(Number(currentTicket))) {
-        clearBanner();
-        state.lastAlertedDiff = null;
-        return;
-      }
-
-      const diff = myTicket - Number(currentTicket);
-
-      if (diff === 0) {
-        setBanner("C'est votre tour ! Présentez-vous au guichet.", "لقد حان دورك! يُرجى التوجّه إلى الشباك.", { active:true, urgent:true });
-        if (state.lastAlertedDiff !== 0) {
-          playAlertBeep();
-          state.lastAlertedDiff = 0;
-        }
-      } else if (diff > 0 && diff <= threshold) {
-        setBanner(`Attention ! Il reste ${diff} personne(s) avant votre tour.`, `تنبيه! مازال ${diff} شخص/أشخاص قبل دورك.`, { active:true, urgent:false });
-        if (state.lastAlertedDiff !== diff) {
-          playAlertBeep();
-          state.lastAlertedDiff = diff;
-        }
-      } else if (diff < 0) {
-        setBanner("Votre tour est déjà passé.", "لقد فات دورك.", { active:true, urgent:true });
-        state.lastAlertedDiff = diff;
-      } else {
-        clearBanner();
-        state.lastAlertedDiff = diff;
-      }
-    }
-
-    /***********************
-     * Polling
-     ***********************/
-    async function pollCurrentTicketOnce() {
-      if (state.systemClosed) return;
-      try {
-        const res = await fetch(TICKET_URL, { cache: "no-store" });
-        if (!res.ok) throw new Error("poll failed");
-        const ticket = await res.json();
-        setTicket(ticket);
-      } catch {}
-    }
-
-    function startPolling() {
-      stopPolling();
-      const period = (document.visibilityState === "visible") ? POLL_VISIBLE_MS : POLL_HIDDEN_MS;
-      pollTimer = setInterval(pollCurrentTicketOnce, period);
-      pollCurrentTicketOnce();
-    }
-
-    /***********************
-     * Tracking button
-     ***********************/
-    function inputsAreValidOrShowMessage(){
-      const myTicket = parseInt(myTicketInput.value, 10);
-      const threshold = parseInt(thresholdInput.value, 10);
-
-      if (isNaN(myTicket) || myTicket < 1) {
-        setBanner("Veuillez saisir un numéro de ticket valide.", "يرجى إدخال رقم تذكرة صحيح.", { active:true, urgent:true });
-        return false;
-      }
-      if (isNaN(threshold) || threshold < 0) {
-        setBanner("Veuillez saisir une marge d'alerte valide (>= 0).", "يرجى إدخال هامش تنبيه صحيح (>= 0).", { active:true, urgent:true });
-        return false;
-      }
-      updateThresholdConstraints({ clamp:true });
-      return true;
-    }
-
-    async function startTrackingAndCheck() {
-      if (state.systemClosed) return;
-
-      await ensureNotificationsEnabled();
-
-      if (!inputsAreValidOrShowMessage()) {
-        setVerifyBtnActive(false);
-        return;
-      }
-
-      state.trackingEnabled = true;
-      state.lastAlertedDiff = null;
-
-      setVerifyBtnActive(true);
-      startPolling();
-      checkUserAlert(state.current_ticket);
-    }
-
-    verifyBtn.addEventListener('click', startTrackingAndCheck);
-
-    myTicketInput.addEventListener('input', () => { stopTrackingHard(); });
-    thresholdInput.addEventListener('input', () => { stopTrackingHard(); updateThresholdConstraints({ clamp:true }); });
-
-    /***********************
-     * Ticket render
-     ***********************/
-    function setTicket(val) {
-      if (val === null || typeof val === "undefined") return;
-
-      const oldShown = queueNumEl.textContent;
-      state.current_ticket = Number(val);
-
-      renderTicketNumber();
-
-      if (state.trackingEnabled && !state.userEditing && !state.systemClosed) {
-        checkUserAlert(state.current_ticket);
-      }
-
-      if (!state.systemClosed && oldShown !== '--' && oldShown !== String(state.current_ticket)) {
-        triggerUpdateAnimation();
-      }
-    }
-
-    /***********************
-     * Fetch meta once + close checks
-     ***********************/
-    async function fetchMetaOnce() {
-      try {
-        const res = await fetch(META_URL, { cache:"no-store" });
-        if (res.ok) {
-          const meta = await res.json();
-          if (meta && typeof meta === "object") {
-            if ("esp32_last_seen_ms" in meta) state.esp32_last_seen_ms = meta.esp32_last_seen_ms;
-            if ("last_request_ms" in meta) state.last_request_ms = meta.last_request_ms;
-            state.metaLoaded = true;
-          }
-        }
-      } catch {}
-      await evaluateClosedState();
-    }
-
-    /***********************
-     * SSE stream (FIXED: no offline flicker)
-     ***********************/
-    let es = null;
-    let reconnectTimer = null;
-
-    function scheduleReconnect() {
-      if (reconnectTimer) return;
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = null;
-        connectStream();
-      }, 4000);
-    }
-
-    async function applyStreamPayload(payload) {
-      if (!payload || typeof payload !== "object") return;
-      const { path, data } = payload;
-
-      if (path === "/") {
-        if (data && typeof data === "object") {
-          if ("current_ticket" in data) setTicket(data.current_ticket);
-
-          if (data.meta && typeof data.meta === "object") {
-            if ("esp32_last_seen_ms" in data.meta) state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
-            if ("last_request_ms" in data.meta) state.last_request_ms = data.meta.last_request_ms;
-            state.metaLoaded = true;
-            await evaluateClosedState();
-          }
-        }
-        return;
-      }
-
-      if (path === "/current_ticket") {
-        setTicket(data);
-        return;
-      }
-
-      if (path === "/meta") {
-        if (data && typeof data === "object") {
-          if ("esp32_last_seen_ms" in data) state.esp32_last_seen_ms = data.esp32_last_seen_ms;
-          if ("last_request_ms" in data) state.last_request_ms = data.meta ? data.meta.last_request_ms : data.last_request_ms;
-          state.metaLoaded = true;
-          await evaluateClosedState();
-        }
-        return;
-      }
-
-      if (path === "/meta/esp32_last_seen_ms") {
-        state.esp32_last_seen_ms = data;
-        state.metaLoaded = true;
-        await evaluateClosedState();
-        return;
-      }
-
-      if (path === "/meta/last_request_ms") {
-        state.last_request_ms = data;
-        state.metaLoaded = true;
-        await evaluateClosedState();
-        return;
-      }
-    }
-
-    function connectStream() {
-      if (es) {
-        try { es.close(); } catch {}
-        es = null;
-      }
-
-      if (!state.isOnline) {
-        setStatus("Connexion au système...", "جارٍ الاتصال بالنظام...");
-      }
-
-      try {
-        es = new EventSource(STREAM_URL);
-
-        es.onopen = () => {
-          cancelOfflineUI();
-          setOnline(true);
-        };
-
-        es.addEventListener("put",   (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-        es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-        es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-
-        es.onerror = () => {
-          requestOfflineUI();
-          scheduleReconnect();
-        };
-      } catch {
-        requestOfflineUI();
-        scheduleReconnect();
-      }
-    }
-
-    /***********************
-     * Initial fetch
-     ***********************/
-    async function initialFetch() {
-      try {
-        const res = await fetch(QUEUE_URL, { cache: "no-store" });
-        if (res.ok) {
-          const data = await res.json();
-          if (data && typeof data === "object") {
-            if ("current_ticket" in data) setTicket(data.current_ticket);
-            if (data.meta && typeof data.meta === "object") {
-              if ("esp32_last_seen_ms" in data.meta) state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
-              if ("last_request_ms" in data.meta) state.last_request_ms = data.meta.last_request_ms;
-              state.metaLoaded = true;
-            }
-          }
-        }
-      } catch {}
-
-      if (!state.metaLoaded) await fetchMetaOnce();
-      else await evaluateClosedState();
-    }
-
-    setInterval(() => {
-      if (!state.metaLoaded) return;
-      evaluateClosedState();
-    }, CHECK_MS);
-
-    document.addEventListener("visibilitychange", async () => {
-      if (document.visibilityState === "visible") {
-        await fetchServerOffset();
-        await initialFetch();
-        connectStream();
-      }
-      if (state.trackingEnabled && !state.systemClosed) startPolling();
-      else stopPolling();
-    });
-
-    (async function start() {
-      setStatus("Connexion en cours...", "جارٍ الاتصال...");
-      await fetchServerOffset();
-      await initialFetch();
-      connectStream();
-      renderTicketNumber();
-      updateStatusUI();
-      setInputsFrozen(state.systemClosed);
-    })();
-  </script>
+  <div class="card">
+    <h1 class="page-title">
+      <div class="bi center">
+        <span class="ar" lang="ar">رقم التذكرة الحالي</span>
+        <span class="fr" lang="fr">Numéro de ticket actuel</span>
+      </div>
+    </h1>
+
+    <div class="number-box">
+      <div class="number" id="queueNum">--</div>
+    </div>
+
+    <div class="user-section">
+      <h3>
+        <div class="bi center">
+          <span class="ar" lang="ar">تتبُّع تذكرتك</span>
+          <span class="fr" lang="fr">Suivi de votre ticket</span>
+        </div>
+      </h3>
+
+      <div class="input-group">
+        <label for="myTicketInput">
+          <div class="bi">
+            <span class="ar" lang="ar">رقم تذكرتك</span>
+            <span class="fr" lang="fr">Votre numéro de ticket</span>
+          </div>
+        </label>
+        <input type="number" id="myTicketInput" placeholder="Ex : 45 — مثال: 45" min="1" />
+      </div>
+
+      <div class="input-group">
+        <label for="thresholdInput">
+          <div class="bi">
+            <span class="ar" lang="ar">هامش التنبيه (عدد الأشخاص قبلك)</span>
+            <span class="fr" lang="fr">Marge d'alerte (personnes avant vous)</span>
+          </div>
+        </label>
+        <input type="number" id="thresholdInput" value="10" min="0" />
+      </div>
+
+      <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
+        <span class="bi center">
+          <span class="ar" id="verifyBtnAr" lang="ar">تتبّع</span>
+          <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
+        </span>
+      </button>
+
+      <div id="alertBanner" class="alert-banner"></div>
+    </div>
+
+    <div class="status-container" id="statusContainer">
+      <span class="status-dot"></span>
+      <span id="statusText" style="width:100%;"></span>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * Firebase REST
+     ***********************/
+    const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
+    const AUTH_TOKEN = "";
+
+    function makeUrl(path, params = {}) {
+      const url = new URL(DB_BASE.replace(/\/$/, "") + "/" + path.replace(/^\//, "") + ".json");
+      Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)));
+      if (AUTH_TOKEN) url.searchParams.set("auth", AUTH_TOKEN);
+      return url.toString();
+    }
+
+    const STREAM_URL  = makeUrl("queue", { print: "silent" });
+    const QUEUE_URL   = makeUrl("queue");
+    const TICKET_URL  = makeUrl("queue/current_ticket");
+    const OFFSET_URL  = makeUrl(".info/serverTimeOffset");
+
+    // MOD: one meta endpoint instead of two
+    const META_URL = makeUrl("queue/meta");
+
+    const ESP32_LAST_SEEN_URL = makeUrl("queue/meta/esp32_last_seen_ms");
+    const LAST_REQUEST_URL    = makeUrl("queue/meta/last_request_ms");
+
+    /***********************
+     * Policy
+     ***********************/
+    const HEARTBEAT_INTERVAL_MIN = 5;
+    const HEARTBEAT_MISSED_LIMIT = 2;
+    const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000;
+
+    const REQUEST_INACTIVITY_MIN = 30;
+    const REQUEST_CLOSE_MS = REQUEST_INACTIVITY_MIN * 60 * 1000;
+
+    const CHECK_MS = 30 * 1000;
+
+    const POLL_VISIBLE_MS = 8000;
+    const POLL_HIDDEN_MS  = 15000;
+
+    /***********************
+     * FIX for Online/Offline flicker (Debounce)
+     ***********************/
+    const OFFLINE_GRACE_MS = 2500;
+    let offlineUiTimer = null;
+
+    function requestOfflineUI() {
+      if (offlineUiTimer) return;
+      offlineUiTimer = setTimeout(() => {
+        offlineUiTimer = null;
+        if (!es || es.readyState !== 1) {
+          setOnline(false);
+        }
+      }, OFFLINE_GRACE_MS);
+    }
+
+    function cancelOfflineUI() {
+      if (!offlineUiTimer) return;
+      clearTimeout(offlineUiTimer);
+      offlineUiTimer = null;
+    }
+
+    /***********************
+     * Elements
+     ***********************/
+    const queueNumEl = document.getElementById('queueNum');
+    const statusContainer = document.getElementById('statusContainer');
+    const statusText = document.getElementById('statusText');
+    const myTicketInput = document.getElementById('myTicketInput');
+    const thresholdInput = document.getElementById('thresholdInput');
+    const alertBanner = document.getElementById('alertBanner');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const verifyBtnAr = document.getElementById('verifyBtnAr');
+    const verifyBtnFr = document.getElementById('verifyBtnFr');
+
+    /***********************
+     * State
+     ***********************/
+    const state = {
+      current_ticket: null,
+      lastAlertedDiff: null,
+      trackingEnabled: false,
+      userEditing: false,
+
+      isOnline: false,
+      systemClosed: false,
+
+      serverOffset: 0,
+
+      esp32_last_seen_ms: null,
+      last_request_ms: null,
+
+      metaLoaded: false
+    };
+
+    /***********************
+     * UI helpers
+     ***********************/
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function biHTML(frText, arText, extraClass = "small") {
+      return `
+        <span class="bi center ${extraClass}">
+          <span class="ar" lang="ar">${escapeHtml(arText)}</span>
+          <span class="fr" lang="fr">${escapeHtml(frText)}</span>
+        </span>
+      `;
+    }
+
+    function setStatus(frText, arText) {
+      statusText.innerHTML = biHTML(frText, arText, "small");
+    }
+
+    function setBanner(frText, arText, { active = true, urgent = false } = {}) {
+      alertBanner.innerHTML = biHTML(frText, arText, "small");
+      alertBanner.classList.toggle('active', !!active);
+      alertBanner.classList.toggle('urgent', !!urgent);
+    }
+
+    function clearBanner() {
+      alertBanner.classList.remove('active', 'urgent');
+      alertBanner.innerHTML = "";
+    }
+
+    function setVerifyBtnActive(isActive){
+      verifyBtn.classList.toggle('active', !!isActive);
+      verifyBtn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      if (isActive) {
+        verifyBtnAr.textContent = "يتم التتبع الآن";
+        verifyBtnFr.textContent = "Suivi en cours";
+      } else {
+        verifyBtnAr.textContent = "تتبّع";
+        verifyBtnFr.textContent = "Suivi";
+      }
+    }
+    setVerifyBtnActive(false);
+
+    function triggerUpdateAnimation() {
+      queueNumEl.classList.add('updated');
+      setTimeout(() => queueNumEl.classList.remove('updated'), 350);
+    }
+
+    function setInputsFrozen(frozen) {
+      const f = !!frozen;
+      if (f) {
+        try { myTicketInput.blur(); } catch {}
+        try { thresholdInput.blur(); } catch {}
+      }
+      myTicketInput.disabled = f;
+      thresholdInput.disabled = f;
+    }
+
+    /***********************
+     * Server time
+     ***********************/
+    async function fetchServerOffset() {
+      try {
+        const res = await fetch(OFFSET_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("offset fetch failed");
+        const offset = await res.json();
+        if (typeof offset === "number" && Number.isFinite(offset)) state.serverOffset = offset;
+      } catch {}
+    }
+
+    function serverNow() {
+      return Date.now() + (state.serverOffset || 0);
+    }
+
+    /***********************
+     * Closed logic (Status only)
+     ***********************/
+    function computeClosedReasons() {
+      const now = serverNow();
+      const lastSeen = Number(state.esp32_last_seen_ms);
+      const lastReq  = Number(state.last_request_ms);
+
+      const hbStale  = !Number.isFinite(lastSeen) ? true : (now - lastSeen >= HEARTBEAT_CLOSE_MS);
+      const reqStale = !Number.isFinite(lastReq)  ? true : (now - lastReq  >= REQUEST_CLOSE_MS);
+
+      return { hbStale, reqStale };
+    }
+
+    function updateStatusUI() {
+      statusContainer.classList.remove("online", "closed");
+
+      if (!state.isOnline) {
+        setStatus("Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+        return;
+      }
+
+      if (state.systemClosed) {
+        statusContainer.classList.add("closed");
+        setStatus("Système fermé", "النظام مغلق");
+        return;
+      }
+
+      statusContainer.classList.add("online");
+      setStatus("Système connecté", "النظام متصل");
+    }
+
+    function setOnline(isOnline) {
+      state.isOnline = !!isOnline;
+      updateStatusUI();
+    }
+
+    function renderTicketNumber() {
+      if (state.systemClosed) {
+        queueNumEl.textContent = "--";
+        queueNumEl.classList.add("closed");
+      } else {
+        queueNumEl.classList.remove("closed");
+        const v = Number(state.current_ticket);
+        queueNumEl.textContent = Number.isFinite(v) ? String(v) : "--";
+      }
+    }
+
+    let pollTimer = null;
+
+    function stopPolling() {
+      if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    function stopTrackingHard() {
+      state.trackingEnabled = false;
+      state.lastAlertedDiff = null;
+      clearBanner();
+      setVerifyBtnActive(false);
+      stopPolling();
+    }
+
+    function setSystemClosed(isClosed) {
+      const next = !!isClosed;
+      if (state.systemClosed === next) return;
+      state.systemClosed = next;
+
+      if (next) {
+        stopTrackingHard();
+        verifyBtn.disabled = true;
+        setInputsFrozen(true);
+      } else {
+        verifyBtn.disabled = false;
+        setInputsFrozen(false);
+        updateThresholdConstraints({ clamp: true });
+      }
+
+      renderTicketNumber();
+      updateStatusUI();
+    }
+
+    async function evaluateClosedState() {
+      if (!state.metaLoaded) return;
+      const { hbStale, reqStale } = computeClosedReasons();
+      setSystemClosed(hbStale || reqStale);
+    }
+
+    /***********************
+     * Threshold clamp
+     ***********************/
+    function getNumbersForDiff() {
+      const myTicket = parseInt(myTicketInput.value, 10);
+      const currentTicket = Number(state.current_ticket);
+      if (!Number.isFinite(currentTicket)) return { ok:false };
+      if (Number.isNaN(myTicket) || myTicket < 1) return { ok:false };
+      return { ok:true, myTicket, currentTicket };
+    }
+
+    function updateThresholdConstraints({ clamp = false } = {}) {
+      const info = getNumbersForDiff();
+      if (!info.ok) {
+        thresholdInput.removeAttribute("max");
+        return;
+      }
+      const diff = info.myTicket - info.currentTicket;
+      const maxAllowed = Math.max(0, diff);
+      thresholdInput.max = String(maxAllowed);
+
+      if (!clamp) return;
+
+      const thr = parseInt(thresholdInput.value, 10);
+      if (Number.isNaN(thr)) return;
+
+      const clampedValue = Math.min(Math.max(0, thr), maxAllowed);
+      if (clampedValue !== thr) thresholdInput.value = String(clampedValue);
+    }
+
+    /***********************
+     * Notifications (minimal)
+     ***********************/
+    async function ensureNotificationsEnabled() {
+      if (!("Notification" in window)) return false;
+      if (!window.isSecureContext) return false;
+      if (Notification.permission === "granted") return true;
+      if (Notification.permission === "denied") return false;
+      const p = await Notification.requestPermission().catch(() => "denied");
+      return p === "granted";
+    }
+
+    /***********************
+     * Audio
+     ***********************/
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') return audioCtx.resume();
+      return Promise.resolve();
+    }
+
+    function playAlertBeep() {
+      ensureAudio().then(() => {
+        if (!audioCtx) return;
+        const playTone = (freq, time, duration) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, time);
+          gain.gain.setValueAtTime(0.25, time);
+          gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(time);
+          osc.stop(time + duration);
+        };
+        const now = audioCtx.currentTime;
+        playTone(987.77, now, 0.25);
+        playTone(1318.51, now + 0.3, 0.4);
+      }).catch(() => {});
+    }
+
+    ["pointerdown","touchstart","mousedown","keydown"].forEach(evt => {
+      window.addEventListener(evt, () => ensureAudio().catch(()=>{}), { once:true, passive:true });
+    });
+
+    /***********************
+     * Alerts (Banner only)
+     ***********************/
+    function checkUserAlert(currentTicket) {
+      if (state.systemClosed) return;
+
+      if (!state.userEditing) updateThresholdConstraints({ clamp: true });
+
+      const myTicket = parseInt(myTicketInput.value, 10);
+      const thresholdParsed = parseInt(thresholdInput.value, 10);
+      const threshold = Number.isNaN(thresholdParsed) ? 10 : thresholdParsed;
+
+      if (isNaN(myTicket) || currentTicket === null || isNaN(Number(currentTicket))) {
+        clearBanner();
+        state.lastAlertedDiff = null;
+        return;
+      }
+
+      const diff = myTicket - Number(currentTicket);
+
+      if (diff === 0) {
+        setBanner("C'est votre tour ! Présentez-vous au guichet.", "لقد حان دورك! يُرجى التوجّه إلى الشباك.", { active:true, urgent:true });
+        if (state.lastAlertedDiff !== 0) {
+          playAlertBeep();
+          state.lastAlertedDiff = 0;
+        }
+      } else if (diff > 0 && diff <= threshold) {
+        setBanner(`Attention ! Il reste ${diff} personne(s) avant votre tour.`, `تنبيه! مازال ${diff} شخص/أشخاص قبل دورك.`, { active:true, urgent:false });
+        if (state.lastAlertedDiff !== diff) {
+          playAlertBeep();
+          state.lastAlertedDiff = diff;
+        }
+      } else if (diff < 0) {
+        setBanner("Votre tour est déjà passé.", "لقد فات دورك.", { active:true, urgent:true });
+        state.lastAlertedDiff = diff;
+      } else {
+        clearBanner();
+        state.lastAlertedDiff = diff;
+      }
+    }
+
+    /***********************
+     * Polling
+     ***********************/
+    async function pollCurrentTicketOnce() {
+      if (state.systemClosed) return;
+      try {
+        const res = await fetch(TICKET_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("poll failed");
+        const ticket = await res.json();
+        setTicket(ticket);
+      } catch {}
+    }
+
+    function startPolling() {
+      stopPolling();
+      const period = (document.visibilityState === "visible") ? POLL_VISIBLE_MS : POLL_HIDDEN_MS;
+      pollTimer = setInterval(pollCurrentTicketOnce, period);
+      pollCurrentTicketOnce();
+    }
+
+    /***********************
+     * Tracking button
+     ***********************/
+    function inputsAreValidOrShowMessage(){
+      const myTicket = parseInt(myTicketInput.value, 10);
+      const threshold = parseInt(thresholdInput.value, 10);
+
+      if (isNaN(myTicket) || myTicket < 1) {
+        setBanner("Veuillez saisir un numéro de ticket valide.", "يرجى إدخال رقم تذكرة صحيح.", { active:true, urgent:true });
+        return false;
+      }
+      if (isNaN(threshold) || threshold < 0) {
+        setBanner("Veuillez saisir une marge d'alerte valide (>= 0).", "يرجى إدخال هامش تنبيه صحيح (>= 0).", { active:true, urgent:true });
+        return false;
+      }
+      updateThresholdConstraints({ clamp:true });
+      return true;
+    }
+
+    async function startTrackingAndCheck() {
+      if (state.systemClosed) return;
+
+      await ensureNotificationsEnabled();
+
+      if (!inputsAreValidOrShowMessage()) {
+        setVerifyBtnActive(false);
+        return;
+      }
+
+      state.trackingEnabled = true;
+      state.lastAlertedDiff = null;
+
+      setVerifyBtnActive(true);
+      startPolling();
+      checkUserAlert(state.current_ticket);
+    }
+
+    verifyBtn.addEventListener('click', startTrackingAndCheck);
+
+    myTicketInput.addEventListener('input', () => { stopTrackingHard(); });
+    thresholdInput.addEventListener('input', () => { stopTrackingHard(); updateThresholdConstraints({ clamp:true }); });
+
+    /***********************
+     * Ticket render
+     ***********************/
+    function setTicket(val) {
+      if (val === null || typeof val === "undefined") return;
+
+      const oldShown = queueNumEl.textContent;
+      state.current_ticket = Number(val);
+
+      renderTicketNumber();
+
+      if (state.trackingEnabled && !state.userEditing && !state.systemClosed) {
+        checkUserAlert(state.current_ticket);
+      }
+
+      if (!state.systemClosed && oldShown !== '--' && oldShown !== String(state.current_ticket)) {
+        triggerUpdateAnimation();
+      }
+    }
+
+    /***********************
+     * Fetch meta once + close checks
+     ***********************/
+    async function fetchMetaOnce() {
+      try {
+        const res = await fetch(META_URL, { cache:"no-store" });
+        if (res.ok) {
+          const meta = await res.json();
+          if (meta && typeof meta === "object") {
+            if ("esp32_last_seen_ms" in meta) state.esp32_last_seen_ms = meta.esp32_last_seen_ms;
+            if ("last_request_ms" in meta) state.last_request_ms = meta.last_request_ms;
+            state.metaLoaded = true;
+          }
+        }
+      } catch {}
+      await evaluateClosedState();
+    }
+
+    /***********************
+     * SSE stream (FIXED: no offline flicker)
+     ***********************/
+    let es = null;
+    let reconnectTimer = null;
+
+    function scheduleReconnect() {
+      if (reconnectTimer) return;
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connectStream();
+      }, 4000);
+    }
+
+    async function applyStreamPayload(payload) {
+      if (!payload || typeof payload !== "object") return;
+      const { path, data } = payload;
+
+      if (path === "/") {
+        if (data && typeof data === "object") {
+          if ("current_ticket" in data) setTicket(data.current_ticket);
+
+          if (data.meta && typeof data.meta === "object") {
+            if ("esp32_last_seen_ms" in data.meta) state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
+            if ("last_request_ms" in data.meta) state.last_request_ms = data.meta.last_request_ms;
+            state.metaLoaded = true;
+            await evaluateClosedState();
+          }
+        }
+        return;
+      }
+
+      if (path === "/current_ticket") {
+        setTicket(data);
+        return;
+      }
+
+      if (path === "/meta") {
+        if (data && typeof data === "object") {
+          if ("esp32_last_seen_ms" in data) state.esp32_last_seen_ms = data.esp32_last_seen_ms;
+          if ("last_request_ms" in data) state.last_request_ms = data.last_request_ms;
+          state.metaLoaded = true;
+          await evaluateClosedState();
+        }
+        return;
+      }
+
+      if (path === "/meta/esp32_last_seen_ms") {
+        state.esp32_last_seen_ms = data;
+        state.metaLoaded = true;
+        await evaluateClosedState();
+        return;
+      }
+
+      if (path === "/meta/last_request_ms") {
+        state.last_request_ms = data;
+        state.metaLoaded = true;
+        await evaluateClosedState();
+        return;
+      }
+    }
+
+    function connectStream() {
+      if (es) {
+        try { es.close(); } catch {}
+        es = null;
+      }
+
+      if (!state.isOnline) {
+        setStatus("Connexion au système...", "جارٍ الاتصال بالنظام...");
+      }
+
+      try {
+        es = new EventSource(STREAM_URL);
+
+        es.onopen = () => {
+          cancelOfflineUI();
+          setOnline(true);
+        };
+
+        es.addEventListener("put",   (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
+        es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
+        es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
+
+        es.onerror = () => {
+          requestOfflineUI();
+          scheduleReconnect();
+        };
+      } catch {
+        requestOfflineUI();
+        scheduleReconnect();
+      }
+    }
+
+    /***********************
+     * Initial fetch
+     ***********************/
+    async function initialFetch() {
+      try {
+        const res = await fetch(QUEUE_URL, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === "object") {
+            if ("current_ticket" in data) setTicket(data.current_ticket);
+            if (data.meta && typeof data.meta === "object") {
+              if ("esp32_last_seen_ms" in data.meta) state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
+              if ("last_request_ms" in data.meta) state.last_request_ms = data.meta.last_request_ms;
+              state.metaLoaded = true;
+            }
+          }
+        }
+      } catch {}
+
+      if (!state.metaLoaded) await fetchMetaOnce();
+      else await evaluateClosedState();
+    }
+
+    setInterval(() => {
+      if (!state.metaLoaded) return;
+      evaluateClosedState();
+    }, CHECK_MS);
+
+    document.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState === "visible") {
+        await fetchServerOffset();
+        await initialFetch();
+        connectStream();
+      }
+      if (state.trackingEnabled && !state.systemClosed) startPolling();
+      else stopPolling();
+    });
+
+    (async function start() {
+      setStatus("Connexion en cours...", "جارٍ الاتصال...");
+      await fetchServerOffset();
+      await initialFetch();
+      connectStream();
+      renderTicketNumber();
+      updateStatusUI();
+      setInputsFrozen(state.systemClosed);
+    })();
+  </script>
 </body>
 </html>
