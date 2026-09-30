@@ -152,11 +152,37 @@
       background-color:var(--closed-dot);
       box-shadow:0 0 0 4px rgba(245,158,11,0.14);
     }
+
+    /* إضافة تنسيق خاص لرسالة أبولبابة */
+    .abolouhaba-banner {
+      background: linear-gradient(135deg, #eff6ff, #dbeafe);
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+      padding: 10px 14px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+      animation: pulse-soft 2s infinite;
+    }
+    @keyframes pulse-soft {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.01); }
+      100% { transform: scale(1); }
+    }
   </style>
 </head>
 
 <body>
   <div class="card">
+    <!-- رسالة مخصصة لأبولبابة -->
+    <div class="abolouhaba-banner">
+      <div class="bi center">
+        <span class="ar" lang="ar">برا أرقد يا بلبابة راك تقرى! 📚😂</span>
+        <span class="fr" lang="fr">Va dormir ô Lababa, tu as cours demain !</span>
+      </div>
+    </div>
+
     <h1 class="page-title">
       <div class="bi center">
         <span class="ar" lang="ar">رقم التذكرة الحالي</span>
@@ -171,7 +197,7 @@
     <div class="user-section">
       <h3>
         <div class="bi center">
-          <span class="ar" lang="ar">تتبُّع تذكرتك</span>
+          <span class="ar" lang="ar">تتبُّع تذكرتك</span>
           <span class="fr" lang="fr">Suivi de votre ticket</span>
         </div>
       </h3>
@@ -227,11 +253,10 @@
     }
 
     const STREAM_URL  = makeUrl("queue", { print: "silent" });
-    const QUEUE_URL   = makeUrl("queue");
-    const TICKET_URL  = makeUrl("queue/current_ticket");
-    const OFFSET_URL  = makeUrl(".info/serverTimeOffset");
+    const QUEUE_URL    = makeUrl("queue");
+    const TICKET_URL   = makeUrl("queue/current_ticket");
+    const OFFSET_URL   = makeUrl(".info/serverTimeOffset");
 
-    // MOD: one meta endpoint instead of two
     const META_URL = makeUrl("queue/meta");
 
     const ESP32_LAST_SEEN_URL = makeUrl("queue/meta/esp32_last_seen_ms");
@@ -732,7 +757,7 @@
       if (path === "/meta") {
         if (data && typeof data === "object") {
           if ("esp32_last_seen_ms" in data) state.esp32_last_seen_ms = data.esp32_last_seen_ms;
-          if ("last_request_ms" in data) state.last_request_ms = data.last_request_ms;
+          if ("last_request_ms" in data) state.last_request_ms = data.meta ? data.meta.last_request_ms : data.last_request_ms;
           state.metaLoaded = true;
           await evaluateClosedState();
         }
@@ -774,7 +799,7 @@
 
         es.addEventListener("put",   (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
         es.addEventListener("patch", (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
-        es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} };
+        es.onmessage = (e) => { try { applyStreamPayload(JSON.parse(e.data)); } catch {} });
 
         es.onerror = () => {
           requestOfflineUI();
