@@ -240,11 +240,11 @@
     /***********************
      * Policy
      ***********************/
-    const HEARTBEAT_INTERVAL_MIN = 5;
+    const HEARTBEAT_INTERVAL_MIN = 0.5;
     const HEARTBEAT_MISSED_LIMIT = 2;
     const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000;
 
-    const REQUEST_INACTIVITY_MIN = 30;
+    const REQUEST_INACTIVITY_MIN = 2;
     const REQUEST_CLOSE_MS = REQUEST_INACTIVITY_MIN * 60 * 1000;
 
     const CHECK_MS = 30 * 1000;
