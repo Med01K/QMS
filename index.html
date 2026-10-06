@@ -720,11 +720,11 @@
       } catch {}
     }
 
-    function testSetTicket(n) {
+    async function testSetTicket(n) {
       const v = Math.max(1, Math.floor(Number(n) || 1));
       testSim.ticket = v;
       if (testTicketInput) testTicketInput.value = String(v);
-      setTicket(v);
+      await setTicket(v);
       testSaveTicket();
     }
 
@@ -1098,54 +1098,116 @@
      * Notifications (Permission + SW showNotification)
      ***********************/
     async function ensureNotificationsEnabled() {
-      if (!("Notification" in window)) return false;
-      if (!window.isSecureContext) return false;
+      if (!("Notification" in window)) {
+        console.warn("[QMS] Notifications API غير مدعوم في هذا المتصفح.");
+        return false;
+      }
+
+      if (!window.isSecureContext) {
+        console.warn("[QMS] الصفحة ليست Secure Context. استعمل HTTPS.");
+        return false;
+      }
 
       if (Notification.permission === "granted") {
         return true;
       }
 
       if (Notification.permission === "denied") {
+        console.warn("[QMS] إذن الإشعارات مرفوض من المتصفح.");
         return false;
       }
 
-      const permission = await Notification
-        .requestPermission()
-        .catch(() => "denied");
-
-      return permission === "granted";
+      try {
+        const permission = await Notification.requestPermission();
+        console.log("[QMS] Notification permission =", permission);
+        return permission === "granted";
+      } catch (err) {
+        console.error("[QMS] فشل طلب إذن الإشعارات:", err);
+        return false;
+      }
     }
 
-    async function sendNotification(frText, arText, { urgent = false, tag = "queue-alert" } = {}) {
+    async function sendNotification(
+      frText,
+      arText,
+      { urgent = false, tag = "queue-alert" } = {}
+    ) {
+      const title = urgent ? "تنبيه / Alerte" : "إشعار / Notification";
+      const body = `${arText}\n${frText}`;
+
       try {
-        if (!("Notification" in window)) return false;
-        if (!window.isSecureContext) return false;
-        if (Notification.permission !== "granted") return false;
+        if (!("Notification" in window)) {
+          console.error("[QMS] Notifications API غير موجود.");
+          return false;
+        }
 
-        const title = urgent ? "تنبيه / Alerte" : "إشعار / Notification";
-        const body = `${arText}\n${frText}`;
+        if (!window.isSecureContext) {
+          console.error("[QMS] Secure Context غير متوفر.");
+          return false;
+        }
 
+        console.log("[QMS] محاولة إرسال إشعار:", {
+          title,
+          body,
+          permission: Notification.permission,
+          tag
+        });
+
+        if (Notification.permission !== "granted") {
+          console.warn(
+            "[QMS] لم يُرسل الإشعار لأن permission =",
+            Notification.permission
+          );
+          return false;
+        }
+
+        // الأفضل: انتظار الـ Service Worker الجاهز فعليًا.
         if ("serviceWorker" in navigator) {
-          let reg = await navigator.serviceWorker.getRegistration();
-          if (!reg) {
-            try { reg = await navigator.serviceWorker.register(SW_URL); } catch {}
+          let reg = null;
+
+          try {
+            reg = await navigator.serviceWorker.ready;
+          } catch (err) {
+            console.warn("[QMS] navigator.serviceWorker.ready فشل:", err);
           }
-          if (reg && reg.showNotification) {
+
+          if (!reg) {
+            try {
+              reg = await navigator.serviceWorker.getRegistration("/");
+            } catch (err) {
+              console.warn("[QMS] getRegistration فشل:", err);
+            }
+          }
+
+          if (reg && typeof reg.showNotification === "function") {
             await reg.showNotification(title, {
               body,
               tag,
               renotify: true,
-              icon: "logo.png",
+              requireInteraction: urgent,
+              icon: "/logo.png",
+              badge: "/logo.png",
               vibrate: urgent ? [200, 100, 200, 100, 200] : [150],
-              data: { url: "./" }
+              data: { url: "/" }
             });
+
+            console.log("[QMS] تم إنشاء إشعار Service Worker بنجاح.");
             return true;
           }
         }
 
-        new Notification(title, { body, tag, renotify: true, icon: "logo.png" });
+        // Fallback للمتصفحات التي لا توفر SW notification.
+        const n = new Notification(title, {
+          body,
+          tag,
+          renotify: true,
+          icon: "/logo.png"
+        });
+
+        console.log("[QMS] تم إنشاء إشعار Notification API بنجاح.", n);
         return true;
-      } catch {
+      } catch (err) {
+        console.error("[QMS] فشل إنشاء الإشعار:", err);
         return false;
       }
     }
@@ -1220,7 +1282,7 @@
     /***********************
      * تنبيهات دور المستخدم
      ***********************/
-    function checkUserAlert(currentTicket) {
+    async function checkUserAlert(currentTicket) {
       if (state.systemClosed) return;
 
       if (!state.userEditing) {
@@ -1253,6 +1315,18 @@
 
       const diff = myTicket - Number(currentTicket);
 
+      console.log("[QMS] checkUserAlert:", {
+        myTicket,
+        currentTicket: Number(currentTicket),
+        diff,
+        threshold,
+        permission:
+          ("Notification" in window)
+            ? Notification.permission
+            : "unsupported",
+        trackingEnabled: state.trackingEnabled
+      });
+
       if (diff === 0) {
         const fr = "C'est votre tour ! Présentez-vous au guichet.";
         const ar = "لقد حان دورك! يُرجى التوجّه إلى الشباك.";
@@ -1260,7 +1334,10 @@
 
         if (state.lastAlertedDiff !== 0) {
           playAlertBeep();
-          sendNotification(fr, ar, { urgent: true, tag: "queue-urgent" }).catch(() => {});
+          await sendNotification(fr, ar, {
+            urgent: true,
+            tag: "queue-urgent"
+          });
           state.lastAlertedDiff = 0;
         }
       } else if (diff > 0 && diff <= threshold) {
@@ -1270,7 +1347,10 @@
 
         if (state.lastAlertedDiff !== diff) {
           playAlertBeep();
-          sendNotification(fr, ar, { urgent: false, tag: "queue-soon" }).catch(() => {});
+          await sendNotification(fr, ar, {
+            urgent: false,
+            tag: "queue-soon"
+          });
           state.lastAlertedDiff = diff;
         }
       } else if (diff < 0) {
@@ -1279,7 +1359,10 @@
         setBanner(fr, ar, { active: true, urgent: true });
 
         if (state.lastAlertedDiff === null || state.lastAlertedDiff >= 0) {
-          sendNotification(fr, ar, { urgent: true, tag: "queue-missed" }).catch(() => {});
+          await sendNotification(fr, ar, {
+            urgent: true,
+            tag: "queue-missed"
+          });
         }
 
         state.lastAlertedDiff = diff;
@@ -1307,7 +1390,7 @@
 
       // في وضع الاختبار: نقرأ من القيمة المحلية بدل Firebase
       if (TEST_MODE) {
-        setTicket(testSim.ticket);
+        await setTicket(testSim.ticket);
         return;
       }
 
@@ -1322,7 +1405,7 @@
         }
 
         const ticket = await response.json();
-        setTicket(ticket);
+        await setTicket(ticket);
       } catch {}
     }
 
@@ -1381,7 +1464,7 @@
       return true;
     }
 
-    function startTrackingOnly() {
+    async function startTrackingOnly() {
       // إذا بدأت المتابعة مسبقًا لا تفعل شيئًا (بدون إيقاف)
       if (state.trackingEnabled) return;
 
@@ -1390,16 +1473,32 @@
 
       saveSettings();
 
+      // نطلب الإذن ونجهز الـ Service Worker أولًا،
+      // ثم نبدأ المراقبة. هذا يمنع Race Condition في أول تنبيه.
+      const permissionGranted = await ensureNotificationsEnabled();
+
+      if (!permissionGranted) {
+        setBanner(
+          "Veuillez autoriser les notifications dans les paramètres du navigateur.",
+          "يرجى السماح بالإشعارات من إعدادات المتصفح حتى تعمل تنبيهات الدور.",
+          { active: true, urgent: true }
+        );
+        setVerifyBtnActive(false);
+        return;
+      }
+
+      await registerServiceWorker();
+
       state.trackingEnabled = true;
       state.lastAlertedDiff = null;
 
       setVerifyBtnActive(true);
 
-      registerServiceWorker().catch(() => {});
-      ensureNotificationsEnabled().catch(() => {});
-
+      // ابدأ polling بعد التأكد من الإشعارات.
       startPolling();
-      checkUserAlert(state.current_ticket);
+
+      // فحص فوري بعد تفعيل المتابعة.
+      await checkUserAlert(state.current_ticket);
     }
 
     verifyBtn.addEventListener("click", startTrackingOnly);
@@ -1457,7 +1556,7 @@
     /***********************
      * عرض رقم الصف
      ***********************/
-    function setTicket(value) {
+    async function setTicket(value) {
       if (
         value === null ||
         typeof value === "undefined"
@@ -1475,7 +1574,7 @@
         !state.userEditing &&
         !state.systemClosed
       ) {
-        checkUserAlert(state.current_ticket);
+        await checkUserAlert(state.current_ticket);
       }
 
       if (
@@ -1799,20 +1898,20 @@
       testSetTicket(testLoadTicket());
 
       // اربط أحداث لوحة الاختبار
-      testApplyBtn?.addEventListener("click", () => {
-        testSetTicket(testTicketInput.value);
+      testApplyBtn?.addEventListener("click", async () => {
+        await testSetTicket(testTicketInput.value);
       });
 
-      testDecBtn?.addEventListener("click", () => {
-        testSetTicket(testSim.ticket - 1);
+      testDecBtn?.addEventListener("click", async () => {
+        await testSetTicket(testSim.ticket - 1);
       });
 
-      testIncBtn?.addEventListener("click", () => {
-        testSetTicket(testSim.ticket + 1);
+      testIncBtn?.addEventListener("click", async () => {
+        await testSetTicket(testSim.ticket + 1);
       });
 
-      testTicketInput?.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") testSetTicket(testTicketInput.value);
+      testTicketInput?.addEventListener("keydown", async (e) => {
+        if (e.key === "Enter") await testSetTicket(testTicketInput.value);
       });
 
       testAutoToggle?.addEventListener("change", () => {
