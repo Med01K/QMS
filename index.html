@@ -959,32 +959,68 @@
       return Promise.resolve();
     }
 
-    function playAlertBeep() {
-      ensureAudio().then(() => {
-        if (!audioCtx) return;
+function playAlertBeep() {
+  ensureAudio().then(() => {
+    if (!audioCtx) return;
 
-        const playTone = (frequency, time, duration) => {
-          const oscillator = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
+    const playTone = (frequency, time, duration) => {
 
-          oscillator.type = "triangle";
-          oscillator.frequency.setValueAtTime(frequency, time);
+      const oscillator = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
 
-          gain.gain.setValueAtTime(0.25, time);
-          gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
+      // موجة غنية بالترددات
+      oscillator.type = "sawtooth";
 
-          oscillator.connect(gain);
-          gain.connect(audioCtx.destination);
+      oscillator.frequency.setValueAtTime(
+        frequency,
+        time
+      );
 
-          oscillator.start(time);
-          oscillator.stop(time + duration);
-        };
+      // تحسين وضوح الصوت
+      filter.type = "lowpass";
+      filter.frequency.value = 6000;
+      filter.Q.value = 0.5;
 
-        const now = audioCtx.currentTime;
-        playTone(987.77, now, 0.25);
-        playTone(1318.51, now + 0.3, 0.4);
-      }).catch(() => {});
-    }
+      // التحكم في مستوى الصوت
+      gain.gain.setValueAtTime(0.0001, time);
+
+      // ارتفاع تدريجي لتجنب الطقطقة
+      gain.gain.exponentialRampToValueAtTime(
+        0.10,
+        time + 0.02
+      );
+
+      // ثبات قصير للصوت
+      gain.gain.setValueAtTime(
+        0.10,
+        time + duration * 0.65
+      );
+
+      // انخفاض تدريجي
+      gain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        time + duration
+      );
+
+      oscillator.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      oscillator.start(time);
+      oscillator.stop(time + duration + 0.01);
+    };
+
+    const now = audioCtx.currentTime + 0.02;
+
+    // النغمة الأولى
+    playTone(987.77, now, 0.25);
+
+    // النغمة الثانية
+    playTone(1318.51, now + 0.30, 0.40);
+
+  }).catch(() => {});
+}
 
     ["pointerdown", "touchstart", "mousedown", "keydown"].forEach((eventName) => {
       window.addEventListener(eventName, () => ensureAudio().catch(() => {}), { once: true, passive: true });
