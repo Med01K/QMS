@@ -590,24 +590,58 @@
     const SW_URL = "/sw.js";
 
     // ✅ إصلاح مهم: نستخدم navigator.serviceWorker.ready لضمان أنه Active
-    let swReadyPromise = null;
-    async function getServiceWorkerReady() {
-      if (!("serviceWorker" in navigator)) return null;
+let swReadyPromise = null;
 
-      if (!swReadyPromise) {
-        swReadyPromise = (async () => {
-          try {
-            await navigator.serviceWorker.register(SW_URL, { scope: "/" });
-          } catch (e) {
-            // قد يفشل التسجيل لأسباب متعددة (مسار، HTTPS، إلخ)
-            qerr("SW register failed:", e?.name, e?.message, e);
-          }
+function waitMs(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-          try {
-            const reg = await navigator.serviceWorker.ready;
-            qlog("SW ready:", reg);
-            return reg;
-          } catch (e) {
+async function getServiceWorkerReady({ timeoutMs = 2500 } = {}) {
+  // SW لا يعمل بدون HTTPS (إلا localhost)
+  if (!("serviceWorker" in navigator)) return null;
+  if (!window.isSecureContext) return null;
+
+  if (swReadyPromise) return swReadyPromise;
+
+  swReadyPromise = (async () => {
+    try {
+      await navigator.serviceWorker.register(SW_URL, { scope: "/" });
+    } catch (e) {
+      qerr("SW register failed:", e?.name, e?.message, e);
+      return null;
+    }
+
+    try {
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        waitMs(timeoutMs).then(() => null)
+      ]);
+
+      if (!reg) {
+        qerr("SW ready timeout (no active worker yet).");
+        // محاولة أخيرة: قد يوجد Registration بدون ready
+        try {
+          return await navigator.serviceWorker.getRegistration();
+        } catch {
+          return null;
+        }
+      }
+
+      qlog("SW ready:", reg);
+      return reg;
+    } catch (e) {
+      qerr("SW ready failed:", e?.name, e?.message, e);
+      return null;
+    }
+  })();
+
+  const reg = await swReadyPromise;
+
+  // لو فشلنا لا نجمّدها للأبد (حتى يمكن إعادة المحاولة)
+  if (!reg) swReadyPromise = null;
+
+  return reg;
+} catch (e) {
             qerr("SW ready failed:", e?.name, e?.message, e);
             return null;
           }
@@ -1272,38 +1306,41 @@
     }
 
     // ✅ إصلاح أساسي: نجعلها async وننتظر إذن الإشعارات + SW ready قبل البدء.
-    async function startTrackingOnly() {
-      if (state.trackingEnabled) return;
-      if (state.systemClosed) return;
-      if (!inputsAreValidOrShowMessage()) return;
+  async function startTrackingOnly() {
+  if (state.trackingEnabled) return;
+  if (state.systemClosed) return;
+  if (!inputsAreValidOrShowMessage()) return;
 
-      saveSettings();
+  saveSettings();
 
-      // 1) Notifications permission (لا نبدأ قبل اكتمالها)
-      const notificationOK = await ensureNotificationsEnabled();
+  // الإشعارات (اختياري): لو فشلت لا نوقف المتابعة
+  const notificationOK = await ensureNotificationsEnabled();
 
-      if (!notificationOK) {
-        // نُظهر رسالة واضحة بدل "فشل صامت"
-        setBanner(
-          "Notifications non autorisées. Activez-les dans les paramètres du navigateur.",
-          "الإشعارات غير مفعّلة. فعّلها من إعدادات المتصفح.",
-          { active: true, urgent: true }
-        );
-        // يمكنك اختيار الاستمرار بدون إشعارات (سنستمر بالمتابعة مع البنر/الصوت)
-      }
+  if (!notificationOK) {
+    // في test mode وعلى http هذا طبيعي، لذلك لا نعتبره "تعطيل"
+    const fr = window.isSecureContext
+      ? "Notifications non autorisées. Activez-les dans les paramètres du navigateur."
+      : "Notifications indisponibles sans HTTPS (mode test). Le suivi fonctionne sans notifications.";
 
-      // 2) Service Worker ready (أفضلية للإشعارات عبر SW)
-      await getServiceWorkerReady();
+    const ar = window.isSecureContext
+      ? "الإشعارات غير مفعّلة. فعّلها من إعدادات المتصفح."
+      : "الإشعارات لا تعمل بدون HTTPS (وضع الاختبار). المتابعة تعمل بدون إشعارات.";
 
-      // 3) الآن نفعّل المتابعة
-      state.trackingEnabled = true;
-      state.lastAlertedDiff = null;
+    setBanner(fr, ar, { active: true, urgent: false });
+  }
 
-      setVerifyBtnActive(true);
+  // لا تجعل SW شرطًا لتفعيل المتابعة (ولا تنتظر للأبد)
+  getServiceWorkerReady({ timeoutMs: 2000 }).catch(() => {});
 
-      startPolling();
-      checkUserAlert(state.current_ticket);
-    }
+  // فعّل المتابعة فورًا
+  state.trackingEnabled = true;
+  state.lastAlertedDiff = null;
+
+  setVerifyBtnActive(true);
+
+  startPolling();
+  checkUserAlert(state.current_ticket);
+}
 
     verifyBtn.addEventListener("click", () => {
       startTrackingOnly().catch((e) => qerr("startTrackingOnly failed:", e));
