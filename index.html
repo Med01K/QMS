@@ -967,56 +967,50 @@ function playAlertBeep() {
 
       const oscillator = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      const filter = audioCtx.createBiquadFilter();
 
-      // موجة غنية بالترددات
-      oscillator.type = "sawtooth";
+      // نفس الموجة الأصلية
+      oscillator.type = "triangle";
 
+      // نفس التردد الأصلي
       oscillator.frequency.setValueAtTime(
         frequency,
         time
       );
 
-      // تحسين وضوح الصوت
-      filter.type = "lowpass";
-      filter.frequency.value = 6000;
-      filter.Q.value = 0.5;
+      // بداية صامتة لمنع الطقطقة
+      gain.gain.setValueAtTime(0, time);
 
-      // التحكم في مستوى الصوت
-      gain.gain.setValueAtTime(0.0001, time);
-
-      // ارتفاع تدريجي لتجنب الطقطقة
-      gain.gain.exponentialRampToValueAtTime(
-        0.10,
-        time + 0.02
+      // ارتفاع تدريجي سريع
+      gain.gain.linearRampToValueAtTime(
+        0.20,
+        time + 0.015
       );
 
-      // ثبات قصير للصوت
+      // المحافظة على مستوى الصوت
       gain.gain.setValueAtTime(
-        0.10,
+        0.20,
         time + duration * 0.65
       );
 
-      // انخفاض تدريجي
-      gain.gain.exponentialRampToValueAtTime(
-        0.0001,
+      // انخفاض تدريجي ناعم
+      gain.gain.linearRampToValueAtTime(
+        0,
         time + duration
       );
 
-      oscillator.connect(filter);
-      filter.connect(gain);
+      oscillator.connect(gain);
       gain.connect(audioCtx.destination);
 
       oscillator.start(time);
-      oscillator.stop(time + duration + 0.01);
+      oscillator.stop(time + duration);
     };
 
     const now = audioCtx.currentTime + 0.02;
 
-    // النغمة الأولى
+    // نفس النغمة الأولى
     playTone(987.77, now, 0.25);
 
-    // النغمة الثانية
+    // نفس النغمة الثانية
     playTone(1318.51, now + 0.30, 0.40);
 
   }).catch(() => {});
