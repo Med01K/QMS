@@ -1,21 +1,28 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Système de gestion de file d'attente — Poste Cité El Amel 4</title>
-  <link rel="icon" href="./favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" sizes="16x16" href="./favicon-16x16.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="manifest" href="./site.webmanifest">
-  <meta name="theme-color" content="#2563eb">
- <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Poste Cité El Amel — Système de gestion de file d'attente</title>
 
+<!-- Favicons & App Icons -->
+<link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+<link rel="shortcut icon" href="./favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+
+<!-- PWA Manifest & Theme -->
+<link rel="manifest" href="./site.webmanifest">
+<meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+
+  
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -407,7 +414,7 @@
 
 <body>
   <div class="card">
-    <img src="./logo.png" alt="Logo" class="brand-logo" />
+    <img src="logo.png" alt="Logo" class="brand-logo" />
     <div class="bi center" style="margin:-10px 0 16px; gap:2px;">
       <span class="ar" lang="ar" style="font-size:15px; font-weight:1000; color:var(--title);">
         مكتب بريد حي الأمل 6033 قابس
@@ -975,7 +982,7 @@
               body,
               tag,
               renotify: true,
-              icon: "./logo.png",
+              icon: "logo.png",
               vibrate: urgent ? [200, 100, 200, 100, 200] : [150],
               data: { url: "./" }
             });
@@ -983,7 +990,7 @@
           }
         }
 
-        new Notification(title, { body, tag, renotify: true, icon: "./logo.png" });
+        new Notification(title, { body, tag, renotify: true, icon: "logo.png" });
         return true;
       } catch {
         return false;
