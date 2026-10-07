@@ -258,14 +258,16 @@
       font-size:12.5px;
     }
 
+    /* الزر عند تفعيل المتابعة: يبقى أزرق + إطار واضح */
     .btn.active{
-      background: var(--primary);
-      border-color: rgba(255,255,255,0.55);
+      background: var(--primary);              /* نفس الأزرق */
+      border-color: rgba(255,255,255,0.55);    /* حافة خفيفة */
       box-shadow:
-        0 0 0 4px rgba(37,99,235,0.22),
-        0 12px 28px rgba(37,99,235,0.22);
+        0 0 0 4px rgba(37,99,235,0.22),        /* حلقة/إطار أزرق واضح */
+        0 12px 28px rgba(37,99,235,0.22);      /* ظل خفيف */
     }
-
+    
+    /* (اختياري) خلي الـ hover نفس الإحساس لما يكون Active */
     .btn.active:hover{
       filter: brightness(.98);
     }
@@ -351,6 +353,7 @@
       box-shadow:0 0 0 4px rgba(245,158,11,0.14);
     }
 
+    /* ====== TEST PANEL (يظهر فقط عند ?test=1) ====== */
     .test-panel{
       margin-top:14px;
       padding:14px;
@@ -408,6 +411,7 @@
 <body>
   <div class="card">
     <img src="logo.png" alt="Logo" class="brand-logo" />
+        <!-- اسم البريد -->
     <div class="bi center" style="margin:-10px 0 16px; gap:2px;">
       <span class="ar" lang="ar" style="font-size:15px; font-weight:1000; color:var(--title);">
         مكتب بريد حي الأمل 6033 قابس
@@ -415,18 +419,28 @@
       <span class="fr" lang="fr" style="font-size:11px; font-weight:520; color:var(--muted);">
         Poste Cité El Amel 6033 Gabès
       </span>
-      <div style="margin-bottom: 10px;"></div>
+      <div style="margin-bottom: 10px;">
+        </div>
+        
     </div>
-
+    
     <h1 class="page-title">
       <span class="bi center">
-        <span class="ar" lang="ar" style="font-size: 50px; ">الرقم الحالي</span>
-        <span class="fr" lang="fr" style="font-size: 20px;">Numéro actuel</span>
+
+
+      <span class="ar" lang="ar" style="font-size: 50px; ">الرقم الحالي</span>
+      <span class="fr" lang="fr" style="font-size: 20px;">Numéro actuel</span>
+        
       </span>
     </h1>
 
     <div class="number-box">
-      <div class="number" id="queueNum" aria-live="polite" aria-atomic="true">--</div>
+      <div
+        class="number"
+        id="queueNum"
+        aria-live="polite"
+        aria-atomic="true"
+      >--</div>
     </div>
 
     <div class="user-section">
@@ -445,7 +459,14 @@
           </span>
         </label>
 
-        <input type="number" inputmode="numeric" pattern="[0-9]*" step="1" id="myTicketInput" min="1" />
+        <input
+          type="number"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          step="1"
+          id="myTicketInput"
+          min="1"
+        />
       </div>
 
       <div class="input-group">
@@ -456,7 +477,15 @@
           </span>
         </label>
 
-        <input type="number" inputmode="numeric" pattern="[0-9]*" step="1" id="thresholdInput" value="10" min="0" />
+        <input
+          type="number"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          step="1"
+          id="thresholdInput"
+          value="10"
+          min="0"
+        />
       </div>
 
       <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
@@ -474,6 +503,7 @@
       <div id="statusText" style="width:100%;"></div>
     </div>
 
+    <!-- TEST PANEL: مخفي افتراضيًا ويظهر فقط عند ?test=1 -->
     <div id="testPanel" class="test-panel" hidden>
       <h3>
         <span class="bi center">
@@ -533,18 +563,29 @@
   </div>
 
   <script>
+    /***********************
+     * TEST MODE (تشغيل فقط عند ?test=1)
+     ***********************/
     const QS = new URLSearchParams(location.search);
     const TEST_MODE = QS.get("test") === "1";
 
+    /***********************
+     * Firebase REST
+     ***********************/
     const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
 
     function makeUrl(path, params = {}) {
       const url = new URL(
-        DB_BASE.replace(/\/$/, "") + "/" + path.replace(/^\//, "") + ".json"
+        DB_BASE.replace(/\/$/, "") +
+        "/" +
+        path.replace(/^\//, "") +
+        ".json"
       );
+
       Object.entries(params).forEach(([key, value]) => {
         url.searchParams.set(key, String(value));
       });
+
       return url.toString();
     }
 
@@ -554,38 +595,51 @@
     const OFFSET_URL = makeUrl(".info/serverTimeOffset");
     const META_URL = makeUrl("queue/meta");
 
-    const HEARTBEAT_GRACE_MS = 20000;
-    const REQUEST_GRACE_MS = 20000;
+    /***********************
+     * Policy
+     ***********************/
+    const HEARTBEAT_GRACE_MS = 20000; // 20 ثانية (تقدر تخليها 30000)
+    const REQUEST_GRACE_MS   = 20000; // اختياري
     const HEARTBEAT_INTERVAL_MIN = 5;
     const HEARTBEAT_MISSED_LIMIT = 2;
-    const HEARTBEAT_CLOSE_MS = HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000;
+    const HEARTBEAT_CLOSE_MS =
+      HEARTBEAT_INTERVAL_MIN * HEARTBEAT_MISSED_LIMIT * 60 * 1000;
 
     const REQUEST_INACTIVITY_MIN = 30;
-    const REQUEST_CLOSE_MS = REQUEST_INACTIVITY_MIN * 60 * 1000;
+    const REQUEST_CLOSE_MS =
+      REQUEST_INACTIVITY_MIN * 60 * 1000;
 
     const CHECK_MS = 30 * 1000;
     const POLL_VISIBLE_MS = 8000;
     const POLL_HIDDEN_MS = 15000;
 
-    const SW_URL = "./sw.js";
+    /***********************
+     * Service Worker register
+     ***********************/
+    const SW_URL = "/sw.js";
 
     async function registerServiceWorker() {
       try {
         if (!("serviceWorker" in navigator)) return false;
-        await navigator.serviceWorker.register(SW_URL);
+        await navigator.serviceWorker.register(SW_URL, { scope: "/" });
         return true;
-      } catch (e) {
-  console.error("SW register failed:", e);
-  return false;
-}
+      } catch {
+        return false;
+      }
+    }
 
+    /***********************
+     * منع تذبذب حالة الاتصال
+     ***********************/
     const OFFLINE_GRACE_MS = 2500;
     let offlineUiTimer = null;
 
     function requestOfflineUI() {
       if (offlineUiTimer) return;
+
       offlineUiTimer = setTimeout(() => {
         offlineUiTimer = null;
+
         if (!es || es.readyState !== 1) {
           setOnline(false);
         }
@@ -594,10 +648,14 @@
 
     function cancelOfflineUI() {
       if (!offlineUiTimer) return;
+
       clearTimeout(offlineUiTimer);
       offlineUiTimer = null;
     }
 
+    /***********************
+     * Elements
+     ***********************/
     const queueNumEl = document.getElementById("queueNum");
     const statusContainer = document.getElementById("statusContainer");
     const statusText = document.getElementById("statusText");
@@ -608,8 +666,10 @@
     const verifyBtnAr = document.getElementById("verifyBtnAr");
     const verifyBtnFr = document.getElementById("verifyBtnFr");
 
+    // ✅ قيمة الهامش الافتراضي (يرجع لها عندما يفوت الدور)
     const DEFAULT_THRESHOLD = String(thresholdInput.defaultValue || "10");
 
+    // Test panel elements
     const testPanel = document.getElementById("testPanel");
     const testTicketInput = document.getElementById("testTicketInput");
     const testApplyBtn = document.getElementById("testApplyBtn");
@@ -618,19 +678,29 @@
     const testAutoToggle = document.getElementById("testAutoToggle");
     const testAutoPeriod = document.getElementById("testAutoPeriod");
 
+    /***********************
+     * State
+     ***********************/
     const state = {
       current_ticket: null,
       lastAlertedDiff: null,
       trackingEnabled: false,
       userEditing: false,
+
       isOnline: false,
       systemClosed: false,
+
       serverOffset: 0,
+
       esp32_last_seen_ms: null,
       last_request_ms: null,
+
       metaLoaded: false
     };
 
+    /***********************
+     * TEST state (local simulation)
+     ***********************/
     const testSim = {
       ticket: 1,
       heartbeatTimer: null,
@@ -645,7 +715,9 @@
     }
 
     function testSaveTicket() {
-      try { localStorage.setItem(testSim.LS_KEY_TICKET, String(testSim.ticket)); } catch {}
+      try {
+        localStorage.setItem(testSim.LS_KEY_TICKET, String(testSim.ticket));
+      } catch {}
     }
 
     function testSetTicket(n) {
@@ -666,6 +738,7 @@
 
     function startTestHeartbeat() {
       stopTestHeartbeat();
+      // تحديث meta كل 20 ثانية حتى لا يعتبر النظام "مغلق"
       testSim.heartbeatTimer = setInterval(() => {
         testTouchMeta();
       }, 20000);
@@ -694,18 +767,30 @@
       }
     }
 
+    /***********************
+     * حفظ الإعدادات محليًا
+     ***********************/
     const LS_KEY = "queue_tracker_settings_v1";
 
     function loadSettings() {
       try {
         const raw = localStorage.getItem(LS_KEY);
         if (!raw) return;
+
         const settings = JSON.parse(raw);
         if (!settings || typeof settings !== "object") return;
-        if (typeof settings.myTicket === "string" || typeof settings.myTicket === "number") {
+
+        if (
+          typeof settings.myTicket === "string" ||
+          typeof settings.myTicket === "number"
+        ) {
           myTicketInput.value = String(settings.myTicket);
         }
-        if (typeof settings.threshold === "string" || typeof settings.threshold === "number") {
+
+        if (
+          typeof settings.threshold === "string" ||
+          typeof settings.threshold === "number"
+        ) {
           thresholdInput.value = String(settings.threshold);
         }
       } catch {}
@@ -723,6 +808,9 @@
       } catch {}
     }
 
+    /***********************
+     * UI helpers
+     ***********************/
     function escapeHtml(value) {
       return String(value)
         .replaceAll("&", "&amp;")
@@ -745,7 +833,11 @@
       statusText.innerHTML = biHTML(frText, arText);
     }
 
-    function setBanner(frText, arText, { active = true, urgent = false } = {}) {
+    function setBanner(
+      frText,
+      arText,
+      { active = true, urgent = false } = {}
+    ) {
       alertBanner.innerHTML = biHTML(frText, arText);
       alertBanner.classList.toggle("active", !!active);
       alertBanner.classList.toggle("urgent", !!urgent);
@@ -759,6 +851,7 @@
     function setVerifyBtnActive(isActive) {
       verifyBtn.classList.toggle("active", !!isActive);
       verifyBtn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    
       if (isActive) {
         verifyBtnAr.textContent = "جاري المتابعة";
         verifyBtnFr.textContent = "Suivi activé";
@@ -766,24 +859,40 @@
         verifyBtnAr.textContent = "متابعة";
         verifyBtnFr.textContent = "Suivi";
       }
-    }
+      }
 
     function setInputsFrozen(frozen) {
       const shouldFreeze = !!frozen;
+
       if (shouldFreeze) {
         try { myTicketInput.blur(); } catch {}
         try { thresholdInput.blur(); } catch {}
       }
+
       myTicketInput.disabled = shouldFreeze;
       thresholdInput.disabled = shouldFreeze;
     }
 
+    /***********************
+     * Server time
+     ***********************/
     async function fetchServerOffset() {
       try {
-        const response = await fetch(OFFSET_URL, { cache: "no-store" });
-        if (!response.ok) throw new Error("offset fetch failed");
+        const response = await fetch(
+          OFFSET_URL,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error("offset fetch failed");
+        }
+
         const offset = await response.json();
-        if (typeof offset === "number" && Number.isFinite(offset)) {
+
+        if (
+          typeof offset === "number" &&
+          Number.isFinite(offset)
+        ) {
           state.serverOffset = offset;
         }
       } catch {}
@@ -793,18 +902,21 @@
       return Date.now() + (state.serverOffset || 0);
     }
 
+    /***********************
+     * حالة إغلاق النظام
+     ***********************/
     function computeClosedReasons() {
       const now = serverNow();
       const lastSeen = Number(state.esp32_last_seen_ms);
       const lastRequest = Number(state.last_request_ms);
 
       const hbStale =
-        !Number.isFinite(lastSeen) ||
-        now - lastSeen >= (HEARTBEAT_CLOSE_MS + HEARTBEAT_GRACE_MS);
+      !Number.isFinite(lastSeen) ||
+      now - lastSeen >= (HEARTBEAT_CLOSE_MS + HEARTBEAT_GRACE_MS);
 
       const reqStale =
-        !Number.isFinite(lastRequest) ||
-        now - lastRequest >= (REQUEST_CLOSE_MS + REQUEST_GRACE_MS);
+      !Number.isFinite(lastRequest) ||
+       now - lastRequest >= (REQUEST_CLOSE_MS + REQUEST_GRACE_MS);
 
       return { hbStale, reqStale };
     }
@@ -812,14 +924,21 @@
     function updateStatusUI() {
       statusContainer.classList.remove("online", "closed");
 
+      // في وضع الاختبار: نعرض حالة خاصة دائمًا
       if (TEST_MODE) {
         statusContainer.classList.add("online");
-        setStatus("Mode test activé (test=1)", "تم تفعيل وضع الاختبار (test=1)");
+        setStatus(
+          "Mode test activé (test=1)",
+          "تم تفعيل وضع الاختبار (test=1)"
+        );
         return;
       }
 
       if (!state.isOnline) {
-        setStatus("Hors ligne - Reconnexion...", "غير متصل - جارٍ إعادة الاتصال...");
+        setStatus(
+          "Hors ligne - Reconnexion...",
+          "غير متصل - جارٍ إعادة الاتصال..."
+        );
         return;
       }
 
@@ -847,10 +966,18 @@
 
       queueNumEl.classList.remove("closed");
 
-      const value = state.current_ticket === null ? NaN : Number(state.current_ticket);
-      queueNumEl.textContent = Number.isFinite(value) ? String(value) : "--";
+      const value =
+        state.current_ticket === null
+          ? NaN
+          : Number(state.current_ticket);
+
+      queueNumEl.textContent =
+        Number.isFinite(value) ? String(value) : "--";
     }
 
+    /***********************
+     * Polling والتحكم بالتتبع
+     ***********************/
     let pollTimer = null;
 
     function stopPolling() {
@@ -863,11 +990,13 @@
     function stopTrackingHard() {
       state.trackingEnabled = false;
       state.lastAlertedDiff = null;
+
       clearBanner();
       stopPolling();
       setVerifyBtnActive(false);
     }
 
+    // ✅ جديد: إيقاف المتابعة بدون حذف رسالة التنبيه (حتى تبقى "لقد فات دورك")
     function stopTrackingKeepBanner() {
       state.trackingEnabled = false;
       stopPolling();
@@ -876,7 +1005,9 @@
 
     function setSystemClosed(isClosed) {
       const next = !!isClosed;
+
       if (state.systemClosed === next) return;
+
       state.systemClosed = next;
 
       if (next) {
@@ -894,21 +1025,38 @@
     }
 
     function evaluateClosedState() {
+      // في وضع الاختبار لا نغلق النظام أبدًا
       if (TEST_MODE) {
         setSystemClosed(false);
         return;
       }
+
       if (!state.metaLoaded) return;
+
       const { hbStale, reqStale } = computeClosedReasons();
       setSystemClosed(hbStale || reqStale);
     }
 
+    /***********************
+     * ضبط هامش التنبيه
+     ***********************/
     function getNumbersForDiff() {
       const myTicket = parseInt(myTicketInput.value, 10);
-      if (state.current_ticket === null) return { ok: false };
+
+      if (state.current_ticket === null) {
+        return { ok: false };
+      }
+
       const currentTicket = Number(state.current_ticket);
-      if (!Number.isFinite(currentTicket)) return { ok: false };
-      if (Number.isNaN(myTicket) || myTicket < 1) return { ok: false };
+
+      if (!Number.isFinite(currentTicket)) {
+        return { ok: false };
+      }
+
+      if (Number.isNaN(myTicket) || myTicket < 1) {
+        return { ok: false };
+      }
+
       return { ok: true, myTicket, currentTicket };
     }
 
@@ -922,6 +1070,7 @@
 
       const diff = info.myTicket - info.currentTicket;
 
+      // ✅ إذا فات الدور (diff < 0): رجّع القيود للوضع الطبيعي (بدون max=0 وبدون clamp)
       if (diff < 0) {
         thresholdInput.removeAttribute("max");
         return;
@@ -935,18 +1084,35 @@
       const threshold = parseInt(thresholdInput.value, 10);
       if (Number.isNaN(threshold)) return;
 
-      const clampedValue = Math.min(Math.max(0, threshold), maxAllowed);
+      const clampedValue = Math.min(
+        Math.max(0, threshold),
+        maxAllowed
+      );
+
       if (clampedValue !== threshold) {
         thresholdInput.value = String(clampedValue);
       }
     }
 
+    /***********************
+     * Notifications (Permission + SW showNotification)
+     ***********************/
     async function ensureNotificationsEnabled() {
       if (!("Notification" in window)) return false;
       if (!window.isSecureContext) return false;
-      if (Notification.permission === "granted") return true;
-      if (Notification.permission === "denied") return false;
-      const permission = await Notification.requestPermission().catch(() => "denied");
+
+      if (Notification.permission === "granted") {
+        return true;
+      }
+
+      if (Notification.permission === "denied") {
+        return false;
+      }
+
+      const permission = await Notification
+        .requestPermission()
+        .catch(() => "denied");
+
       return permission === "granted";
     }
 
@@ -984,15 +1150,27 @@
       }
     }
 
+    /***********************
+     * Audio
+     ***********************/
     let audioCtx = null;
 
     function ensureAudio() {
       if (!audioCtx) {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) return Promise.resolve();
+        const AudioContextClass =
+          window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+          return Promise.resolve();
+        }
+
         audioCtx = new AudioContextClass();
       }
-      if (audioCtx.state === "suspended") return audioCtx.resume();
+
+      if (audioCtx.state === "suspended") {
+        return audioCtx.resume();
+      }
+
       return Promise.resolve();
     }
 
@@ -1005,10 +1183,16 @@
           const gain = audioCtx.createGain();
 
           oscillator.type = "triangle";
-          oscillator.frequency.setValueAtTime(frequency, time);
+          oscillator.frequency.setValueAtTime(
+            frequency,
+            time
+          );
 
           gain.gain.setValueAtTime(0.25, time);
-          gain.gain.exponentialRampToValueAtTime(0.00001, time + duration);
+          gain.gain.exponentialRampToValueAtTime(
+            0.00001,
+            time + duration
+          );
 
           oscillator.connect(gain);
           gain.connect(audioCtx.destination);
@@ -1018,19 +1202,24 @@
         };
 
         const now = audioCtx.currentTime;
+
         playTone(987.77, now, 0.25);
         playTone(1318.51, now + 0.3, 0.4);
       }).catch(() => {});
     }
 
-    ["pointerdown", "touchstart", "mousedown", "keydown"].forEach((eventName) => {
-      window.addEventListener(
-        eventName,
-        () => ensureAudio().catch(() => {}),
-        { once: true, passive: true }
-      );
-    });
+    ["pointerdown", "touchstart", "mousedown", "keydown"]
+      .forEach((eventName) => {
+        window.addEventListener(
+          eventName,
+          () => ensureAudio().catch(() => {}),
+          { once: true, passive: true }
+        );
+      });
 
+    /***********************
+     * تنبيهات دور المستخدم
+     ***********************/
     function checkUserAlert(currentTicket) {
       if (state.systemClosed) return;
 
@@ -1038,11 +1227,25 @@
         updateThresholdConstraints({ clamp: true });
       }
 
-      const myTicket = parseInt(myTicketInput.value, 10);
-      const thresholdParsed = parseInt(thresholdInput.value, 10);
-      const threshold = Number.isNaN(thresholdParsed) ? 10 : thresholdParsed;
+      const myTicket = parseInt(
+        myTicketInput.value,
+        10
+      );
 
-      if (Number.isNaN(myTicket) || currentTicket === null || Number.isNaN(Number(currentTicket))) {
+      const thresholdParsed = parseInt(
+        thresholdInput.value,
+        10
+      );
+
+      const threshold = Number.isNaN(thresholdParsed)
+        ? 10
+        : thresholdParsed;
+
+      if (
+        Number.isNaN(myTicket) ||
+        currentTicket === null ||
+        Number.isNaN(Number(currentTicket))
+      ) {
         clearBanner();
         state.lastAlertedDiff = null;
         return;
@@ -1080,9 +1283,13 @@
         }
 
         state.lastAlertedDiff = diff;
+
+        // ✅ المطلوب: لما يفوت الدور يرجع الهامش للافتراضي
         thresholdInput.value = DEFAULT_THRESHOLD;
         thresholdInput.removeAttribute("max");
         saveSettings();
+
+        // ✅ إيقاف المتابعة مع إبقاء رسالة "لقد فات دورك"
         stopTrackingKeepBanner();
       } else {
         clearBanner();
@@ -1090,17 +1297,30 @@
       }
     }
 
+    /***********************
+     * Polling احتياطي أثناء التتبع
+     ***********************/
     async function pollCurrentTicketOnce() {
-      if (state.systemClosed || !state.trackingEnabled) return;
+      if (state.systemClosed || !state.trackingEnabled) {
+        return;
+      }
 
+      // في وضع الاختبار: نقرأ من القيمة المحلية بدل Firebase
       if (TEST_MODE) {
         setTicket(testSim.ticket);
         return;
       }
 
       try {
-        const response = await fetch(TICKET_URL, { cache: "no-store" });
-        if (!response.ok) throw new Error("poll failed");
+        const response = await fetch(
+          TICKET_URL,
+          { cache: "no-store" }
+        );
+
+        if (!response.ok) {
+          throw new Error("poll failed");
+        }
+
         const ticket = await response.json();
         setTicket(ticket);
       } catch {}
@@ -1108,22 +1328,52 @@
 
     function startPolling() {
       stopPolling();
-      const period = document.visibilityState === "visible" ? POLL_VISIBLE_MS : POLL_HIDDEN_MS;
-      pollTimer = setInterval(pollCurrentTicketOnce, period);
+
+      const period =
+        document.visibilityState === "visible"
+          ? POLL_VISIBLE_MS
+          : POLL_HIDDEN_MS;
+
+      pollTimer = setInterval(
+        pollCurrentTicketOnce,
+        period
+      );
+
       pollCurrentTicketOnce();
     }
 
+    /***********************
+     * زر واحد: بدء / إيقاف التتبع
+     ***********************/
     function inputsAreValidOrShowMessage() {
-      const myTicket = parseInt(myTicketInput.value, 10);
-      const threshold = parseInt(thresholdInput.value, 10);
+      const myTicket = parseInt(
+        myTicketInput.value,
+        10
+      );
+
+      const threshold = parseInt(
+        thresholdInput.value,
+        10
+      );
 
       if (Number.isNaN(myTicket) || myTicket < 1) {
-        setBanner("Veuillez saisir un numéro de ticket valide.", "يرجى إدخال رقم صف صحيح.", { active: true, urgent: true });
+        setBanner(
+          "Veuillez saisir un numéro de ticket valide.",
+          "يرجى إدخال رقم صف صحيح.",
+          { active: true, urgent: true }
+        );
         return false;
       }
 
-      if (Number.isNaN(threshold) || threshold < 0) {
-        setBanner("Veuillez saisir une marge d'alerte valide (>= 0).", "يرجى إدخال هامش تنبيه صحيح (>= 0).", { active: true, urgent: true });
+      if (
+        Number.isNaN(threshold) ||
+        threshold < 0
+      ) {
+        setBanner(
+          "Veuillez saisir une marge d'alerte valide (>= 0).",
+          "يرجى إدخال هامش تنبيه صحيح (>= 0).",
+          { active: true, urgent: true }
+        );
         return false;
       }
 
@@ -1132,7 +1382,9 @@
     }
 
     function startTrackingOnly() {
+      // إذا بدأت المتابعة مسبقًا لا تفعل شيئًا (بدون إيقاف)
       if (state.trackingEnabled) return;
+
       if (state.systemClosed) return;
       if (!inputsAreValidOrShowMessage()) return;
 
@@ -1152,69 +1404,113 @@
 
     verifyBtn.addEventListener("click", startTrackingOnly);
 
-    myTicketInput.addEventListener("input", () => {
-      stopTrackingHard();
-    });
+    myTicketInput.addEventListener(
+      "input",
+      () => {
+        stopTrackingHard();
+      }
+    );
 
-    thresholdInput.addEventListener("input", () => {
-      stopTrackingHard();
-      updateThresholdConstraints({ clamp: !state.userEditing });
-    });
+    thresholdInput.addEventListener(
+      "input",
+      () => {
+        stopTrackingHard();
 
-    myTicketInput.addEventListener("focus", () => {
-      state.userEditing = true;
-    });
+        updateThresholdConstraints({
+          clamp: !state.userEditing
+        });
+      }
+    );
 
-    myTicketInput.addEventListener("blur", () => {
-      state.userEditing = false;
-      updateThresholdConstraints({ clamp: true });
-      saveSettings();
-    });
+    myTicketInput.addEventListener(
+      "focus",
+      () => {
+        state.userEditing = true;
+      }
+    );
 
-    thresholdInput.addEventListener("focus", () => {
-      state.userEditing = true;
-    });
+    myTicketInput.addEventListener(
+      "blur",
+      () => {
+        state.userEditing = false;
+        updateThresholdConstraints({ clamp: true });
+        saveSettings();
+      }
+    );
 
-    thresholdInput.addEventListener("blur", () => {
-      state.userEditing = false;
-      updateThresholdConstraints({ clamp: true });
-      saveSettings();
-    });
+    thresholdInput.addEventListener(
+      "focus",
+      () => {
+        state.userEditing = true;
+      }
+    );
 
-    function triggerUpdateAnimation() {
-      queueNumEl.classList.remove("updated");
-      void queueNumEl.offsetWidth;
-      queueNumEl.classList.add("updated");
-      setTimeout(() => queueNumEl.classList.remove("updated"), 260);
-    }
+    thresholdInput.addEventListener(
+      "blur",
+      () => {
+        state.userEditing = false;
+        updateThresholdConstraints({ clamp: true });
+        saveSettings();
+      }
+    );
 
+    /***********************
+     * عرض رقم الصف
+     ***********************/
     function setTicket(value) {
-      if (value === null || typeof value === "undefined") return;
+      if (
+        value === null ||
+        typeof value === "undefined"
+      ) {
+        return;
+      }
 
       const oldShown = queueNumEl.textContent;
 
       state.current_ticket = Number(value);
       renderTicketNumber();
 
-      if (state.trackingEnabled && !state.userEditing && !state.systemClosed) {
+      if (
+        state.trackingEnabled &&
+        !state.userEditing &&
+        !state.systemClosed
+      ) {
         checkUserAlert(state.current_ticket);
       }
 
-      if (!state.systemClosed && oldShown !== "--" && oldShown !== String(state.current_ticket)) {
+      if (
+        !state.systemClosed &&
+        oldShown !== "--" &&
+        oldShown !== String(state.current_ticket)
+      ) {
         triggerUpdateAnimation();
       }
     }
 
+    /***********************
+     * جلب بيانات حالة النظام
+     ***********************/
     async function fetchMetaOnce() {
       try {
-        const response = await fetch(META_URL, { cache: "no-store" });
+        const response = await fetch(
+          META_URL,
+          { cache: "no-store" }
+        );
 
         if (response.ok) {
           const meta = await response.json();
 
           if (meta && typeof meta === "object") {
-            if ("esp32_last_seen_ms" in meta) state.esp32_last_seen_ms = meta.esp32_last_seen_ms;
-            if ("last_request_ms" in meta) state.last_request_ms = meta.last_request_ms;
+            if ("esp32_last_seen_ms" in meta) {
+              state.esp32_last_seen_ms =
+                meta.esp32_last_seen_ms;
+            }
+
+            if ("last_request_ms" in meta) {
+              state.last_request_ms =
+                meta.last_request_ms;
+            }
+
             state.metaLoaded = true;
           }
         }
@@ -1223,11 +1519,15 @@
       evaluateClosedState();
     }
 
+    /***********************
+     * Firebase SSE
+     ***********************/
     let es = null;
     let reconnectTimer = null;
 
     function scheduleReconnect() {
       if (reconnectTimer) return;
+
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         connectStream();
@@ -1235,21 +1535,44 @@
     }
 
     function applyStreamPayload(payload) {
-      if (!payload || typeof payload !== "object") return;
+      if (
+        !payload ||
+        typeof payload !== "object"
+      ) {
+        return;
+      }
 
       const { path, data } = payload;
 
       if (path === "/") {
         if (data && typeof data === "object") {
-          if ("current_ticket" in data) setTicket(data.current_ticket);
+          if ("current_ticket" in data) {
+            setTicket(data.current_ticket);
+          }
 
-          if (data.meta && typeof data.meta === "object") {
-            if ("esp32_last_seen_ms" in data.meta) state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
-            if ("last_request_ms" in data.meta) state.last_request_ms = data.meta.last_request_ms;
+          if (
+            data.meta &&
+            typeof data.meta === "object"
+          ) {
+            if (
+              "esp32_last_seen_ms" in data.meta
+            ) {
+              state.esp32_last_seen_ms =
+                data.meta.esp32_last_seen_ms;
+            }
+
+            if (
+              "last_request_ms" in data.meta
+            ) {
+              state.last_request_ms =
+                data.meta.last_request_ms;
+            }
+
             state.metaLoaded = true;
             evaluateClosedState();
           }
         }
+
         return;
       }
 
@@ -1260,22 +1583,35 @@
 
       if (path === "/meta") {
         if (data && typeof data === "object") {
-          if ("esp32_last_seen_ms" in data) state.esp32_last_seen_ms = data.esp32_last_seen_ms;
-          if ("last_request_ms" in data) state.last_request_ms = data.last_request_ms;
+          if ("esp32_last_seen_ms" in data) {
+            state.esp32_last_seen_ms =
+              data.esp32_last_seen_ms;
+          }
+
+          if ("last_request_ms" in data) {
+            state.last_request_ms =
+              data.last_request_ms;
+          }
+
           state.metaLoaded = true;
           evaluateClosedState();
         }
+
         return;
       }
 
-      if (path === "/meta/esp32_last_seen_ms") {
+      if (
+        path === "/meta/esp32_last_seen_ms"
+      ) {
         state.esp32_last_seen_ms = data;
         state.metaLoaded = true;
         evaluateClosedState();
         return;
       }
 
-      if (path === "/meta/last_request_ms") {
+      if (
+        path === "/meta/last_request_ms"
+      ) {
         state.last_request_ms = data;
         state.metaLoaded = true;
         evaluateClosedState();
@@ -1283,15 +1619,22 @@
     }
 
     function connectStream() {
+      // في وضع الاختبار: لا SSE ولا Firebase
       if (TEST_MODE) return;
 
       if (es) {
-        try { es.close(); } catch {}
+        try {
+          es.close();
+        } catch {}
+
         es = null;
       }
 
       if (!state.isOnline) {
-        setStatus("Connexion au système...", "جارٍ الاتصال بالنظام...");
+        setStatus(
+          "Connexion au système...",
+          "جارٍ الاتصال بالنظام..."
+        );
       }
 
       try {
@@ -1302,16 +1645,34 @@
           setOnline(true);
         };
 
-        es.addEventListener("put", (event) => {
-          try { applyStreamPayload(JSON.parse(event.data)); } catch {}
-        });
+        es.addEventListener(
+          "put",
+          (event) => {
+            try {
+              applyStreamPayload(
+                JSON.parse(event.data)
+              );
+            } catch {}
+          }
+        );
 
-        es.addEventListener("patch", (event) => {
-          try { applyStreamPayload(JSON.parse(event.data)); } catch {}
-        });
+        es.addEventListener(
+          "patch",
+          (event) => {
+            try {
+              applyStreamPayload(
+                JSON.parse(event.data)
+              );
+            } catch {}
+          }
+        );
 
         es.onmessage = (event) => {
-          try { applyStreamPayload(JSON.parse(event.data)); } catch {}
+          try {
+            applyStreamPayload(
+              JSON.parse(event.data)
+            );
+          } catch {}
         };
 
         es.onerror = () => {
@@ -1324,21 +1685,48 @@
       }
     }
 
+    /***********************
+     * Initial fetch
+     ***********************/
     async function initialFetch() {
+      // في وضع الاختبار: لا نجلب شيئًا من Firebase
       if (TEST_MODE) return;
 
       try {
-        const response = await fetch(QUEUE_URL, { cache: "no-store" });
+        const response = await fetch(
+          QUEUE_URL,
+          { cache: "no-store" }
+        );
 
         if (response.ok) {
           const data = await response.json();
 
-          if (data && typeof data === "object") {
-            if ("current_ticket" in data) setTicket(data.current_ticket);
+          if (
+            data &&
+            typeof data === "object"
+          ) {
+            if ("current_ticket" in data) {
+              setTicket(data.current_ticket);
+            }
 
-            if (data.meta && typeof data.meta === "object") {
-              if ("esp32_last_seen_ms" in data.meta) state.esp32_last_seen_ms = data.meta.esp32_last_seen_ms;
-              if ("last_request_ms" in data.meta) state.last_request_ms = data.meta.last_request_ms;
+            if (
+              data.meta &&
+              typeof data.meta === "object"
+            ) {
+              if (
+                "esp32_last_seen_ms" in data.meta
+              ) {
+                state.esp32_last_seen_ms =
+                  data.meta.esp32_last_seen_ms;
+              }
+
+              if (
+                "last_request_ms" in data.meta
+              ) {
+                state.last_request_ms =
+                  data.meta.last_request_ms;
+              }
+
               state.metaLoaded = true;
             }
           }
@@ -1354,6 +1742,7 @@
 
     setInterval(() => {
       if (TEST_MODE) {
+        // نبقيه مفتوحًا دائمًا
         setSystemClosed(false);
         return;
       }
@@ -1361,33 +1750,55 @@
       evaluateClosedState();
     }, CHECK_MS);
 
-    document.addEventListener("visibilitychange", async () => {
-      if (TEST_MODE) {
-        if (state.trackingEnabled && !state.systemClosed) startPolling();
-        else stopPolling();
-        return;
+    document.addEventListener(
+      "visibilitychange",
+      async () => {
+        if (TEST_MODE) {
+          if (state.trackingEnabled && !state.systemClosed) {
+            startPolling();
+          } else {
+            stopPolling();
+          }
+          return;
+        }
+
+        if (
+          document.visibilityState === "visible"
+        ) {
+          await fetchServerOffset();
+          await initialFetch();
+          connectStream();
+        }
+
+        if (
+          state.trackingEnabled &&
+          !state.systemClosed
+        ) {
+          startPolling();
+        } else {
+          stopPolling();
+        }
       }
+    );
 
-      if (document.visibilityState === "visible") {
-        await fetchServerOffset();
-        await initialFetch();
-        connectStream();
-      }
-
-      if (state.trackingEnabled && !state.systemClosed) startPolling();
-      else stopPolling();
-    });
-
+    /***********************
+     * Init Test Mode UI
+     ***********************/
     function initTestMode() {
       if (testPanel) testPanel.hidden = false;
 
+      // اعتبره "متصل" لكن بوضع اختبار
       setOnline(true);
       state.metaLoaded = true;
       state.serverOffset = 0;
 
+      // ابدأ heartbeat محلي
       startTestHeartbeat();
+
+      // حمّل/ضع رقم تجريبي
       testSetTicket(testLoadTicket());
 
+      // اربط أحداث لوحة الاختبار
       testApplyBtn?.addEventListener("click", () => {
         testSetTicket(testTicketInput.value);
       });
@@ -1405,14 +1816,18 @@
       });
 
       testAutoToggle?.addEventListener("change", () => {
-        if (testAutoToggle.checked) startTestAutoIncrement();
-        else stopTestAutoIncrement();
+        if (testAutoToggle.checked) {
+          startTestAutoIncrement();
+        } else {
+          stopTestAutoIncrement();
+        }
       });
 
       testAutoPeriod?.addEventListener("input", () => {
         if (testAutoToggle?.checked) startTestAutoIncrement();
       });
 
+      // تأكد أن النظام مفتوح
       setSystemClosed(false);
       renderTicketNumber();
       updateStatusUI();
@@ -1420,10 +1835,16 @@
       updateThresholdConstraints({ clamp: true });
     }
 
+    /***********************
+     * Start
+     ***********************/
     (async function start() {
       loadSettings();
 
-      setStatus("Connexion en cours...", "جارٍ الاتصال...");
+      setStatus(
+        "Connexion en cours...",
+        "جارٍ الاتصال..."
+      );
 
       registerServiceWorker().catch(() => {});
 
@@ -1440,8 +1861,47 @@
       updateStatusUI();
 
       setInputsFrozen(state.systemClosed);
-      updateThresholdConstraints({ clamp: true });
+      updateThresholdConstraints({
+        clamp: true
+      });
     })();
   </script>
 </body>
 </html>
+"/* Queue tracker service worker */
+
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = new URL(
+    event.notification.data?.url || "/",
+    self.location.origin
+  ).href;
+
+  event.waitUntil(
+    self.clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url === targetUrl && "focus" in client) {
+          return client.focus();
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+
+      return undefined;
+    })
+  );
+});
