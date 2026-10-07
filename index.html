@@ -8,9 +8,9 @@
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-  <link rel="manifest" href="/site.webmanifest">
+  <link rel="manifest" href="site.webmanifest">
   <meta name="theme-color" content="#2563eb">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -551,7 +551,13 @@
     const STREAM_URL = makeUrl("queue", { print: "silent" });
     const QUEUE_URL = makeUrl("queue");
     const TICKET_URL = makeUrl("queue/current_ticket");
-    const OFFSET_URL = makeUrl(".info/serverTimeOffset");
+    async function fetchServerOffset() {
+      state.serverOffset = 0;
+    }
+    
+    function serverNow() {
+      return Date.now();
+    }
     const META_URL = makeUrl("queue/meta");
 
     const HEARTBEAT_GRACE_MS = 20000;
