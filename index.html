@@ -578,7 +578,7 @@
     async function registerServiceWorker() {
       try {
         if (!("serviceWorker" in navigator)) return false;
-        await navigator.serviceWorker.register(SW_URL, { scope: "/" });
+        await navigator.serviceWorker.register(SW_URL, { scope: "./" });
         return true;
       } catch {
         return false;
