@@ -226,22 +226,57 @@ body.popup-open{overflow:hidden}
 }
   
 /* رسالة إبقاء المتصفح مفتوحًا */
-const browserReminder = document.getElementById("browserReminder");
-let browserReminderTimer = null;
-function showBrowserReminder() {
-  if (!browserReminder) return;
-  clearTimeout(browserReminderTimer);
-  browserReminder.classList.add("show");
-  browserReminderTimer = setTimeout(() => {
-    browserReminder.classList.remove("show");
-    browserReminderTimer = null;
-  }, 30000);
+.browser-reminder {
+  display: block;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 13px 12px;
+  margin-top: 12px;
+  text-align: center;
+  color: #1e40af;
+
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  border-width: 0;
+  overflow: hidden;
+  visibility: hidden;
+
+  transition:
+    opacity 2s ease,
+    max-height 2s ease,
+    padding 2s ease,
+    margin 2s ease,
+    border-width 2s ease,
+    visibility 2s ease;
 }
 
-function hideBrowserReminder() {
-  clearTimeout(browserReminderTimer);
-  browserReminderTimer = null;
-  browserReminder.classList.remove("show");
+.browser-reminder.show {
+  opacity: 1;
+  max-height: 200px;
+  padding: 13px 12px;
+  margin-top: 12px;
+  border-width: 1px;
+  visibility: visible;
+}
+
+.browser-reminder .ar {
+  font-family: Tajawal, Tahoma, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.7;
+  color: #1e40af;
+}
+
+.browser-reminder .fr {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #475569;
 }
 
 @keyframes reminderFadeIn {
