@@ -327,6 +327,7 @@ body.popup-open{overflow:hidden}
       </label>
       <input type="number" inputmode="numeric" step="1" id="myTicketInput" min="1">
     </div>
+    
     <div class="input-group">
       <label for="thresholdInput">
         <span class="bi">
@@ -336,8 +337,7 @@ body.popup-open{overflow:hidden}
       </label>
       <input type="number" inputmode="numeric" step="1" id="thresholdInput" value="10" min="0">
     </div>
-
-    <!-- رسالة إبقاء المتصفح مفتوحًا -->
+        <!-- رسالة إبقاء المتصفح مفتوحًا -->
 <div id="browserReminder" class="browser-reminder" role="status">
   <span class="bi center">
 
@@ -349,14 +349,18 @@ body.popup-open{overflow:hidden}
       Veuillez garder le navigateur ouvert pour recevoir les alertes.
     </span>
     
+    
+  </span>
+</div>
+    
     <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
       <span class="bi center">
         <span class="ar" id="verifyBtnAr" lang="ar">متابعة</span>
         <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
       </span>
     </button>
-  </span>
-</div>
+
+
 
 <div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
   </div>
