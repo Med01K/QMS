@@ -256,12 +256,28 @@ body {
 }
 
 .btn.active {
-  background:var(--primary);
-  border-color:rgba(255,255,255,0.55);
-  box-shadow:0 0 0 4px rgba(37,99,235,0.22),0 12px 28px rgba(37,99,235,0.22);
+  background:#dc2626;
+  border-color:#b91c1c;
+  box-shadow:0 0 0 4px rgba(220,38,38,0.12);
 }
 
-.btn.active:hover { filter:brightness(.98); }
+.btn.active:hover {
+  background:#b91c1c;
+  filter:none;
+}
+
+.btn.active .bi .ar,
+.btn.active .bi .fr {
+  color:#ffffff;
+}
+
+.btn.active .bi .ar { font-size:15px; }
+.btn.active .bi .fr { font-size:12px; }
+
+.btn.active:focus-visible {
+  outline:3px solid rgba(220,38,38,0.35);
+  outline-offset:3px;
+}
 
 .btn:disabled {
   opacity:.65;
@@ -754,11 +770,17 @@ function setVerifyBtnActive(isActive) {
   verifyBtn.setAttribute("aria-pressed", isActive ? "true" : "false");
 
   if (isActive) {
-    verifyBtnAr.textContent = "جاري المتابعة";
-    verifyBtnFr.textContent = "Suivi activé";
+    verifyBtnAr.textContent = "✓ جاري المتابعة — اضغط للإيقاف";
+    verifyBtnFr.textContent = "Suivi activé — Appuyez pour arrêter";
+
+    verifyBtn.title = "اضغط لإيقاف المتابعة / Appuyez pour arrêter";
+    verifyBtn.setAttribute("aria-label", "المتابعة جارية، اضغط لإيقاف المتابعة");
   } else {
     verifyBtnAr.textContent = "متابعة";
     verifyBtnFr.textContent = "Suivi";
+
+    verifyBtn.title = "بدء المتابعة / Démarrer le suivi";
+    verifyBtn.setAttribute("aria-label", "بدء متابعة الدور");
   }
 }
 
@@ -843,8 +865,6 @@ function stopPolling() {
 }
 
 /* DYNAMIC THRESHOLD */
-
-// حساب الهامش الظاهر أثناء المتابعة.
 function getEffectiveThreshold() {
   const originalThreshold = Number(savedThreshold);
   const myTicket = Number(myTicketInput.value);
@@ -861,14 +881,11 @@ function getEffectiveThreshold() {
 
   const diff = myTicket - Number(current);
 
-  // إذا لم يتبق أشخاص، يصبح الهامش صفرًا.
   if (diff <= 0) return 0;
 
-  // لا يمكن أن يتجاوز الهامش عدد الأشخاص المتبقين.
   return Math.min(originalThreshold, diff);
 }
 
-// تحديث الهامش المعروض دون تغيير القيمة الأصلية المحفوظة.
 function updateThresholdConstraints({ clamp = false } = {}) {
   thresholdInput.removeAttribute("max");
 
@@ -879,7 +896,6 @@ function updateThresholdConstraints({ clamp = false } = {}) {
   }
 }
 
-// استرجاع الهامش الأصلي عند توقف المتابعة.
 function restoreSavedThreshold() {
   thresholdInput.value = savedThreshold;
   thresholdInput.removeAttribute("max");
@@ -1047,24 +1063,23 @@ function checkUserAlert(currentTicket) {
 
   const diff = myTicket - current;
 
-  // تحديث الهامش الظاهر مع تغير الرقم الحالي.
   updateThresholdConstraints();
 
-  // عندما يحين دورك: لا إشعار ولا صوت.
+  // عند حلول الدور: لا إشعار ولا صوت.
   if (diff === 0) {
     clearBanner();
     state.lastAlertedDiff = 0;
     return;
   }
 
-  // عندما يفوت دورك: إيقاف المتابعة واسترجاع الهامش.
+  // عند تجاوز الدور: إيقاف المتابعة.
   if (diff < 0) {
     stopTrackingHard();
     saveSettings();
     return;
   }
 
-  // خارج هامش التنبيه الأصلي.
+  // خارج هامش التنبيه.
   if (diff > originalThreshold || originalThreshold === 0) {
     clearBanner();
     state.lastAlertedDiff = diff;
@@ -1089,7 +1104,7 @@ function checkUserAlert(currentTicket) {
     return;
   }
 
-  // التنبيهات من الهامش المحدد إلى شخصين.
+  // التنبيه من الهامش المحدد إلى شخصين.
   if (diff > 1 && diff <= originalThreshold) {
     const fr = `Attention ! Il reste ${diff} personnes avant votre tour.`;
     const ar = `تنبيه! تبقّى ${diff} أشخاص قبلك.`;
@@ -1173,17 +1188,15 @@ function inputsAreValidOrShowMessage() {
 function startTrackingOnly() {
   if (state.systemClosed) return;
 
-  // إلغاء المتابعة واسترجاع الهامش الأصلي.
+  // إلغاء المتابعة.
   if (state.trackingEnabled) {
     stopTrackingHard();
     saveSettings();
     return;
   }
 
-  // التحقق من البيانات.
   if (!inputsAreValidOrShowMessage()) return;
 
-  // حفظ الهامش الذي اختاره المستخدم قبل المتابعة.
   const value = Number(thresholdInput.value);
 
   if (Number.isSafeInteger(value) && value >= 0) {
@@ -1192,12 +1205,11 @@ function startTrackingOnly() {
 
   saveSettings();
 
-  // تشغيل المتابعة.
+  // تفعيل المتابعة وتغيير الزر إلى الأحمر.
   state.trackingEnabled = true;
   state.lastAlertedDiff = null;
   setVerifyBtnActive(true);
 
-  // تحديث الهامش بناءً على الرقم الحالي.
   updateThresholdConstraints();
 
   registerServiceWorker().catch(() => {});
@@ -1217,7 +1229,6 @@ myTicketInput.addEventListener("input", () => {
 });
 
 thresholdInput.addEventListener("input", () => {
-  // حفظ القيمة التي أدخلها المستخدم فقط.
   const value = Number(thresholdInput.value);
   const valid = thresholdInput.value.trim() !== "" &&
     Number.isSafeInteger(value) && value >= 0;
@@ -1226,7 +1237,7 @@ thresholdInput.addEventListener("input", () => {
     savedThreshold = String(value);
   }
 
-  // إيقاف المتابعة عند تعديل الهامش يدويًا.
+  // إيقاف المتابعة عند تعديل الهامش.
   if (state.trackingEnabled) {
     state.trackingEnabled = false;
     state.lastAlertedDiff = null;
@@ -1282,11 +1293,9 @@ function setTicket(value) {
   if (!Number.isSafeInteger(number) || number < 0) return;
 
   const oldShown = queueNumEl.textContent;
-
   state.current_ticket = number;
   renderTicketNumber();
 
-  // تحديث الهامش والتنبيهات مع تغير الرقم.
   if (state.trackingEnabled && !state.userEditing && !state.systemClosed) {
     checkUserAlert(state.current_ticket);
   }
