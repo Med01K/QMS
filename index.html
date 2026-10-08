@@ -1397,15 +1397,6 @@ function showBrowserReminder() {
 
   // إظهار الرسالة
   browserReminder.classList.add("show");
-
-  // إخفاؤها تلقائيًا بعد 10 ثوانٍ
-  browserReminderTimer = setTimeout(() => {
-
-    browserReminder.classList.remove("show");
-
-    browserReminderTimer = null;
-
-  }, 10000);
 }
 
 function hideBrowserReminder() {
