@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="fr" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poste Cité El Amel - Système de gestion de file d'attente</title>
+<link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="shortcut icon" href="./favicon.ico">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="./site.webmanifest">
+<meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;
+  --border:#e5e7eb;--primary:#2563eb;--success:#16a34a;
+  --warn-bg:#fffbeb;--warn-bd:#fde68a;--warn-tx:#92400e;
+  --danger-bg:#fef2f2;--danger-bd:#fecaca;--danger-tx:#991b1b;
+  --online-bg:#ecfdf5;--online-tx:#065f46;--online-dot:#16a34a;
+  --offline-bg:#fef2f2;--offline-tx:#991b1b;--offline-dot:#dc2626;
+  --title2:#161B5D;--closed-bg:#fffbeb;--closed-tx:#92400e;--closed-dot:#f59e0b
+}
+body{
+  font-family:Inter,'Segoe UI',Tahoma,Arial,sans-serif;
+  text-align:center;background:radial-gradient(1200px 600px at 50% -10%,#e8f0ff,var(--bg));
+  display:flex;justify-content:center;align-items:center;
+  min-height:100vh;padding:16px;color:var(--text)
+}
+.card{
+  background:var(--card);padding:28px 22px;border-radius:22px;
+  box-shadow:0 18px 50px rgba(17,24,39,.10);
+  max-width:560px;width:100%;border:1px solid rgba(229,231,235,.7)
+}
+.brand-logo{
+  max-width:90px;height:auto;margin:0 auto 24px;
+  display:block;object-fit:contain;cursor:pointer
+}
+.bi{display:flex;flex-direction:column;gap:4px}
+.bi .fr,.bi .ar{display:block;line-height:1.2;unicode-bidi:isolate}
+.bi .fr{direction:ltr;text-align:left;font-family:Inter,sans-serif}
+.bi .ar{direction:rtl;text-align:right;font-family:Tajawal,Tahoma,Arial,sans-serif}
+.bi.center .fr,.bi.center .ar{text-align:center}
+.bi.small .fr,.bi.small .ar{font-size:12.5px;font-weight:700;color:var(--muted)}
+.page-title{margin-bottom:12px}
+.page-title .ar{font-size:26px;font-weight:800;color:var(--title2)}
+.page-title .fr{font-size:14.5px;font-weight:700;color:var(--muted)}
+.number-box{
+  background:linear-gradient(180deg,#f8fafc,#fff);
+  border-radius:18px;padding:14px 12px;margin:14px 0 10px;
+  border:1px solid var(--border)
+}
+.number{
+  font-size:clamp(56px,14vw,96px);color:var(--primary);
+  font-weight:800;line-height:1;letter-spacing:1px;
+  transition:color .25s ease,transform .18s ease
+}
+.number.updated{transform:scale(1.06);color:var(--success)}
+.number.closed{color:var(--muted)}
+.user-section{
+  background:#f9fafb;padding:16px;border-radius:16px;
+  margin:16px 0;border:1px solid var(--border);text-align:initial
+}
+.user-section h3{margin-bottom:10px}
+.user-section h3 .ar{font-size:15px;font-weight:800;text-align:center}
+.user-section h3 .fr{font-size:12.5px;font-weight:700;color:var(--muted);text-align:center}
+.input-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.input-group label .ar{font-size:13px;font-weight:800}
+.input-group label .fr{font-size:12.5px;font-weight:700;color:var(--muted)}
+.input-group input{
+  padding:11px 12px;border-radius:10px;border:1px solid var(--border);
+  font-size:14px;outline:none;background:#fff;
+  transition:border-color .2s ease,box-shadow .2s ease
+}
+.input-group input:focus{
+  border-color:rgba(37,99,235,.55);
+  box-shadow:0 0 0 4px rgba(37,99,235,.12)
+}
+.input-group input:disabled{
+  background:#f3f4f6;color:var(--muted);
+  cursor:not-allowed;box-shadow:none
+}
+.btn{
+  width:100%;max-width:280px;margin:8px auto 0;display:block;
+  border:1px solid rgba(0,0,0,.06);border-radius:12px;
+  background:var(--primary);color:#fff;padding:12px 14px;
+  cursor:pointer;transition:filter .15s ease,background-color .2s ease
+}
+.btn:hover{filter:brightness(.97)}
+.btn .bi .ar{color:#fff;font-weight:900;font-size:16px}
+.btn .bi .fr{color:rgba(255,255,255,.92);font-weight:800;font-size:12.5px}
+.btn.active{
+  background:#16a34a;border-color:#15803d;
+  box-shadow:0 0 0 4px rgba(22,163,74,.15),0 8px 22px rgba(22,163,74,.20)
+}
+.btn.active:hover{background:#15803d}
+.btn:disabled{opacity:.65;cursor:not-allowed}
+.alert-banner{
+  display:none;background:var(--warn-bg);color:var(--warn-tx);
+  border:1px solid var(--warn-bd);padding:12px;
+  border-radius:12px;margin-top:10px;text-align:center
+}
+.alert-banner.active{display:block}
+.alert-banner.urgent{
+  background:var(--danger-bg);color:var(--danger-tx);
+  border-color:var(--danger-bd)
+}
+.alert-banner .bi.small .fr,.alert-banner .bi.small .ar{
+  color:inherit;font-weight:800
+}
+.status-container{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:10px 14px;border-radius:16px;width:100%;
+  background:var(--offline-bg);color:var(--offline-tx);
+  border:1px solid rgba(0,0,0,.05)
+}
+.status-dot{
+  width:10px;height:10px;border-radius:50%;
+  background:var(--offline-dot);display:inline-block;flex:0 0 auto
+}
+.status-container.online{background:var(--online-bg);color:var(--online-tx)}
+.status-container.online .status-dot{background:var(--online-dot)}
+.status-container.closed{background:var(--closed-bg);color:var(--closed-tx)}
+.status-container.closed .status-dot{background:var(--closed-dot)}
+.notification-overlay{
+  position:fixed;inset:0;background:rgba(15,23,42,.55);
+  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
+  display:flex;align-items:center;justify-content:center;
+  padding:18px;z-index:99999;opacity:0;visibility:hidden;
+  pointer-events:none;transition:opacity .25s ease,visibility .25s ease
+}
+.notification-overlay.show{opacity:1;visibility:visible;pointer-events:auto}
+.notification-popup{
+  position:relative;width:100%;max-width:390px;
+  max-height:90dvh;overflow-y:auto;background:#fff;
+  border-radius:22px;padding:25px 20px 20px;
+  box-shadow:0 25px 70px rgba(0,0,0,.22);
+  transform:translateY(18px) scale(.96);
+  transition:transform .25s ease;text-align:center
+}
+.notification-overlay.show .notification-popup{transform:translateY(0) scale(1)}
+.popup-close{
+  position:absolute;top:12px;right:12px;width:32px;height:32px;
+  border:none;border-radius:50%;background:#f1f5f9;color:#64748b;
+  font-size:23px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center
+}
+.popup-close:hover{background:#e2e8f0;color:#111827}
+.popup-icon{
+  width:68px;height:68px;margin:0 auto 15px;border-radius:50%;
+  background:#eff6ff;display:flex;align-items:center;
+  justify-content:center;font-size:34px
+}
+.popup-title{margin-bottom:12px}
+.popup-title .ar{color:#1e40af;font-size:21px;font-weight:800}
+.popup-title .fr{color:#64748b;font-size:13px;font-weight:700}
+.popup-description{margin-bottom:16px}
+.popup-description .ar{
+  font-size:14px;line-height:1.7;color:#334155;font-weight:700
+}
+.popup-description .fr{
+  font-size:12px;line-height:1.6;color:#64748b;font-weight:600
+}
+.popup-permission{
+  padding:11px;border-radius:12px;background:#fffbeb;
+  border:1px solid #fde68a;margin-bottom:12px
+}
+.popup-permission .ar,.popup-permission .fr{
+  color:#92400e;font-size:12px;font-weight:700;line-height:1.5
+}
+.popup-permission.denied{background:#fef2f2;border-color:#fecaca}
+.popup-permission.denied .ar,.popup-permission.denied .fr{color:#991b1b}
+.popup-enable{
+  width:100%;border:none;border-radius:12px;
+  background:#2563eb;color:white;padding:13px;
+  cursor:pointer;margin-bottom:10px
+}
+.popup-enable .ar{font-size:15px;font-weight:800;color:#fff}
+.popup-enable .fr{font-size:12px;font-weight:700;color:#fff}
+.popup-enable:hover{background:#1d4ed8}
+.popup-enable:disabled{opacity:.6;cursor:not-allowed}
+.popup-enable[hidden]{display:none}
+.popup-later{
+  background:none;border:none;color:#64748b;
+  font-size:13px;cursor:pointer;padding:9px
+}
+.popup-note{
+  margin-top:12px;padding:11px;background:#f8fafc;
+  border:1px solid #e2e8f0;border-radius:11px
+}
+.popup-note .ar,.popup-note .fr{
+  font-size:11px;line-height:1.5;color:#64748b;font-weight:700
+}
+body.popup-open{overflow:hidden}
+.test-panel{
+  margin-top:14px;padding:14px;border-radius:16px;
+  border:1px dashed rgba(37,99,235,.35);
+  background:linear-gradient(180deg,#f8fafc,#fff);text-align:initial
+}
+.test-panel[hidden]{display:none}
+.test-panel h3{margin-bottom:10px}
+.test-row{
+  display:flex;gap:8px;flex-wrap:wrap;
+  justify-content:center;align-items:center;margin-top:10px
+}
+.test-row input[type="number"]{
+  width:160px;max-width:100%;padding:10px;
+  border-radius:10px;border:1px solid var(--border)
+}
+.btn.test-btn{max-width:170px;margin:0;padding:10px 12px;background:#111827}
+.btn.test-btn.secondary{background:#374151}
+.test-note{
+  margin-top:10px;color:var(--muted);
+  font-size:12.5px;font-weight:700;text-align:center
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    transition-duration:.01ms!important
+  }
+}
+  
+/* رسالة إبقاء المتصفح مفتوحًا */
+.browser-reminder {
+  display: block;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 13px 12px;
+  margin-top: 12px;
+  text-align: center;
+  color: #1e40af;
+
+  opacity: 0;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  border-width: 0;
+  overflow: hidden;
+  visibility: hidden;
+
+  transition:
+    opacity 1s ease,
+    max-height 1s ease,
+    padding 1s ease,
+    margin 1s ease,
+    border-width 1s ease,
+    visibility 1s ease;
+}
+
+.browser-reminder.show {
+  opacity: 1;
+  max-height: 200px;
+  padding: 13px 12px;
+  margin-top: 12px;
+  border-width: 1px;
+  visibility: visible;
+}
+
+.browser-reminder .ar {
+  font-family: Tajawal, Tahoma, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.7;
+  color: #1e40af;
+}
+
+.browser-reminder .fr {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #475569;
+}
+
+@keyframes reminderFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+  
+</style>
+</head>
+<body>
+<div class="card">
+  <a href="./index.html" aria-label="العودة إلى الصفحة الرئيسية">
+    <img src="logo.png" alt="Logo" class="brand-logo">
+  </a>
+  <div class="bi center" style="margin:-10px 0 16px;gap:2px">
+    <span class="ar" lang="ar" style="font-size:15px;font-weight:800;color:var(--title2)">مكتب بريد حي الأمل 6033 قابس</span>
+    <span class="fr" lang="fr" style="font-size:11px;color:var(--muted)">Poste Cité El Amel 6033 Gabès</span>
+    <div style="margin-bottom:10px"></div>
+  </div>
+  <h1 class="page-title">
+    <span class="bi center">
+      <span class="ar" lang="ar" style="font-size:50px">الرقم الحالي</span>
+      <span class="fr" lang="fr" style="font-size:20px">Numéro actuel</span>
+    </span>
+  </h1>
+  <div class="number-box">
+    <div class="number" id="queueNum" aria-live="polite" aria-atomic="true">--</div>
+  </div>
+  <div class="user-section">
+    <h3>
+      <span class="bi center">
+        <span class="ar" lang="ar">متابعة دورك</span>
+        <span class="fr" lang="fr">Suivez votre tour</span>
+      </span>
+    </h3>
+    <div class="input-group">
+      <label for="myTicketInput">
+        <span class="bi">
+          <span class="ar" lang="ar">رقمك</span>
+          <span class="fr" lang="fr">Votre numéro</span>
+        </span>
+      </label>
+      <input type="number" inputmode="numeric" step="1" id="myTicketInput" min="1">
+    </div>
+    
+    <div class="input-group">
+      <label for="thresholdInput">
+        <span class="bi">
+          <span class="ar" lang="ar">هامش التنبيه (عدد الأشخاص قبلك)</span>
+          <span class="fr" lang="fr">Marge d'alerte (personnes avant vous)</span>
+        </span>
+      </label>
+      <input type="number" inputmode="numeric" step="1" id="thresholdInput" value="10" min="0">
+    </div>
+        <!-- رسالة إبقاء المتصفح مفتوحًا -->
+<div id="browserReminder" class="browser-reminder" role="status">
+  <span class="bi center">
+
+    <span class="ar" lang="ar">
+       يُرجى إبقاء المتصفح مفتوحًا لضمان تلقي الإشعارات.
+    </span>
+
+    <span class="fr" lang="fr">
+      Veuillez garder le navigateur ouvert pour recevoir les notifications.
+    </span>
+    
+    
+  </span>
+</div>
+    
+    <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
+      <span class="bi center">
+        <span class="ar" id="verifyBtnAr" lang="ar">متابعة</span>
+        <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
+      </span>
+    </button>
+
+
+
+<div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
+  </div>
+  <div class="status-container" id="statusContainer">
+    <span class="status-dot" aria-hidden="true"></span>
+    <div id="statusText" style="width:100%"></div>
+  </div>
+  <div id="testPanel" class="test-panel" hidden>
+    <h3>
+      <span class="bi center">
+        <span class="ar" lang="ar">وضع الاختبار (بدون ESP32)</span>
+        <span class="fr" lang="fr">Mode test (sans ESP32)</span>
+      </span>
+    </h3>
+    <div class="test-row">
+      <input id="testTicketInput" type="number" min="1" step="1" placeholder="Ticket courant">
+      <button id="testApplyBtn" class="btn test-btn secondary" type="button">
+        <span class="bi center">
+          <span class="ar" lang="ar">تطبيق</span>
+          <span class="fr" lang="fr">Appliquer</span>
+        </span>
+      </button>
+    </div>
+    <div class="test-row">
+      <button id="testDecBtn" class="btn test-btn secondary" type="button">
+        <span class="bi center">
+          <span class="ar">- 1</span>
+          <span class="fr">- 1</span>
+        </span>
+      </button>
+      <button id="testIncBtn" class="btn test-btn" type="button">
+        <span class="bi center">
+          <span class="ar">+ 1</span>
+          <span class="fr">+ 1</span>
+        </span>
+      </button>
+    </div>
+    <div class="test-row">
+      <label style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap">
+        <input id="testAutoToggle" type="checkbox">
+        <span class="bi center small">
+          <span class="ar" lang="ar">زيادة تلقائية</span>
+          <span class="fr" lang="fr">Auto-incrément</span>
+        </span>
+      </label>
+      <input id="testAutoPeriod" type="number" min="1" step="1" value="5" style="width:90px">
+      <span class="bi center small">
+        <span class="ar" lang="ar">ثوانٍ</span>
+        <span class="fr" lang="fr">secondes</span>
+      </span>
+    </div>
+    <div class="test-note">
+      <span class="bi center small">
+        <span class="ar" lang="ar">هذا الوضع يعمل فقط عند إضافة test=1 للرابط.</span>
+        <span class="fr" lang="fr">Ce mode fonctionne uniquement avec test=1 dans l’URL.</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="notificationOverlay" class="notification-overlay" role="dialog" aria-modal="true" aria-labelledby="notificationPopupTitle" aria-hidden="true">
+  <div class="notification-popup">
+    <button id="closeNotificationPopup" class="popup-close" type="button" aria-label="Fermer / إغلاق">&times;</button>
+    <div class="popup-icon">🔔</div>
+    <h2 id="notificationPopupTitle" class="popup-title">
+      <span class="bi center">
+        <span class="ar" lang="ar">تفعيل الإشعارات</span>
+        <span class="fr" lang="fr">Activer les notifications</span>
+      </span>
+    </h2>
+    <div class="popup-description">
+      <span class="bi center">
+        <span class="ar" lang="ar">يُرجى السماح بالإشعارات حتى نتمكن من تنبيهك عند اقتراب دورك.</span>
+        <span class="fr" lang="fr">Veuillez autoriser les notifications afin d'être averti lorsque votre tour approche.</span>
+      </span>
+    </div>
+    <div id="popupPermissionStatus" class="popup-permission" role="status" aria-live="polite">
+      <span class="bi center">
+      </span>
+    </div>
+    <button id="popupEnableBtn" class="popup-enable" type="button">
+      <span class="bi center">
+        <span class="ar" lang="ar">🔔 تفعيل الإشعارات</span>
+        <span class="fr" lang="fr">Activer les notifications</span>
+      </span>
+    </button>
+    <button id="popupLaterBtn" class="popup-later" type="button">لاحقًا / Plus tard</button>
+
+  </div>
+</div>
+
+<script>
+const QS=new URLSearchParams(location.search);
+const TEST_MODE=QS.get("test")==="1";
+const DB_BASE="https://qms-online-2658d-default-rtdb.firebaseio.com";
+const SW_URL="./sw.js";
+
+function makeUrl(path,params={}){
+  const url=new URL(DB_BASE.replace(/\/$/,"")+"/"+path.replace(/^\//,"")+".json");
+  Object.entries(params).forEach(([key,value])=>url.searchParams.set(key,String(value)));
+  return url.toString();
+}
+
+const STREAM_URL=makeUrl("queue",{print:"silent"});
+const QUEUE_URL=makeUrl("queue");
+const TICKET_URL=makeUrl("queue/current_ticket");
+const META_URL=makeUrl("queue/meta");
+
+const HEARTBEAT_GRACE_MS=20000;
+const REQUEST_GRACE_MS=20000;
+const HEARTBEAT_INTERVAL_MIN=5;
+const HEARTBEAT_MISSED_LIMIT=2;
+const HEARTBEAT_CLOSE_MS=HEARTBEAT_INTERVAL_MIN*HEARTBEAT_MISSED_LIMIT*60*1000;
+const REQUEST_INACTIVITY_MIN=30;
+const REQUEST_CLOSE_MS=REQUEST_INACTIVITY_MIN*60*1000;
+const CHECK_MS=30000;
+const POLL_VISIBLE_MS=8000;
+const POLL_HIDDEN_MS=15000;
+
+const queueNumEl=document.getElementById("queueNum");
+const statusContainer=document.getElementById("statusContainer");
+const statusText=document.getElementById("statusText");
+const myTicketInput=document.getElementById("myTicketInput");
+const thresholdInput=document.getElementById("thresholdInput");
+const alertBanner=document.getElementById("alertBanner");
+const verifyBtn=document.getElementById("verifyBtn");
+const verifyBtnAr=document.getElementById("verifyBtnAr");
+const verifyBtnFr=document.getElementById("verifyBtnFr");
+const notificationOverlay=document.getElementById("notificationOverlay");
+const closeNotificationPopupBtn=document.getElementById("closeNotificationPopup");
+const popupEnableBtn=document.getElementById("popupEnableBtn");
+const popupLaterBtn=document.getElementById("popupLaterBtn");
+const popupPermissionStatus=document.getElementById("popupPermissionStatus");
+const testPanel=document.getElementById("testPanel");
+const testTicketInput=document.getElementById("testTicketInput");
+const testApplyBtn=document.getElementById("testApplyBtn");
+const testDecBtn=document.getElementById("testDecBtn");
+const testIncBtn=document.getElementById("testIncBtn");
+const testAutoToggle=document.getElementById("testAutoToggle");
+const testAutoPeriod=document.getElementById("testAutoPeriod");
+
+const DEFAULT_THRESHOLD=String(thresholdInput.defaultValue||"10");
+let savedThreshold=DEFAULT_THRESHOLD;
+
+const state={
+  current_ticket:null,lastAlertedDiff:null,trackingEnabled:false,
+  userEditing:false,isOnline:false,systemClosed:false,serverOffset:0,
+  esp32_last_seen_ms:null,last_request_ms:null,metaLoaded:false
+};
+
+async function fetchServerOffset(){state.serverOffset=0}
+function serverNow(){return Date.now()+(state.serverOffset||0)}
+
+async function registerServiceWorker(){
+  try{
+    if(!("serviceWorker" in navigator))return false;
+    await navigator.serviceWorker.register(SW_URL,{scope:"./"});
+    return true;
+  }catch{return false}
+}
+
+const LS_KEY="queue_tracker_settings_v1";
+
+function loadSettings(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(!raw)return;
+    const settings=JSON.parse(raw);
+    if(!settings||typeof settings!=="object")return;
+    if(typeof settings.myTicket==="string"||typeof settings.myTicket==="number"){
+      myTicketInput.value=String(settings.myTicket);
+    }
+    if(typeof settings.threshold==="string"||typeof settings.threshold==="number"){
+      const value=Number(settings.threshold);
+      if(String(settings.threshold).trim()!==""&&Number.isSafeInteger(value)&&value>=0){
+        savedThreshold=String(value);
+        thresholdInput.value=savedThreshold;
+      }
+    }
+  }catch{}
+}
+
+function saveSettings(){
+  try{
+    localStorage.setItem(LS_KEY,JSON.stringify({
+      myTicket:myTicketInput.value,threshold:savedThreshold
+    }));
+  }catch{}
+}
+
+function escapeHtml(value){
+  return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;")
+    .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+function biHTML(frText,arText,extraClass="small"){
+  return `<span class="bi center ${extraClass}">
+    <span class="ar" lang="ar">${escapeHtml(arText)}</span>
+    <span class="fr" lang="fr">${escapeHtml(frText)}</span>
+  </span>`;
+}
+
+function setStatus(frText,arText){
+  statusText.innerHTML=biHTML(frText,arText);
+}
+
+function setBanner(frText,arText,{active=true,urgent=false}={}){
+  alertBanner.innerHTML=biHTML(frText,arText);
+  alertBanner.classList.toggle("active",!!active);
+  alertBanner.classList.toggle("urgent",!!urgent);
+}
+
+function clearBanner(){
+  alertBanner.classList.remove("active","urgent");
+  alertBanner.innerHTML="";
+}
+
+let popupDismissedForSession=false;
+let popupPreviousFocus=null;
+
+function notificationsGranted(){
+  return "Notification" in window&&window.isSecureContext&&Notification.permission==="granted";
+}
+
+function showNotificationPopup(){
+  if(!state.trackingEnabled)return;
+  if(notificationsGranted()){
+    hideNotificationPopup();
+    return;
+  }
+  if(popupDismissedForSession)return;
+  updatePopupPermission();
+  popupPreviousFocus=document.activeElement;
+  notificationOverlay.classList.add("show");
+  notificationOverlay.setAttribute("aria-hidden","false");
+  document.body.classList.add("popup-open");
+  closeNotificationPopupBtn.focus();
+}
+
+function hideNotificationPopup(){
+  const wasOpen=notificationOverlay.classList.contains("show");
+  notificationOverlay.classList.remove("show");
+  notificationOverlay.setAttribute("aria-hidden","true");
+  document.body.classList.remove("popup-open");
+  if(wasOpen){
+    const target=popupPreviousFocus;
+    if(target&&typeof target.focus==="function"&&target.isConnected&&!target.disabled){
+      target.focus();
+    }else if(!verifyBtn.disabled){
+      verifyBtn.focus();
+    }
+  }
+  popupPreviousFocus=null;
+}
+
+function dismissNotificationPopup(){
+  popupDismissedForSession=true;
+  hideNotificationPopup();
+}
+
+function setPopupPermission(frText,arText,denied=false){
+  popupPermissionStatus.innerHTML=biHTML(frText,arText);
+  popupPermissionStatus.classList.toggle("denied",denied);
+}
+
+function updatePopupPermission(){
+  if(notificationsGranted()){
+    hideNotificationPopup();
+    return;
+  }
+  if(!("Notification" in window)||!window.isSecureContext){
+    setPopupPermission(
+      "Les notifications ne sont pas disponibles dans ce navigateur ou ce contexte.",
+      "الإشعارات غير متاحة في هذا المتصفح أو في طريقة فتح الصفحة الحالية.",true
+    );
+    popupEnableBtn.hidden=true;
+    return;
+  }
+  if(Notification.permission==="denied"){
+    setPopupPermission(
+      "Notifications bloquées. Autorisez-les depuis les paramètres du navigateur.",
+      "الإشعارات محظورة. يمكنك السماح بها من إعدادات المتصفح.",true
+    );
+    popupEnableBtn.hidden=true;
+    return;
+  }
+  popupEnableBtn.hidden=false;
+}
+
+async function ensureNotificationsEnabled(){
+  if(!("Notification" in window)||!window.isSecureContext)return false;
+  if(Notification.permission==="granted")return true;
+  if(Notification.permission==="denied")return false;
+  try{
+    const permission=await Notification.requestPermission();
+    return permission==="granted";
+  }catch{return false}
+}
+
+closeNotificationPopupBtn.addEventListener("click",dismissNotificationPopup);
+popupLaterBtn.addEventListener("click",dismissNotificationPopup);
+
+popupEnableBtn.addEventListener("click",async()=>{
+  popupEnableBtn.disabled=true;
+  let permissionGranted=false;
+  try{
+    permissionGranted=await ensureNotificationsEnabled();
+  }finally{
+    popupEnableBtn.disabled=false;
+  }
+  if(permissionGranted){
+    popupDismissedForSession=true;
+    hideNotificationPopup();
+    registerServiceWorker().catch(()=>{});
+  }else{
+    updatePopupPermission();
+  }
+});
+
+notificationOverlay.addEventListener("click",event=>{
+  if(event.target===notificationOverlay)dismissNotificationPopup();
+});
+
+document.addEventListener("keydown",event=>{
+  if(event.key==="Escape"&&notificationOverlay.classList.contains("show")){
+    dismissNotificationPopup();
+  }
+});
+
+notificationOverlay.addEventListener("keydown",event=>{
+  if(event.key!=="Tab"||!notificationOverlay.classList.contains("show"))return;
+  const focusable=Array.from(notificationOverlay.querySelectorAll(
+    'button:not([disabled]):not([hidden])'
+  )).filter(el=>el.getClientRects().length>0);
+  if(!focusable.length)return;
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(event.shiftKey&&document.activeElement===first){
+    event.preventDefault();
+    last.focus();
+  }else if(!event.shiftKey&&document.activeElement===last){
+    event.preventDefault();
+    first.focus();
+  }
+});
+
+function setVerifyBtnActive(isActive){
+  verifyBtn.classList.toggle("active",!!isActive);
+  verifyBtn.setAttribute("aria-pressed",isActive?"true":"false");
+  if(isActive){
+    verifyBtnAr.textContent="جاري المتابعة - اضغط للإيقاف";
+    verifyBtnFr.textContent="Suivi activé - Appuyez pour arrêter";
+    verifyBtn.title="اضغط لإيقاف المتابعة / Appuyez pour arrêter";
+  }else{
+    verifyBtnAr.textContent="متابعة";
+    verifyBtnFr.textContent="Suivi";
+    verifyBtn.title="بدء المتابعة / Démarrer le suivi";
+  }
+}
+
+function setInputsFrozen(frozen){
+  const shouldFreeze=!!frozen;
+  if(shouldFreeze){
+    myTicketInput.blur();
+    thresholdInput.blur();
+  }
+  myTicketInput.disabled=shouldFreeze;
+  thresholdInput.disabled=shouldFreeze;
+}
+
+function computeClosedReasons(){
+  const now=serverNow();
+  const lastSeen=state.esp32_last_seen_ms==null?NaN:Number(state.esp32_last_seen_ms);
+  const lastRequest=state.last_request_ms==null?NaN:Number(state.last_request_ms);
+  const hbStale=!Number.isFinite(lastSeen)||
+    now-lastSeen>=HEARTBEAT_CLOSE_MS+HEARTBEAT_GRACE_MS;
+  const reqStale=!Number.isFinite(lastRequest)||
+    now-lastRequest>=REQUEST_CLOSE_MS+REQUEST_GRACE_MS;
+  return{hbStale,reqStale};
+}
+
+function updateStatusUI(){
+  statusContainer.classList.remove("online","closed");
+  if(TEST_MODE){
+    statusContainer.classList.add("online");
+    setStatus("Mode test activé (test=1)","تم تفعيل وضع الاختبار (test=1)");
+    return;
+  }
+  if(!state.isOnline){
+    setStatus("Hors ligne - Reconnexion...","غير متصل - جارٍ إعادة الاتصال...");
+    return;
+  }
+  if(state.systemClosed){
+    statusContainer.classList.add("closed");
+    setStatus("Système fermé","النظام مغلق");
+    return;
+  }
+  statusContainer.classList.add("online");
+  setStatus("Système connecté","النظام متصل");
+}
+
+function setOnline(isOnline){
+  state.isOnline=!!isOnline;
+  updateStatusUI();
+}
+
+function renderTicketNumber(){
+  if(state.systemClosed){
+    queueNumEl.textContent="--";
+    queueNumEl.classList.add("closed");
+    return;
+  }
+  queueNumEl.classList.remove("closed");
+  const value=state.current_ticket===null?NaN:Number(state.current_ticket);
+  queueNumEl.textContent=Number.isFinite(value)?String(value):"--";
+}
+
+function getEffectiveThreshold(){
+  const originalThreshold=Number(savedThreshold);
+  const myTicket=Number(myTicketInput.value);
+  const current=state.current_ticket;
+  if(!Number.isSafeInteger(originalThreshold)||originalThreshold<0){
+    return Number(DEFAULT_THRESHOLD);
+  }
+  if(current===null||!Number.isSafeInteger(Number(current))||
+    !Number.isSafeInteger(myTicket)||myTicket<1){
+    return originalThreshold;
+  }
+  const diff=myTicket-Number(current);
+  if(diff<=0)return 0;
+  return Math.min(originalThreshold,diff);
+}
+
+function updateThresholdConstraints(){
+  thresholdInput.removeAttribute("max");
+  thresholdInput.value=state.trackingEnabled?
+    String(getEffectiveThreshold()):savedThreshold;
+}
+
+function restoreSavedThreshold(){
+  thresholdInput.value=savedThreshold;
+  thresholdInput.removeAttribute("max");
+}
+
+let pollTimer=null;
+
+function stopPolling(){
+  if(pollTimer){
+    clearInterval(pollTimer);
+    pollTimer=null;
+  }
+}
+
+function stopTrackingHard(){
+  hideBrowserReminder();
+  state.trackingEnabled=false;
+  state.lastAlertedDiff=null;
+  clearBanner();
+  stopPolling();
+  setVerifyBtnActive(false);
+  restoreSavedThreshold();
+  hideNotificationPopup();
+  popupDismissedForSession=false;
+}
+
+function setSystemClosed(isClosed){
+  const next=!!isClosed;
+  if(state.systemClosed===next)return;
+  state.systemClosed=next;
+  if(next){
+    stopTrackingHard();
+    verifyBtn.disabled=true;
+    setInputsFrozen(true);
+  }else{
+    verifyBtn.disabled=false;
+    setInputsFrozen(false);
+    updateThresholdConstraints();
+  }
+  renderTicketNumber();
+  updateStatusUI();
+}
+
+function evaluateClosedState(){
+  if(TEST_MODE){
+    setSystemClosed(false);
+    return;
+  }
+  if(!state.metaLoaded)return;
+  const{hbStale,reqStale}=computeClosedReasons();
+  setSystemClosed(hbStale||reqStale);
+}
+
+async function sendNotification(frText,arText,{urgent=false,tag="queue-alert"}={}){
+  try{
+    if(!notificationsGranted())return false;
+    const title=urgent?"تنبيه مهم / Alerte importante":"تنبيه الدور / Alerte de file";
+    const body=`${arText}\n${frText}`;
+    if("serviceWorker" in navigator){
+      let reg=await navigator.serviceWorker.getRegistration();
+      if(!reg){
+        try{
+          reg=await navigator.serviceWorker.register(SW_URL,{scope:"./"});
+        }catch{}
+      }
+      if(reg&&reg.showNotification){
+        await reg.showNotification(title,{
+          body,tag,renotify:true,icon:"logo.png",
+          vibrate:urgent?[200,100,200,100,200]:[150],
+          data:{url:"./"}
+        });
+        return true;
+      }
+    }
+    new Notification(title,{body,tag,icon:"logo.png"});
+    return true;
+  }catch{return false}
+}
+
+let audioCtx=null;
+
+function ensureAudio(){
+  if(!audioCtx){
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass)return Promise.resolve();
+    audioCtx=new AudioContextClass();
+  }
+  if(audioCtx.state==="suspended")return audioCtx.resume();
+  return Promise.resolve();
+}
+
+function playAlertBeep(){
+  ensureAudio().then(()=>{
+    if(!audioCtx)return;
+    const playTone=(frequency,time,duration)=>{
+      const oscillator=audioCtx.createOscillator();
+      const gain=audioCtx.createGain();
+      oscillator.type="triangle";
+      oscillator.frequency.setValueAtTime(frequency,time);
+      gain.gain.setValueAtTime(.25,time);
+      gain.gain.exponentialRampToValueAtTime(.00001,time+duration);
+      oscillator.connect(gain);
+      gain.connect(audioCtx.destination);
+      oscillator.start(time);
+      oscillator.stop(time+duration);
+    };
+    const now=audioCtx.currentTime;
+    playTone(987.77,now,.25);
+    playTone(1318.51,now+.3,.4);
+  }).catch(()=>{});
+}
+
+["pointerdown","touchstart","mousedown","keydown"].forEach(eventName=>{
+  window.addEventListener(eventName,()=>{
+    ensureAudio().catch(()=>{});
+  },{once:true,passive:true});
+});
+
+function checkUserAlert(currentTicket){
+  if(state.systemClosed||!state.trackingEnabled)return;
+  const myTicket=Number(myTicketInput.value);
+  const originalThreshold=Number(savedThreshold);
+  const current=Number(currentTicket);
+  if(!Number.isSafeInteger(myTicket)||myTicket<1||
+    !Number.isSafeInteger(originalThreshold)||originalThreshold<0||
+    currentTicket===null||!Number.isSafeInteger(current)){
+    clearBanner();
+    state.lastAlertedDiff=null;
+    return;
+  }
+  const diff=myTicket-current;
+  updateThresholdConstraints();
+  if(diff<=0){
+    stopTrackingHard();
+    saveSettings();
+    return;
+  }
+  if(diff>originalThreshold||originalThreshold===0){
+    clearBanner();
+    state.lastAlertedDiff=diff;
+    return;
+  }
+  if(diff===1){
+    const fr="Il ne reste qu'une seule personne avant vous. Veuillez vous préparer à vous présenter au guichet.";
+    const ar="تبقّى شخص واحد فقط قبلك، يُرجى الاستعداد للتوجّه إلى الشباك.";
+    setBanner(fr,ar,{active:true,urgent:true});
+    if(state.lastAlertedDiff!==1){
+      state.lastAlertedDiff=1;
+      playAlertBeep();
+      sendNotification(fr,ar,{urgent:true,tag:"queue-alert"}).catch(()=>{});
+    }
+    return;
+  }
+  if(diff>1&&diff<=originalThreshold){
+    const fr=`Attention ! Il reste ${diff} personnes avant votre tour.`;
+    const ar=`تنبيه! تبقّى ${diff} أشخاص قبلك.`;
+    setBanner(fr,ar,{active:true,urgent:false});
+    if(state.lastAlertedDiff!==diff){
+      state.lastAlertedDiff=diff;
+      playAlertBeep();
+      sendNotification(fr,ar,{urgent:false,tag:"queue-alert"}).catch(()=>{});
+    }
+  }
+}
+
+async function pollCurrentTicketOnce(){
+  if(state.systemClosed||!state.trackingEnabled)return;
+  if(TEST_MODE){
+    setTicket(testSim.ticket);
+    return;
+  }
+  try{
+    const response=await fetch(TICKET_URL,{cache:"no-store"});
+    if(!response.ok)throw new Error("poll failed");
+    const ticket=await response.json();
+    if(state.trackingEnabled&&!state.systemClosed)setTicket(ticket);
+  }catch{}
+}
+
+function startPolling(){
+  stopPolling();
+  const period=document.visibilityState==="visible"?POLL_VISIBLE_MS:POLL_HIDDEN_MS;
+  pollTimer=setInterval(pollCurrentTicketOnce,period);
+  pollCurrentTicketOnce();
+}
+
+function inputsAreValidOrShowMessage(){
+  const myTicket=Number(myTicketInput.value);
+  const threshold=Number(thresholdInput.value);
+  if(myTicketInput.value.trim()===""||!Number.isSafeInteger(myTicket)||myTicket<1){
+    setBanner("Veuillez saisir un numéro de ticket valide.",
+      "يرجى إدخال رقم تذكرة صحيح.",{active:true,urgent:true});
+    return false;
+  }
+  if(thresholdInput.value.trim()===""||!Number.isSafeInteger(threshold)||threshold<0){
+    setBanner("Veuillez saisir une marge d'alerte valide (>= 0).",
+      "يرجى إدخال هامش تنبيه صحيح (0 أو أكثر).",{active:true,urgent:true});
+    return false;
+  }
+  return true;
+}
+
+function startTrackingOnly(){
+  if(state.systemClosed)return;
+  if(state.trackingEnabled){
+    stopTrackingHard();
+    saveSettings();
+    return;
+  }
+  if(!inputsAreValidOrShowMessage())return;
+  const value=Number(thresholdInput.value);
+  if(Number.isSafeInteger(value)&&value>=0)savedThreshold=String(value);
+  saveSettings();
+  state.trackingEnabled=true;
+  state.lastAlertedDiff=null;
+  popupDismissedForSession=false;
+  showBrowserReminder();
+  setVerifyBtnActive(true);
+  updateThresholdConstraints();
+  registerServiceWorker().catch(()=>{});
+  ensureAudio().catch(()=>{});
+  startPolling();
+  checkUserAlert(state.current_ticket);
+  if(state.trackingEnabled&&!notificationsGranted())showNotificationPopup();
+}
+
+verifyBtn.addEventListener("click",startTrackingOnly);
+
+myTicketInput.addEventListener("input",()=>{
+  stopTrackingHard();
+  saveSettings();
+});
+
+thresholdInput.addEventListener("input",()=>{
+  const value=Number(thresholdInput.value);
+  const valid=thresholdInput.value.trim()!==""&&Number.isSafeInteger(value)&&value>=0;
+  if(valid)savedThreshold=String(value);
+  if(state.trackingEnabled)stopTrackingHard();
+  if(valid)saveSettings();
+});
+
+myTicketInput.addEventListener("focus",()=>{state.userEditing=true});
+myTicketInput.addEventListener("blur",()=>{
+  state.userEditing=false;
+  saveSettings();
+});
+thresholdInput.addEventListener("focus",()=>{state.userEditing=true});
+thresholdInput.addEventListener("blur",()=>{
+  state.userEditing=false;
+  const value=Number(thresholdInput.value);
+  if(thresholdInput.value.trim()!==""&&Number.isSafeInteger(value)&&value>=0){
+    savedThreshold=String(value);
+  }else{
+    thresholdInput.value=savedThreshold;
+  }
+  saveSettings();
+});
+
+function triggerUpdateAnimation(){
+  queueNumEl.classList.remove("updated");
+  void queueNumEl.offsetWidth;
+  queueNumEl.classList.add("updated");
+  setTimeout(()=>queueNumEl.classList.remove("updated"),260);
+}
+
+function setTicket(value){
+  if(value===null||typeof value==="undefined")return;
+  const number=Number(value);
+  if(!Number.isSafeInteger(number)||number<0)return;
+  const oldShown=queueNumEl.textContent;
+  state.current_ticket=number;
+  renderTicketNumber();
+  if(state.trackingEnabled&&!state.userEditing&&!state.systemClosed){
+    checkUserAlert(state.current_ticket);
+  }
+  if(!state.systemClosed&&oldShown!=="--"&&oldShown!==String(state.current_ticket)){
+    triggerUpdateAnimation();
+  }
+}
+
+async function fetchMetaOnce(){
+  try{
+    const response=await fetch(META_URL,{cache:"no-store"});
+    if(response.ok){
+      const meta=await response.json();
+      if(meta&&typeof meta==="object"){
+        state.esp32_last_seen_ms=meta.esp32_last_seen_ms??null;
+        state.last_request_ms=meta.last_request_ms??null;
+        state.metaLoaded=true;
+      }
+    }
+  }catch{}
+  evaluateClosedState();
+}
+
+let es=null;
+let reconnectTimer=null;
+let offlineUiTimer=null;
+const OFFLINE_GRACE_MS=2500;
+
+function requestOfflineUI(){
+  if(offlineUiTimer)return;
+  offlineUiTimer=setTimeout(()=>{
+    offlineUiTimer=null;
+    if(!es||es.readyState!==1)setOnline(false);
+  },OFFLINE_GRACE_MS);
+}
+
+function cancelOfflineUI(){
+  if(!offlineUiTimer)return;
+  clearTimeout(offlineUiTimer);
+  offlineUiTimer=null;
+}
+
+function scheduleReconnect(){
+  if(reconnectTimer)return;
+  reconnectTimer=setTimeout(()=>{
+    reconnectTimer=null;
+    connectStream();
+  },4000);
+}
+
+function applyStreamPayload(payload){
+  if(!payload||typeof payload!=="object")return;
+  const{path,data}=payload;
+  if(path==="/"){
+    if(data&&typeof data==="object"){
+      if("current_ticket" in data)setTicket(data.current_ticket);
+      if(data.meta&&typeof data.meta==="object"){
+        state.esp32_last_seen_ms=data.meta.esp32_last_seen_ms??null;
+        state.last_request_ms=data.meta.last_request_ms??null;
+        state.metaLoaded=true;
+        evaluateClosedState();
+      }else if(data.meta===null||!("meta" in data)){
+        state.esp32_last_seen_ms=null;
+        state.last_request_ms=null;
+        state.metaLoaded=true;
+        evaluateClosedState();
+      }
+    }
+    return;
+  }
+  if(path==="/current_ticket"){
+    setTicket(data);
+    return;
+  }
+  if(path==="/meta"){
+    if(data&&typeof data==="object"){
+      state.esp32_last_seen_ms=data.esp32_last_seen_ms??null;
+      state.last_request_ms=data.last_request_ms??null;
+    }else{
+      state.esp32_last_seen_ms=null;
+      state.last_request_ms=null;
+    }
+    state.metaLoaded=true;
+    evaluateClosedState();
+    return;
+  }
+  if(path==="/meta/esp32_last_seen_ms"){
+    state.esp32_last_seen_ms=data;
+    state.metaLoaded=true;
+    evaluateClosedState();
+    return;
+  }
+  if(path==="/meta/last_request_ms"){
+    state.last_request_ms=data;
+    state.metaLoaded=true;
+    evaluateClosedState();
+  }
+}
+
+function connectStream(){
+  if(TEST_MODE)return;
+  if(es){
+    try{es.close()}catch{}
+    es=null;
+  }
+  if(!state.isOnline){
+    setStatus("Connexion au système...","جارٍ الاتصال بالنظام...");
+  }
+  try{
+    es=new EventSource(STREAM_URL);
+    es.onopen=()=>{
+      cancelOfflineUI();
+      setOnline(true);
+    };
+    es.addEventListener("put",event=>{
+      try{applyStreamPayload(JSON.parse(event.data))}catch{}
+    });
+    es.addEventListener("patch",event=>{
+      try{applyStreamPayload(JSON.parse(event.data))}catch{}
+    });
+    es.onmessage=event=>{
+      try{applyStreamPayload(JSON.parse(event.data))}catch{}
+    };
+    es.onerror=()=>{
+      requestOfflineUI();
+      scheduleReconnect();
+    };
+  }catch{
+    requestOfflineUI();
+    scheduleReconnect();
+  }
+}
+
+async function initialFetch(){
+  if(TEST_MODE)return;
+  try{
+    const response=await fetch(QUEUE_URL,{cache:"no-store"});
+    if(response.ok){
+      const data=await response.json();
+      if(data&&typeof data==="object"){
+        if("current_ticket" in data)setTicket(data.current_ticket);
+        if(data.meta&&typeof data.meta==="object"){
+          state.esp32_last_seen_ms=data.meta.esp32_last_seen_ms??null;
+          state.last_request_ms=data.meta.last_request_ms??null;
+          state.metaLoaded=true;
+        }
+      }
+    }
+  }catch{}
+  if(!state.metaLoaded)await fetchMetaOnce();
+  else evaluateClosedState();
+}
+
+setInterval(()=>{
+  if(TEST_MODE){
+    setSystemClosed(false);
+    return;
+  }
+  if(!state.metaLoaded)return;
+  evaluateClosedState();
+},CHECK_MS);
+
+document.addEventListener("visibilitychange",async()=>{
+  if(notificationsGranted())hideNotificationPopup();
+  if(TEST_MODE){
+    if(state.trackingEnabled&&!state.systemClosed)startPolling();
+    else stopPolling();
+    return;
+  }
+  if(document.visibilityState==="visible"){
+    await fetchServerOffset();
+    await initialFetch();
+    connectStream();
+  }
+  if(state.trackingEnabled&&!state.systemClosed)startPolling();
+  else stopPolling();
+});
+
+const testSim={
+  ticket:1,heartbeatTimer:null,autoTimer:null,
+  LS_KEY_TICKET:"queue_test_ticket_v1"
+};
+
+function testLoadTicket(){
+  try{
+    const saved=Number(localStorage.getItem(testSim.LS_KEY_TICKET));
+    if(Number.isSafeInteger(saved)&&saved>=1)return saved;
+  }catch{}
+  return 1;
+}
+
+function testSaveTicket(){
+  try{
+    localStorage.setItem(testSim.LS_KEY_TICKET,String(testSim.ticket));
+  }catch{}
+}
+
+function testSetTicket(n){
+  const v=Math.max(1,Math.floor(Number(n)||1));
+  testSim.ticket=v;
+  if(testTicketInput)testTicketInput.value=String(v);
+  setTicket(v);
+  testSaveTicket();
+}
+
+function testTouchMeta(){
+  const now=serverNow();
+  state.esp32_last_seen_ms=now;
+  state.last_request_ms=now;
+  state.metaLoaded=true;
+  setSystemClosed(false);
+}
+
+function startTestHeartbeat(){
+  stopTestHeartbeat();
+  testSim.heartbeatTimer=setInterval(testTouchMeta,20000);
+  testTouchMeta();
+}
+
+function stopTestHeartbeat(){
+  if(testSim.heartbeatTimer){
+    clearInterval(testSim.heartbeatTimer);
+    testSim.heartbeatTimer=null;
+  }
+}
+
+function startTestAutoIncrement(){
+  stopTestAutoIncrement();
+  const sec=Math.max(1,Math.floor(Number(testAutoPeriod?.value)||5));
+  testSim.autoTimer=setInterval(()=>{
+    testSetTicket(testSim.ticket+1);
+  },sec*1000);
+}
+
+function stopTestAutoIncrement(){
+  if(testSim.autoTimer){
+    clearInterval(testSim.autoTimer);
+    testSim.autoTimer=null;
+  }
+}
+
+function initTestMode(){
+  if(testPanel)testPanel.hidden=false;
+  setOnline(true);
+  state.metaLoaded=true;
+  state.serverOffset=0;
+  startTestHeartbeat();
+  testSetTicket(testLoadTicket());
+  testApplyBtn?.addEventListener("click",()=>{
+    testSetTicket(testTicketInput.value);
+  });
+  testDecBtn?.addEventListener("click",()=>{
+    testSetTicket(testSim.ticket-1);
+  });
+  testIncBtn?.addEventListener("click",()=>{
+    testSetTicket(testSim.ticket+1);
+  });
+  testTicketInput?.addEventListener("keydown",event=>{
+    if(event.key==="Enter")testSetTicket(testTicketInput.value);
+  });
+  testAutoToggle?.addEventListener("change",()=>{
+    if(testAutoToggle.checked)startTestAutoIncrement();
+    else stopTestAutoIncrement();
+  });
+  testAutoPeriod?.addEventListener("input",()=>{
+    if(testAutoToggle?.checked)startTestAutoIncrement();
+  });
+  setSystemClosed(false);
+  renderTicketNumber();
+  updateStatusUI();
+  setInputsFrozen(false);
+  updateThresholdConstraints();
+}
+
+(async function start(){
+  loadSettings();
+  restoreSavedThreshold();
+  setStatus("Connexion en cours...","جارٍ الاتصال...");
+  registerServiceWorker().catch(()=>{});
+  if(TEST_MODE){
+    initTestMode();
+    return;
+  }
+  await fetchServerOffset();
+  await initialFetch();
+  connectStream();
+  renderTicketNumber();
+  updateStatusUI();
+  setInputsFrozen(state.systemClosed);
+  updateThresholdConstraints();
+})();
+/* =====================================
+   رسالة إبقاء المتصفح مفتوحًا
+   تظهر للمستخدم مرة واحدة فقط
+   وتختفي تلقائيًا بعد 10 ثوانٍ
+===================================== */
+
+const browserReminder = document.getElementById("browserReminder");
+
+const BROWSER_REMINDER_SEEN_KEY = "browser_reminder_seen_v1";
+
+let browserReminderTimer = null;
+
+function showBrowserReminder() {
+
+  if (!browserReminder) return;
+
+  // إذا سبق عرض الرسالة لهذا المستخدم، لا تعرضها مرة أخرى
+  try {
+    if (localStorage.getItem(BROWSER_REMINDER_SEEN_KEY) === "1") {
+      return;
+    }
+  } catch {}
+
+  // تسجيل أن الرسالة عُرضت
+  try {
+    localStorage.setItem(BROWSER_REMINDER_SEEN_KEY, "1");
+  } catch {}
+
+  // إلغاء أي مؤقت سابق
+  if (browserReminderTimer) {
+    clearTimeout(browserReminderTimer);
+    browserReminderTimer = null;
+  }
+
+  // إظهار الرسالة
+  browserReminder.classList.add("show");
+  // إخفاء الرسالة تلقائيًا بعد 30 ثانية
+  browserReminderTimer = setTimeout(() => {
+    hideBrowserReminder();
+  }, 15000);
+}
+
+function hideBrowserReminder() {
+
+  if (browserReminderTimer) {
+    clearTimeout(browserReminderTimer);
+    browserReminderTimer = null;
+  }
+
+  if (browserReminder) {
+    browserReminder.classList.remove("show");
+  }
+}
+</script>
+</body>
+</html>
