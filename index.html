@@ -33,6 +33,8 @@
   --border:#e5e7eb;
   --primary:#2563eb;
   --success:#16a34a;
+  --tracking:#7c3aed;
+  --tracking-hover:#6d28d9;
   --warn-bg:#fffbeb;
   --warn-bd:#fde68a;
   --warn-tx:#92400e;
@@ -238,7 +240,7 @@ body {
   color:#fff;
   padding:12px 14px;
   cursor:pointer;
-  transition:filter .15s ease,background-color .2s ease,border-color .2s ease;
+  transition:filter .15s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease;
 }
 
 .btn:hover { filter:brightness(.97); }
@@ -256,13 +258,13 @@ body {
 }
 
 .btn.active {
-  background:#dc2626;
-  border-color:#b91c1c;
-  box-shadow:0 0 0 4px rgba(220,38,38,0.12);
+  background:var(--tracking);
+  border-color:rgba(255,255,255,0.45);
+  box-shadow:0 0 0 4px rgba(124,58,237,0.15),0 8px 22px rgba(124,58,237,0.18);
 }
 
 .btn.active:hover {
-  background:#b91c1c;
+  background:var(--tracking-hover);
   filter:none;
 }
 
@@ -271,11 +273,8 @@ body {
   color:#ffffff;
 }
 
-.btn.active .bi .ar { font-size:15px; }
-.btn.active .bi .fr { font-size:12px; }
-
 .btn.active:focus-visible {
-  outline:3px solid rgba(220,38,38,0.35);
+  outline:3px solid rgba(124,58,237,0.35);
   outline-offset:3px;
 }
 
@@ -571,6 +570,10 @@ const POLL_VISIBLE_MS = 8000;
 const POLL_HIDDEN_MS = 15000;
 const SW_URL = "./sw.js";
 
+/* BUTTON ANIMATION */
+const TRACKING_ANIMATION_MS = 2000;
+const TRACKING_DOTS_INTERVAL_MS = 400;
+
 /* SERVER TIME */
 async function fetchServerOffset() {
   state.serverOffset = 0;
@@ -627,6 +630,10 @@ const state = {
   last_request_ms:null,
   metaLoaded:false
 };
+
+/* BUTTON ANIMATION STATE */
+let trackingDotsTimer = null;
+let trackingAnimationTimer = null;
 
 /* TEST SIMULATION */
 const testSim = {
@@ -764,24 +771,63 @@ function clearBanner() {
   alertBanner.innerHTML = "";
 }
 
-/* VERIFY BUTTON */
+/* VERIFY BUTTON ANIMATION */
+function stopTrackingButtonAnimation() {
+  if (trackingDotsTimer) {
+    clearInterval(trackingDotsTimer);
+    trackingDotsTimer = null;
+  }
+
+  if (trackingAnimationTimer) {
+    clearTimeout(trackingAnimationTimer);
+    trackingAnimationTimer = null;
+  }
+}
+
 function setVerifyBtnActive(isActive) {
+  stopTrackingButtonAnimation();
+
   verifyBtn.classList.toggle("active", !!isActive);
   verifyBtn.setAttribute("aria-pressed", isActive ? "true" : "false");
 
-  if (isActive) {
-    verifyBtnAr.textContent = "✓ جاري المتابعة — اضغط للإيقاف";
-    verifyBtnFr.textContent = "Suivi activé — Appuyez pour arrêter";
-
-    verifyBtn.title = "اضغط لإيقاف المتابعة / Appuyez pour arrêter";
-    verifyBtn.setAttribute("aria-label", "المتابعة جارية، اضغط لإيقاف المتابعة");
-  } else {
+  if (!isActive) {
     verifyBtnAr.textContent = "متابعة";
     verifyBtnFr.textContent = "Suivi";
-
     verifyBtn.title = "بدء المتابعة / Démarrer le suivi";
     verifyBtn.setAttribute("aria-label", "بدء متابعة الدور");
+    return;
   }
+
+  verifyBtn.title = "إيقاف المتابعة / Arrêter le suivi";
+  verifyBtn.setAttribute("aria-label", "المتابعة جارية، اضغط لإيقاف المتابعة");
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    verifyBtnAr.textContent = "إيقاف المتابعة";
+    verifyBtnFr.textContent = "Arrêter le suivi";
+    return;
+  }
+
+  let dotsCount = 1;
+
+  const updateDots = () => {
+    const dots = ".".repeat(dotsCount);
+    verifyBtnAr.textContent = `جاري المتابعة${dots}`;
+    verifyBtnFr.textContent = `Suivi en cours${dots}`;
+    dotsCount = dotsCount >= 3 ? 1 : dotsCount + 1;
+  };
+
+  updateDots();
+
+  trackingDotsTimer = setInterval(updateDots, TRACKING_DOTS_INTERVAL_MS);
+
+  trackingAnimationTimer = setTimeout(() => {
+    stopTrackingButtonAnimation();
+
+    if (!state.trackingEnabled || state.systemClosed) return;
+
+    verifyBtnAr.textContent = "إيقاف المتابعة";
+    verifyBtnFr.textContent = "Arrêter le suivi";
+  }, TRACKING_ANIMATION_MS);
 }
 
 function setInputsFrozen(frozen) {
@@ -1205,7 +1251,7 @@ function startTrackingOnly() {
 
   saveSettings();
 
-  // تفعيل المتابعة وتغيير الزر إلى الأحمر.
+  // تفعيل المتابعة وتحريك النقاط داخل الزر.
   state.trackingEnabled = true;
   state.lastAlertedDiff = null;
   setVerifyBtnActive(true);
@@ -1237,7 +1283,6 @@ thresholdInput.addEventListener("input", () => {
     savedThreshold = String(value);
   }
 
-  // إيقاف المتابعة عند تعديل الهامش.
   if (state.trackingEnabled) {
     state.trackingEnabled = false;
     state.lastAlertedDiff = null;
