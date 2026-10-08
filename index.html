@@ -1161,18 +1161,32 @@ function inputsAreValidOrShowMessage() {
 
 /* START TRACKING */
 function startTrackingOnly() {
-  if (state.trackingEnabled || state.systemClosed) return;
+  if (state.systemClosed) return;
+
+  // إذا كانت المتابعة مفعّلة، أوقفها.
+  if (state.trackingEnabled) {
+    stopTrackingHard();
+    return;
+  }
+
+  // التحقق من صحة البيانات قبل بدء المتابعة.
   if (!inputsAreValidOrShowMessage()) return;
 
   saveSettings();
+
+  // تفعيل المتابعة.
   state.trackingEnabled = true;
   state.lastAlertedDiff = null;
+
+  // تغيير الزر إلى "جاري المتابعة".
   setVerifyBtnActive(true);
 
+  // تفعيل الإشعارات والصوت.
   registerServiceWorker().catch(() => {});
   ensureAudio().catch(() => {});
   ensureNotificationsEnabled().catch(() => {});
 
+  // بدء مراقبة الرقم الحالي.
   startPolling();
   checkUserAlert(state.current_ticket);
 }
