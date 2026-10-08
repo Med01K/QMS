@@ -236,7 +236,6 @@ body.popup-open{overflow:hidden}
   text-align: center;
   color: #1e40af;
 
-  /* الحالة المخفية */
   opacity: 0;
   max-height: 0;
   padding-top: 0;
@@ -246,12 +245,16 @@ body.popup-open{overflow:hidden}
   overflow: hidden;
   visibility: hidden;
 
-  /* لا يوجد Transition */
-  transition: none;
+  transition:
+    opacity 1s ease,
+    max-height 1s ease,
+    padding 1s ease,
+    margin 1s ease,
+    border-width 1s ease,
+    visibility 1s ease;
 }
 
 .browser-reminder.show {
-  /* الحالة الظاهرة مباشرة */
   opacity: 1;
   max-height: 200px;
   padding: 13px 12px;
@@ -364,7 +367,7 @@ body.popup-open{overflow:hidden}
     <h3>
       <span class="bi center">
         <span class="ar" lang="ar">وضع الاختبار (بدون ESP32)</span>
-        <span class="fr" lang="fr">Mode test</span>
+        <span class="fr" lang="fr">Mode test (sans ESP32)</span>
       </span>
     </h3>
     <div class="test-row">
@@ -1379,7 +1382,7 @@ function showBrowserReminder() {
   // إظهار الرسالة
   browserReminder.classList.add("show");
 
-
+  // إخفاؤها تلقائيًا بعد 30 ثانية
   browserReminderTimer = setTimeout(() => {
 
     browserReminder.classList.remove("show");
