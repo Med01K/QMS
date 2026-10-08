@@ -224,6 +224,50 @@ body.popup-open{overflow:hidden}
     transition-duration:.01ms!important
   }
 }
+/* رسالة إبقاء المتصفح مفتوحًا */
+.browser-reminder {
+  display: none;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 13px 12px;
+  margin-top: 12px;
+  text-align: center;
+  color: #1e40af;
+}
+
+.browser-reminder.show {
+  display: block;
+  animation: reminderFadeIn .35s ease;
+}
+
+.browser-reminder .ar {
+  font-family: Tajawal, Tahoma, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.7;
+  color: #1e40af;
+}
+
+.browser-reminder .fr {
+  font-family: Inter, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.6;
+  color: #475569;
+}
+
+@keyframes reminderFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+  
 </style>
 </head>
 <body>
@@ -276,7 +320,22 @@ body.popup-open{overflow:hidden}
         <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
       </span>
     </button>
-    <div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
+    <!-- رسالة إبقاء المتصفح مفتوحًا -->
+<div id="browserReminder" class="browser-reminder" role="status">
+  <span class="bi center">
+
+    <span class="ar" lang="ar">
+      📱 يُرجى إبقاء المتصفح مفتوحًا مع الحفاظ على اتصال الإنترنت لضمان متابعة دورك وتلقي التنبيهات.
+    </span>
+
+    <span class="fr" lang="fr">
+      📱 Veuillez garder le navigateur ouvert et maintenir votre connexion Internet pour suivre votre tour et recevoir les alertes.
+    </span>
+
+  </span>
+</div>
+
+<div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
   </div>
   <div class="status-container" id="statusContainer">
     <span class="status-dot" aria-hidden="true"></span>
@@ -364,12 +423,7 @@ body.popup-open{overflow:hidden}
       </span>
     </button>
     <button id="popupLaterBtn" class="popup-later" type="button">لاحقًا / Plus tard</button>
-    <div class="popup-note">
-      <span class="bi center">
-        <span class="ar" lang="ar">يُرجى إبقاء صفحة المتابعة مفتوحة مع الحفاظ على اتصال الإنترنت لتقليل احتمال تأخر التنبيهات.</span>
-        <span class="fr" lang="fr">Gardez la page de suivi ouverte et maintenez votre connexion Internet pour réduire le risque de retard des alertes.</span>
-      </span>
-    </div>
+
   </div>
 </div>
 
@@ -739,6 +793,7 @@ function stopPolling(){
 }
 
 function stopTrackingHard(){
+  hideBrowserReminder();
   state.trackingEnabled=false;
   state.lastAlertedDiff=null;
   clearBanner();
@@ -939,6 +994,7 @@ function startTrackingOnly(){
   state.trackingEnabled=true;
   state.lastAlertedDiff=null;
   popupDismissedForSession=false;
+  showBrowserReminder();
   setVerifyBtnActive(true);
   updateThresholdConstraints();
   registerServiceWorker().catch(()=>{});
@@ -1285,6 +1341,50 @@ function initTestMode(){
   setInputsFrozen(state.systemClosed);
   updateThresholdConstraints();
 })();
+/* =====================================
+   رسالة إبقاء المتصفح مفتوحًا
+   تظهر لمدة 30 ثانية ثم تختفي
+===================================== */
+
+const browserReminder = document.getElementById("browserReminder");
+
+let browserReminderTimer = null;
+
+function showBrowserReminder() {
+
+  if (!browserReminder) return;
+
+  // إلغاء المؤقت السابق
+  if (browserReminderTimer) {
+    clearTimeout(browserReminderTimer);
+  }
+
+  // إظهار الرسالة
+  browserReminder.classList.add("show");
+
+  // إخفاؤها تلقائيًا بعد 30 ثانية
+  browserReminderTimer = setTimeout(() => {
+
+    browserReminder.classList.remove("show");
+
+    browserReminderTimer = null;
+
+  }, 30000);
+
+}
+
+function hideBrowserReminder() {
+
+  if (browserReminderTimer) {
+    clearTimeout(browserReminderTimer);
+    browserReminderTimer = null;
+  }
+
+  if (browserReminder) {
+    browserReminder.classList.remove("show");
+  }
+
+}  
 </script>
 </body>
 </html>
