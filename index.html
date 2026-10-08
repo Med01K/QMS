@@ -326,11 +326,7 @@ footer {
         <div class="current-number" id="currentTicket">
             ---
         </div>
-
-        <div class="guichet" id="currentConsole">
-            Guichet --
-        </div>
-
+  
         <div class="divider"></div>
 
         <div class="waiting-box">
@@ -523,9 +519,7 @@ const db = getDatabase(app);
 
 const currentTicketEl =
     document.getElementById("currentTicket");
-
-const currentConsoleEl =
-    document.getElementById("currentConsole");
+ 
 
 const waitingCountEl =
     document.getElementById("waitingCount");
@@ -673,10 +667,7 @@ onValue(
 
         currentTicketEl.textContent =
             formatNumber(currentTicket);
-
-        currentConsoleEl.textContent =
-            "Guichet N° " +
-            String(currentConsole).padStart(2, "0");
+ 
 
         /*
          waiting_count سيضاف لاحقًا إلى Firebase
