@@ -259,9 +259,7 @@ body {
 .btn.active {
   background:#16a34a;
   border-color:#15803d;
-  box-shadow:
-    0 0 0 4px rgba(22,163,74,0.15),
-    0 8px 22px rgba(22,163,74,0.20);
+  box-shadow:0 0 0 4px rgba(22,163,74,0.15),0 8px 22px rgba(22,163,74,0.20);
 }
 
 .btn.active:hover {
@@ -270,17 +268,10 @@ body {
 }
 
 .btn.active .bi .ar,
-.btn.active .bi .fr {
-  color:#ffffff;
-}
+.btn.active .bi .fr { color:#ffffff; }
 
-.btn.active .bi .ar {
-  font-size:15px;
-}
-
-.btn.active .bi .fr {
-  font-size:12px;
-}
+.btn.active .bi .ar { font-size:15px; }
+.btn.active .bi .fr { font-size:12px; }
 
 .btn.active:focus-visible {
   outline:3px solid rgba(22,163,74,0.35);
@@ -1073,15 +1064,8 @@ function checkUserAlert(currentTicket) {
 
   updateThresholdConstraints();
 
-  // عند حلول الدور: لا إشعار ولا صوت.
-  if (diff === 0) {
-    clearBanner();
-    state.lastAlertedDiff = 0;
-    return;
-  }
-
-  // عند تجاوز الدور: إيقاف المتابعة.
-  if (diff < 0) {
+  // عند حلول الدور أو تجاوزه: إيقاف المتابعة تلقائيًا دون إشعار أو صوت.
+  if (diff <= 0) {
     stopTrackingHard();
     saveSettings();
     return;
@@ -1196,7 +1180,7 @@ function inputsAreValidOrShowMessage() {
 function startTrackingOnly() {
   if (state.systemClosed) return;
 
-  // إلغاء المتابعة.
+  // إلغاء المتابعة يدويًا.
   if (state.trackingEnabled) {
     stopTrackingHard();
     saveSettings();
@@ -1213,7 +1197,7 @@ function startTrackingOnly() {
 
   saveSettings();
 
-  // تفعيل المتابعة وتغيير الزر إلى الأحمر.
+  // تفعيل المتابعة.
   state.trackingEnabled = true;
   state.lastAlertedDiff = null;
   setVerifyBtnActive(true);
@@ -1245,7 +1229,6 @@ thresholdInput.addEventListener("input", () => {
     savedThreshold = String(value);
   }
 
-  // إيقاف المتابعة عند تعديل الهامش.
   if (state.trackingEnabled) {
     state.trackingEnabled = false;
     state.lastAlertedDiff = null;
@@ -1276,7 +1259,8 @@ thresholdInput.addEventListener("blur", () => {
   const value = Number(thresholdInput.value);
 
   if (thresholdInput.value.trim() !== "" &&
-      Number.isSafeInteger(value) && value >= 0) {
+      Number.isSafeInteger(value) &&
+      value >= 0) {
     savedThreshold = String(value);
   } else {
     thresholdInput.value = savedThreshold;
