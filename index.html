@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
 <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 <link rel="shortcut icon" href="./favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+<link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180" />
 
 <!-- PWA Manifest & Theme -->
 <link rel="manifest" href="./site.webmanifest">
@@ -23,7 +23,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
 
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* { box-sizing:border-box; margin:0; padding:0; }
 
 :root {
   --bg:#f3f4f6;
@@ -79,6 +79,7 @@ body {
   margin:0 auto 24px;
   display:block;
   object-fit:contain;
+  cursor:pointer;
 }
 
 .bi {
@@ -107,9 +108,7 @@ body {
 }
 
 .bi.center .fr,
-.bi.center .ar {
-  text-align:center;
-}
+.bi.center .ar { text-align:center; }
 
 .bi.small .fr,
 .bi.small .ar {
@@ -390,9 +389,7 @@ body {
 @media (prefers-reduced-motion:reduce) {
   .number,
   .btn,
-  .input-group input {
-    transition:none;
-  }
+  .input-group input { transition:none; }
   .number.updated { transform:none; }
 }
 </style>
@@ -401,7 +398,7 @@ body {
 <body>
 <div class="card">
   <a href="./index.html" aria-label="العودة إلى الصفحة الرئيسية">
-  <img src="logo.png" alt="Logo" class="brand-logo" style="cursor:pointer;" />
+    <img src="logo.png" alt="Logo" class="brand-logo" />
   </a>
 
   <div class="bi center" style="margin:-10px 0 16px;gap:2px;">
@@ -588,7 +585,9 @@ const alertBanner = document.getElementById("alertBanner");
 const verifyBtn = document.getElementById("verifyBtn");
 const verifyBtnAr = document.getElementById("verifyBtnAr");
 const verifyBtnFr = document.getElementById("verifyBtnFr");
+
 const DEFAULT_THRESHOLD = String(thresholdInput.defaultValue || "10");
+let savedThreshold = DEFAULT_THRESHOLD;
 
 /* TEST ELEMENTS */
 const testPanel = document.getElementById("testPanel");
@@ -624,7 +623,7 @@ const testSim = {
 function testLoadTicket() {
   try {
     const saved = Number(localStorage.getItem(testSim.LS_KEY_TICKET));
-    if (Number.isFinite(saved) && saved >= 1) return saved;
+    if (Number.isSafeInteger(saved) && saved >= 1) return saved;
   } catch {}
   return 1;
 }
@@ -686,13 +685,22 @@ function loadSettings() {
   try {
     const raw = localStorage.getItem(LS_KEY);
     if (!raw) return;
+
     const settings = JSON.parse(raw);
     if (!settings || typeof settings !== "object") return;
+
     if (typeof settings.myTicket === "string" || typeof settings.myTicket === "number") {
       myTicketInput.value = String(settings.myTicket);
     }
+
     if (typeof settings.threshold === "string" || typeof settings.threshold === "number") {
-      thresholdInput.value = String(settings.threshold);
+      const value = Number(settings.threshold);
+
+      if (String(settings.threshold).trim() !== "" &&
+          Number.isSafeInteger(value) && value >= 0) {
+        savedThreshold = String(value);
+        thresholdInput.value = savedThreshold;
+      }
     }
   } catch {}
 }
@@ -701,7 +709,7 @@ function saveSettings() {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({
       myTicket:myTicketInput.value,
-      threshold:thresholdInput.value
+      threshold:savedThreshold
     }));
   } catch {}
 }
@@ -756,10 +764,12 @@ function setVerifyBtnActive(isActive) {
 
 function setInputsFrozen(frozen) {
   const shouldFreeze = !!frozen;
+
   if (shouldFreeze) {
     try { myTicketInput.blur(); } catch {}
     try { thresholdInput.blur(); } catch {}
   }
+
   myTicketInput.disabled = shouldFreeze;
   thresholdInput.disabled = shouldFreeze;
 }
@@ -817,6 +827,7 @@ function renderTicketNumber() {
   }
 
   queueNumEl.classList.remove("closed");
+
   const value = state.current_ticket === null ? NaN : Number(state.current_ticket);
   queueNumEl.textContent = Number.isFinite(value) ? String(value) : "--";
 }
@@ -831,6 +842,49 @@ function stopPolling() {
   }
 }
 
+/* DYNAMIC THRESHOLD */
+
+// حساب الهامش الظاهر أثناء المتابعة.
+function getEffectiveThreshold() {
+  const originalThreshold = Number(savedThreshold);
+  const myTicket = Number(myTicketInput.value);
+  const current = state.current_ticket;
+
+  if (!Number.isSafeInteger(originalThreshold) || originalThreshold < 0) {
+    return Number(DEFAULT_THRESHOLD);
+  }
+
+  if (current === null || !Number.isSafeInteger(Number(current)) ||
+      !Number.isSafeInteger(myTicket) || myTicket < 1) {
+    return originalThreshold;
+  }
+
+  const diff = myTicket - Number(current);
+
+  // إذا لم يتبق أشخاص، يصبح الهامش صفرًا.
+  if (diff <= 0) return 0;
+
+  // لا يمكن أن يتجاوز الهامش عدد الأشخاص المتبقين.
+  return Math.min(originalThreshold, diff);
+}
+
+// تحديث الهامش المعروض دون تغيير القيمة الأصلية المحفوظة.
+function updateThresholdConstraints({ clamp = false } = {}) {
+  thresholdInput.removeAttribute("max");
+
+  if (state.trackingEnabled) {
+    thresholdInput.value = String(getEffectiveThreshold());
+  } else {
+    thresholdInput.value = savedThreshold;
+  }
+}
+
+// استرجاع الهامش الأصلي عند توقف المتابعة.
+function restoreSavedThreshold() {
+  thresholdInput.value = savedThreshold;
+  thresholdInput.removeAttribute("max");
+}
+
 /* TRACKING CONTROL */
 function stopTrackingHard() {
   state.trackingEnabled = false;
@@ -838,6 +892,7 @@ function stopTrackingHard() {
   clearBanner();
   stopPolling();
   setVerifyBtnActive(false);
+  restoreSavedThreshold();
 }
 
 /* SYSTEM CLOSED */
@@ -854,7 +909,7 @@ function setSystemClosed(isClosed) {
   } else {
     verifyBtn.disabled = false;
     setInputsFrozen(false);
-    updateThresholdConstraints({ clamp:!state.trackingEnabled });
+    updateThresholdConstraints();
   }
 
   renderTicketNumber();
@@ -868,58 +923,9 @@ function evaluateClosedState() {
   }
 
   if (!state.metaLoaded) return;
+
   const { hbStale, reqStale } = computeClosedReasons();
   setSystemClosed(hbStale || reqStale);
-}
-
-/* THRESHOLD */
-function getNumbersForDiff() {
-  const myTicket = Number(myTicketInput.value);
-  if (state.current_ticket === null) return { ok:false };
-
-  const currentTicket = Number(state.current_ticket);
-  if (!Number.isSafeInteger(currentTicket) ||
-      !Number.isSafeInteger(myTicket) ||
-      myTicket < 1) {
-    return { ok:false };
-  }
-
-  return { ok:true, myTicket, currentTicket };
-}
-
-function updateThresholdConstraints({ clamp = false } = {}) {
-  const info = getNumbersForDiff();
-
-  if (!info.ok) {
-    thresholdInput.removeAttribute("max");
-    return;
-  }
-
-  const diff = info.myTicket - info.currentTicket;
-
-  if (diff < 0) {
-    thresholdInput.removeAttribute("max");
-    return;
-  }
-
-  const maxAllowed = Math.max(0, diff);
-
-  // أثناء المتابعة نحافظ على الهامش المحدد.
-  if (state.trackingEnabled) {
-    thresholdInput.removeAttribute("max");
-    return;
-  }
-
-  thresholdInput.max = String(maxAllowed);
-  if (!clamp) return;
-
-  const threshold = Number(thresholdInput.value);
-  if (!Number.isFinite(threshold)) return;
-
-  const clampedValue = Math.min(Math.max(0, threshold), maxAllowed);
-  if (clampedValue !== threshold) {
-    thresholdInput.value = String(clampedValue);
-  }
 }
 
 /* NOTIFICATIONS PERMISSION */
@@ -1022,16 +1028,16 @@ function playAlertBeep() {
 
 /* ALERT SYSTEM */
 function checkUserAlert(currentTicket) {
-  if (state.systemClosed) return;
+  if (state.systemClosed || !state.trackingEnabled) return;
 
   const myTicket = Number(myTicketInput.value);
-  const threshold = Number(thresholdInput.value);
+  const originalThreshold = Number(savedThreshold);
   const current = Number(currentTicket);
 
   if (!Number.isSafeInteger(myTicket) ||
       myTicket < 1 ||
-      !Number.isSafeInteger(threshold) ||
-      threshold < 0 ||
+      !Number.isSafeInteger(originalThreshold) ||
+      originalThreshold < 0 ||
       currentTicket === null ||
       !Number.isSafeInteger(current)) {
     clearBanner();
@@ -1041,6 +1047,9 @@ function checkUserAlert(currentTicket) {
 
   const diff = myTicket - current;
 
+  // تحديث الهامش الظاهر مع تغير الرقم الحالي.
+  updateThresholdConstraints();
+
   // عندما يحين دورك: لا إشعار ولا صوت.
   if (diff === 0) {
     clearBanner();
@@ -1048,18 +1057,15 @@ function checkUserAlert(currentTicket) {
     return;
   }
 
-  // عندما يفوت دورك: لا إشعار ولا صوت، وتتوقف المتابعة.
+  // عندما يفوت دورك: إيقاف المتابعة واسترجاع الهامش.
   if (diff < 0) {
-    clearBanner();
-    thresholdInput.value = DEFAULT_THRESHOLD;
-    thresholdInput.removeAttribute("max");
-    saveSettings();
     stopTrackingHard();
+    saveSettings();
     return;
   }
 
-  // خارج هامش التنبيه.
-  if (diff > threshold || threshold === 0) {
+  // خارج هامش التنبيه الأصلي.
+  if (diff > originalThreshold || originalThreshold === 0) {
     clearBanner();
     state.lastAlertedDiff = diff;
     return;
@@ -1083,8 +1089,8 @@ function checkUserAlert(currentTicket) {
     return;
   }
 
-  // التنبيه من الهامش المحدد إلى شخصين.
-  if (diff > 1 && diff <= threshold) {
+  // التنبيهات من الهامش المحدد إلى شخصين.
+  if (diff > 1 && diff <= originalThreshold) {
     const fr = `Attention ! Il reste ${diff} personnes avant votre tour.`;
     const ar = `تنبيه! تبقّى ${diff} أشخاص قبلك.`;
 
@@ -1113,13 +1119,18 @@ async function pollCurrentTicketOnce() {
   try {
     const response = await fetch(TICKET_URL, { cache:"no-store" });
     if (!response.ok) throw new Error("poll failed");
+
     const ticket = await response.json();
-    setTicket(ticket);
+
+    if (state.trackingEnabled && !state.systemClosed) {
+      setTicket(ticket);
+    }
   } catch {}
 }
 
 function startPolling() {
   stopPolling();
+
   const period = document.visibilityState === "visible"
     ? POLL_VISIBLE_MS
     : POLL_HIDDEN_MS;
@@ -1155,38 +1166,44 @@ function inputsAreValidOrShowMessage() {
     return false;
   }
 
-  updateThresholdConstraints({ clamp:true });
   return true;
 }
 
-/* START TRACKING */
+/* START / STOP TRACKING */
 function startTrackingOnly() {
   if (state.systemClosed) return;
 
-  // إذا كانت المتابعة مفعّلة، أوقفها.
+  // إلغاء المتابعة واسترجاع الهامش الأصلي.
   if (state.trackingEnabled) {
     stopTrackingHard();
+    saveSettings();
     return;
   }
 
-  // التحقق من صحة البيانات قبل بدء المتابعة.
+  // التحقق من البيانات.
   if (!inputsAreValidOrShowMessage()) return;
+
+  // حفظ الهامش الذي اختاره المستخدم قبل المتابعة.
+  const value = Number(thresholdInput.value);
+
+  if (Number.isSafeInteger(value) && value >= 0) {
+    savedThreshold = String(value);
+  }
 
   saveSettings();
 
-  // تفعيل المتابعة.
+  // تشغيل المتابعة.
   state.trackingEnabled = true;
   state.lastAlertedDiff = null;
-
-  // تغيير الزر إلى "جاري المتابعة".
   setVerifyBtnActive(true);
 
-  // تفعيل الإشعارات والصوت.
+  // تحديث الهامش بناءً على الرقم الحالي.
+  updateThresholdConstraints();
+
   registerServiceWorker().catch(() => {});
   ensureAudio().catch(() => {});
   ensureNotificationsEnabled().catch(() => {});
 
-  // بدء مراقبة الرقم الحالي.
   startPolling();
   checkUserAlert(state.current_ticket);
 }
@@ -1196,11 +1213,29 @@ verifyBtn.addEventListener("click", startTrackingOnly);
 /* INPUT EVENTS */
 myTicketInput.addEventListener("input", () => {
   stopTrackingHard();
+  saveSettings();
 });
 
 thresholdInput.addEventListener("input", () => {
-  stopTrackingHard();
-  updateThresholdConstraints({ clamp:!state.userEditing });
+  // حفظ القيمة التي أدخلها المستخدم فقط.
+  const value = Number(thresholdInput.value);
+  const valid = thresholdInput.value.trim() !== "" &&
+    Number.isSafeInteger(value) && value >= 0;
+
+  if (valid) {
+    savedThreshold = String(value);
+  }
+
+  // إيقاف المتابعة عند تعديل الهامش يدويًا.
+  if (state.trackingEnabled) {
+    state.trackingEnabled = false;
+    state.lastAlertedDiff = null;
+    clearBanner();
+    stopPolling();
+    setVerifyBtnActive(false);
+  }
+
+  if (valid) saveSettings();
 });
 
 myTicketInput.addEventListener("focus", () => {
@@ -1209,7 +1244,6 @@ myTicketInput.addEventListener("focus", () => {
 
 myTicketInput.addEventListener("blur", () => {
   state.userEditing = false;
-  updateThresholdConstraints({ clamp:true });
   saveSettings();
 });
 
@@ -1219,7 +1253,16 @@ thresholdInput.addEventListener("focus", () => {
 
 thresholdInput.addEventListener("blur", () => {
   state.userEditing = false;
-  updateThresholdConstraints({ clamp:true });
+
+  const value = Number(thresholdInput.value);
+
+  if (thresholdInput.value.trim() !== "" &&
+      Number.isSafeInteger(value) && value >= 0) {
+    savedThreshold = String(value);
+  } else {
+    thresholdInput.value = savedThreshold;
+  }
+
   saveSettings();
 });
 
@@ -1239,9 +1282,11 @@ function setTicket(value) {
   if (!Number.isSafeInteger(number) || number < 0) return;
 
   const oldShown = queueNumEl.textContent;
+
   state.current_ticket = number;
   renderTicketNumber();
 
+  // تحديث الهامش والتنبيهات مع تغير الرقم.
   if (state.trackingEnabled && !state.userEditing && !state.systemClosed) {
     checkUserAlert(state.current_ticket);
   }
@@ -1340,6 +1385,7 @@ function applyStreamPayload(payload) {
       state.esp32_last_seen_ms = null;
       state.last_request_ms = null;
     }
+
     state.metaLoaded = true;
     evaluateClosedState();
     return;
@@ -1456,8 +1502,11 @@ document.addEventListener("visibilitychange", async () => {
     connectStream();
   }
 
-  if (state.trackingEnabled && !state.systemClosed) startPolling();
-  else stopPolling();
+  if (state.trackingEnabled && !state.systemClosed) {
+    startPolling();
+  } else {
+    stopPolling();
+  }
 });
 
 /* TEST MODE INITIALIZATION */
@@ -1500,12 +1549,14 @@ function initTestMode() {
   renderTicketNumber();
   updateStatusUI();
   setInputsFrozen(false);
-  updateThresholdConstraints({ clamp:true });
+  updateThresholdConstraints();
 }
 
 /* START APPLICATION */
 (async function start() {
   loadSettings();
+  restoreSavedThreshold();
+
   setStatus("Connexion en cours...", "جارٍ الاتصال...");
   registerServiceWorker().catch(() => {});
 
@@ -1521,7 +1572,7 @@ function initTestMode() {
   renderTicketNumber();
   updateStatusUI();
   setInputsFrozen(state.systemClosed);
-  updateThresholdConstraints({ clamp:true });
+  updateThresholdConstraints();
 })();
 </script>
 </body>
