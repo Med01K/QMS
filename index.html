@@ -23,7 +23,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
 
 <style>
-* { box-sizing:border-box; margin:0; padding:0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   --bg:#f3f4f6;
@@ -79,7 +79,6 @@ body {
   margin:0 auto 24px;
   display:block;
   object-fit:contain;
-  cursor:pointer;
 }
 
 .bi {
@@ -108,7 +107,9 @@ body {
 }
 
 .bi.center .fr,
-.bi.center .ar { text-align:center; }
+.bi.center .ar {
+  text-align:center;
+}
 
 .bi.small .fr,
 .bi.small .ar {
@@ -389,7 +390,9 @@ body {
 @media (prefers-reduced-motion:reduce) {
   .number,
   .btn,
-  .input-group input { transition:none; }
+  .input-group input {
+    transition:none;
+  }
   .number.updated { transform:none; }
 }
 </style>
@@ -398,7 +401,7 @@ body {
 <body>
 <div class="card">
   <a href="./index.html" aria-label="العودة إلى الصفحة الرئيسية">
-    <img src="logo.png" alt="Logo" class="brand-logo" />
+  <img src="logo.png" alt="Logo" class="brand-logo" style="cursor:pointer;" />
   </a>
 
   <div class="bi center" style="margin:-10px 0 16px;gap:2px;">
@@ -586,7 +589,6 @@ const verifyBtn = document.getElementById("verifyBtn");
 const verifyBtnAr = document.getElementById("verifyBtnAr");
 const verifyBtnFr = document.getElementById("verifyBtnFr");
 const DEFAULT_THRESHOLD = String(thresholdInput.defaultValue || "10");
-let savedThreshold = DEFAULT_THRESHOLD;
 
 /* TEST ELEMENTS */
 const testPanel = document.getElementById("testPanel");
@@ -686,17 +688,11 @@ function loadSettings() {
     if (!raw) return;
     const settings = JSON.parse(raw);
     if (!settings || typeof settings !== "object") return;
-
     if (typeof settings.myTicket === "string" || typeof settings.myTicket === "number") {
       myTicketInput.value = String(settings.myTicket);
     }
-
     if (typeof settings.threshold === "string" || typeof settings.threshold === "number") {
-      const value = Number(settings.threshold);
-      if (String(settings.threshold).trim() !== "" && Number.isSafeInteger(value) && value >= 0) {
-        savedThreshold = String(value);
-        thresholdInput.value = savedThreshold;
-      }
+      thresholdInput.value = String(settings.threshold);
     }
   } catch {}
 }
@@ -705,7 +701,7 @@ function saveSettings() {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify({
       myTicket:myTicketInput.value,
-      threshold:savedThreshold
+      threshold:thresholdInput.value
     }));
   } catch {}
 }
@@ -858,7 +854,7 @@ function setSystemClosed(isClosed) {
   } else {
     verifyBtn.disabled = false;
     setInputsFrozen(false);
-    updateThresholdConstraints({ clamp:false });
+    updateThresholdConstraints({ clamp:!state.trackingEnabled });
   }
 
   renderTicketNumber();
@@ -892,9 +888,38 @@ function getNumbersForDiff() {
 }
 
 function updateThresholdConstraints({ clamp = false } = {}) {
-  // لا يتم تخفيض الهامش تلقائيًا حسب الرقم الحالي.
-  // نحافظ دائمًا على الهامش الذي اختاره المستخدم.
-  thresholdInput.removeAttribute("max");
+  const info = getNumbersForDiff();
+
+  if (!info.ok) {
+    thresholdInput.removeAttribute("max");
+    return;
+  }
+
+  const diff = info.myTicket - info.currentTicket;
+
+  if (diff < 0) {
+    thresholdInput.removeAttribute("max");
+    return;
+  }
+
+  const maxAllowed = Math.max(0, diff);
+
+  // أثناء المتابعة نحافظ على الهامش المحدد.
+  if (state.trackingEnabled) {
+    thresholdInput.removeAttribute("max");
+    return;
+  }
+
+  thresholdInput.max = String(maxAllowed);
+  if (!clamp) return;
+
+  const threshold = Number(thresholdInput.value);
+  if (!Number.isFinite(threshold)) return;
+
+  const clampedValue = Math.min(Math.max(0, threshold), maxAllowed);
+  if (clampedValue !== threshold) {
+    thresholdInput.value = String(clampedValue);
+  }
 }
 
 /* NOTIFICATIONS PERMISSION */
@@ -997,10 +1022,10 @@ function playAlertBeep() {
 
 /* ALERT SYSTEM */
 function checkUserAlert(currentTicket) {
-  if (state.systemClosed || !state.trackingEnabled) return;
+  if (state.systemClosed) return;
 
   const myTicket = Number(myTicketInput.value);
-  const threshold = Number(savedThreshold);
+  const threshold = Number(thresholdInput.value);
   const current = Number(currentTicket);
 
   if (!Number.isSafeInteger(myTicket) ||
@@ -1025,10 +1050,11 @@ function checkUserAlert(currentTicket) {
 
   // عندما يفوت دورك: لا إشعار ولا صوت، وتتوقف المتابعة.
   if (diff < 0) {
-    stopTrackingHard();
-    thresholdInput.value = savedThreshold;
-    updateThresholdConstraints();
+    clearBanner();
+    thresholdInput.value = DEFAULT_THRESHOLD;
+    thresholdInput.removeAttribute("max");
     saveSettings();
+    stopTrackingHard();
     return;
   }
 
@@ -1088,7 +1114,7 @@ async function pollCurrentTicketOnce() {
     const response = await fetch(TICKET_URL, { cache:"no-store" });
     if (!response.ok) throw new Error("poll failed");
     const ticket = await response.json();
-    if (state.trackingEnabled) setTicket(ticket);
+    setTicket(ticket);
   } catch {}
 }
 
@@ -1129,39 +1155,38 @@ function inputsAreValidOrShowMessage() {
     return false;
   }
 
+  updateThresholdConstraints({ clamp:true });
   return true;
 }
 
-/* START / STOP TRACKING */
+/* START TRACKING */
 function startTrackingOnly() {
   if (state.systemClosed) return;
 
-  // إيقاف المتابعة واسترجاع الهامش المحفوظ.
+  // إذا كانت المتابعة مفعّلة، أوقفها.
   if (state.trackingEnabled) {
     stopTrackingHard();
-    thresholdInput.value = savedThreshold;
-    updateThresholdConstraints();
-    saveSettings();
     return;
   }
 
-  // بدء المتابعة.
+  // التحقق من صحة البيانات قبل بدء المتابعة.
   if (!inputsAreValidOrShowMessage()) return;
 
-  const value = Number(thresholdInput.value);
-  if (Number.isSafeInteger(value) && value >= 0) {
-    savedThreshold = String(value);
-  }
-
   saveSettings();
+
+  // تفعيل المتابعة.
   state.trackingEnabled = true;
   state.lastAlertedDiff = null;
+
+  // تغيير الزر إلى "جاري المتابعة".
   setVerifyBtnActive(true);
 
+  // تفعيل الإشعارات والصوت.
   registerServiceWorker().catch(() => {});
   ensureAudio().catch(() => {});
   ensureNotificationsEnabled().catch(() => {});
 
+  // بدء مراقبة الرقم الحالي.
   startPolling();
   checkUserAlert(state.current_ticket);
 }
@@ -1171,19 +1196,11 @@ verifyBtn.addEventListener("click", startTrackingOnly);
 /* INPUT EVENTS */
 myTicketInput.addEventListener("input", () => {
   stopTrackingHard();
-  saveSettings();
 });
 
 thresholdInput.addEventListener("input", () => {
   stopTrackingHard();
-
-  const value = Number(thresholdInput.value);
-  if (thresholdInput.value.trim() !== "" &&
-      Number.isSafeInteger(value) &&
-      value >= 0) {
-    savedThreshold = String(value);
-    saveSettings();
-  }
+  updateThresholdConstraints({ clamp:!state.userEditing });
 });
 
 myTicketInput.addEventListener("focus", () => {
@@ -1192,7 +1209,7 @@ myTicketInput.addEventListener("focus", () => {
 
 myTicketInput.addEventListener("blur", () => {
   state.userEditing = false;
-  updateThresholdConstraints();
+  updateThresholdConstraints({ clamp:true });
   saveSettings();
 });
 
@@ -1202,17 +1219,7 @@ thresholdInput.addEventListener("focus", () => {
 
 thresholdInput.addEventListener("blur", () => {
   state.userEditing = false;
-
-  const value = Number(thresholdInput.value);
-  if (thresholdInput.value.trim() !== "" &&
-      Number.isSafeInteger(value) &&
-      value >= 0) {
-    savedThreshold = String(value);
-  } else {
-    thresholdInput.value = savedThreshold;
-  }
-
-  updateThresholdConstraints();
+  updateThresholdConstraints({ clamp:true });
   saveSettings();
 });
 
@@ -1493,13 +1500,12 @@ function initTestMode() {
   renderTicketNumber();
   updateStatusUI();
   setInputsFrozen(false);
-  updateThresholdConstraints();
+  updateThresholdConstraints({ clamp:true });
 }
 
 /* START APPLICATION */
 (async function start() {
   loadSettings();
-  thresholdInput.value = savedThreshold;
   setStatus("Connexion en cours...", "جارٍ الاتصال...");
   registerServiceWorker().catch(() => {});
 
@@ -1515,7 +1521,7 @@ function initTestMode() {
   renderTicketNumber();
   updateStatusUI();
   setInputsFrozen(state.systemClosed);
-  updateThresholdConstraints();
+  updateThresholdConstraints({ clamp:true });
 })();
 </script>
 </body>
