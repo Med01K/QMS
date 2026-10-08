@@ -347,11 +347,11 @@ body.popup-open{overflow:hidden}
   <span class="bi center">
 
     <span class="ar" lang="ar">
-       يُرجى إبقاء المتصفح مفتوحًا مع الحفاظ على اتصال الإنترنت لضمان تلقي التنبيهات.
+       يُرجى إبقاء المتصفح مفتوحًا لضمان تلقي التنبيهات.
     </span>
 
     <span class="fr" lang="fr">
-      Veuillez garder le navigateur ouvert et maintenir votre connexion Internet pour recevoir les alertes.
+      Veuillez garder le navigateur ouvert pour recevoir les alertes.
     </span>
 
   </span>
@@ -1363,10 +1363,13 @@ function initTestMode(){
 })();
 /* =====================================
    رسالة إبقاء المتصفح مفتوحًا
-   تظهر لمدة 30 ثانية ثم تختفي
+   تظهر للمستخدم مرة واحدة فقط
+   وتختفي تلقائيًا بعد 10 ثوانٍ
 ===================================== */
 
 const browserReminder = document.getElementById("browserReminder");
+
+const BROWSER_REMINDER_SEEN_KEY = "browser_reminder_seen_v1";
 
 let browserReminderTimer = null;
 
@@ -1374,15 +1377,28 @@ function showBrowserReminder() {
 
   if (!browserReminder) return;
 
-  // إلغاء المؤقت السابق
+  // إذا سبق عرض الرسالة لهذا المستخدم، لا تعرضها مرة أخرى
+  try {
+    if (localStorage.getItem(BROWSER_REMINDER_SEEN_KEY) === "1") {
+      return;
+    }
+  } catch {}
+
+  // تسجيل أن الرسالة عُرضت
+  try {
+    localStorage.setItem(BROWSER_REMINDER_SEEN_KEY, "1");
+  } catch {}
+
+  // إلغاء أي مؤقت سابق
   if (browserReminderTimer) {
     clearTimeout(browserReminderTimer);
+    browserReminderTimer = null;
   }
 
   // إظهار الرسالة
   browserReminder.classList.add("show");
 
-  // إخفاؤها تلقائيًا بعد 30 ثانية
+  // إخفاؤها تلقائيًا بعد 10 ثوانٍ
   browserReminderTimer = setTimeout(() => {
 
     browserReminder.classList.remove("show");
@@ -1390,7 +1406,6 @@ function showBrowserReminder() {
     browserReminderTimer = null;
 
   }, 10000);
-
 }
 
 function hideBrowserReminder() {
@@ -1403,8 +1418,7 @@ function hideBrowserReminder() {
   if (browserReminder) {
     browserReminder.classList.remove("show");
   }
-
-}  
+}
 </script>
 </body>
 </html>
