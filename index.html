@@ -255,14 +255,17 @@ body {
   font-size:12.5px;
 }
 
+/* زر المتابعة عند التفعيل - أخضر */
 .btn.active {
-  background:#dc2626;
-  border-color:#b91c1c;
-  box-shadow:0 0 0 4px rgba(220,38,38,0.12);
+  background:#16a34a;
+  border-color:#15803d;
+  box-shadow:
+    0 0 0 4px rgba(22,163,74,0.15),
+    0 8px 22px rgba(22,163,74,0.20);
 }
 
 .btn.active:hover {
-  background:#b91c1c;
+  background:#15803d;
   filter:none;
 }
 
@@ -271,11 +274,16 @@ body {
   color:#ffffff;
 }
 
-.btn.active .bi .ar { font-size:15px; }
-.btn.active .bi .fr { font-size:12px; }
+.btn.active .bi .ar {
+  font-size:15px;
+}
+
+.btn.active .bi .fr {
+  font-size:12px;
+}
 
 .btn.active:focus-visible {
-  outline:3px solid rgba(220,38,38,0.35);
+  outline:3px solid rgba(22,163,74,0.35);
   outline-offset:3px;
 }
 
