@@ -8,6 +8,59 @@
 <title>POSTE EL AMAL | Réservation de ticket</title>
 
 <style>
+    /* =========================================
+   GOOGLE AUTHENTICATION
+========================================= */
+
+.auth-card {
+    text-align: center;
+}
+
+.auth-card h2 {
+    font-size: 21px;
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.auth-card p {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.btn-google {
+    background: white;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+.btn-google:hover {
+    background: #f8fafc;
+}
+
+.user-photo {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+    object-fit: cover;
+}
+
+.user-name {
+    font-size: 17px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+
+.user-email {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 15px;
+    overflow-wrap: anywhere;
+}
 :root {
     --primary: #123b74;
     --primary-dark: #09264d;
@@ -349,7 +402,61 @@ footer {
         </div>
 
     </section>
+    <!-- GOOGLE AUTHENTICATION -->
 
+<section class="card auth-card">
+
+    <h2>Compte client</h2>
+
+    <div id="loginSection">
+
+        <p>
+            Connectez-vous avec votre compte Google
+            pour réserver un ticket.
+        </p>
+
+        <button
+            class="btn-google"
+            id="googleLoginButton"
+        >
+            Se connecter avec Google
+        </button>
+
+    </div>
+
+    <div id="userSection" style="display:none;">
+
+        <img
+            id="userPhoto"
+            class="user-photo"
+            alt="Photo du profil"
+        >
+
+        <div
+            class="user-name"
+            id="userName"
+        ></div>
+
+        <div
+            class="user-email"
+            id="userEmail"
+        ></div>
+
+        <button
+            class="btn-secondary"
+            id="logoutButton"
+        >
+            Se déconnecter
+        </button>
+
+    </div>
+
+    <div
+        class="error-message"
+        id="authError"
+    ></div>
+
+</section>
     <!-- RESERVATION -->
 
     <section class="card reservation-card" id="reservationSection">
@@ -452,7 +559,14 @@ footer {
 
 import { initializeApp } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
+import {
+    getAuth,
+    GoogleAuthProvider,
+    signInWithPopup,
+    signOut,
+    onAuthStateChanged
+} from
+"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import {
     getDatabase,
     ref,
@@ -520,10 +634,40 @@ const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
 
+/* GOOGLE AUTH */
+
+const auth = getAuth(app);
+
+const googleProvider = new GoogleAuthProvider();
+
 /* =====================================================
    ELEMENTS
 ===================================================== */
+/* AUTH ELEMENTS */
 
+const googleLoginButton =
+    document.getElementById("googleLoginButton");
+
+const logoutButton =
+    document.getElementById("logoutButton");
+
+const loginSection =
+    document.getElementById("loginSection");
+
+const userSection =
+    document.getElementById("userSection");
+
+const userPhoto =
+    document.getElementById("userPhoto");
+
+const userName =
+    document.getElementById("userName");
+
+const userEmail =
+    document.getElementById("userEmail");
+
+const authError =
+    document.getElementById("authError");
 const currentTicketEl =
     document.getElementById("currentTicket");
  
@@ -568,7 +712,9 @@ let reservationInProgress = false;
 let currentTicket = 0;
 let currentConsole = 0;
 let waitingCount = null;
+let currentUser = null;
 
+let authReady = false;
 let queueConnected = false;
 /* ===== MASTER CONNECTION MONITOR ===== */
 
@@ -585,8 +731,20 @@ let lastTicketRequest = 0;
 
 let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
-const STORAGE_KEY = "poste_elamal_reservation";
+const STORAGE_PREFIX =
+    "poste_elamal_reservation_";
 
+const PENDING_PREFIX =
+    "poste_elamal_pending_";
+    function getReservationKey(uid) {
+
+    return STORAGE_PREFIX + uid;
+}
+
+function getPendingKey(uid) {
+
+    return PENDING_PREFIX + uid;
+}
 /* =====================================================
    HELPERS
 ===================================================== */
@@ -676,13 +834,29 @@ function checkMasterStatus() {
 }
 function updateReserveButton() {
 
-    reserveButton.disabled =
-        !queueConnected || reservationInProgress;
+    const userLoggedIn =
+        authReady && currentUser !== null;
 
-    reserveButton.textContent =
-        reservationInProgress
-            ? "RÉSERVATION EN COURS..."
-            : "RÉSERVER UN TICKET";
+    reserveButton.disabled =
+        !queueConnected ||
+        reservationInProgress ||
+        !userLoggedIn;
+
+    if (reservationInProgress) {
+
+        reserveButton.textContent =
+            "RÉSERVATION EN COURS...";
+
+    } else if (!userLoggedIn) {
+
+        reserveButton.textContent =
+            "CONNECTEZ-VOUS POUR RÉSERVER";
+
+    } else {
+
+        reserveButton.textContent =
+            "RÉSERVER UN TICKET";
+    }
 }
 
 function showError(message) {
@@ -800,24 +974,47 @@ checkMasterStatus();
 
 function saveReservation(reservation) {
 
+    if (!currentUser) return;
+
+    const data = {
+        ...reservation,
+        user_id: currentUser.uid
+    };
+
     localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(reservation)
+        getReservationKey(currentUser.uid),
+        JSON.stringify(data)
     );
 }
 
 function loadReservation() {
 
+    if (!currentUser) return null;
+
     try {
 
-        const saved =
-            localStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(
+            getReservationKey(currentUser.uid)
+        );
 
         if (!saved) return null;
 
-        return JSON.parse(saved);
+        const reservation = JSON.parse(saved);
+
+        if (
+            reservation.user_id !== currentUser.uid
+        ) {
+            return null;
+        }
+
+        return reservation;
 
     } catch (error) {
+
+        console.error(
+            "Reservation restore error:",
+            error
+        );
 
         return null;
     }
@@ -939,21 +1136,41 @@ let unsubscribeReservation = null;
 
 function watchReservation(requestRef) {
 
+    if (!currentUser) return;
+
+    const ownerUid = currentUser.uid;
+
     if (unsubscribeReservation) {
         unsubscribeReservation();
     }
 
     unsubscribeReservation = onValue(
+
         requestRef,
+
         (snapshot) => {
+
+            // منع عرض بيانات حساب آخر
+
+            if (
+                !currentUser ||
+                currentUser.uid !== ownerUid
+            ) {
+                return;
+            }
 
             const data = snapshot.val();
 
             if (!data) return;
 
+            if (data.user_id !== ownerUid) {
+                return;
+            }
+
             if (data.status === "pending") {
 
                 reservationInProgress = true;
+
                 updateReserveButton();
             }
 
@@ -967,20 +1184,29 @@ function watchReservation(requestRef) {
                 }
 
                 const reservation = {
+
                     id: requestRef.key,
+
                     ticket: Number(data.ticket),
+
                     code: String(data.code),
-                    status: "reserved"
+
+                    status: "reserved",
+
+                    user_id: ownerUid
+
                 };
 
                 saveReservation(reservation);
+
                 showReservation(reservation);
 
                 localStorage.removeItem(
-                    "pendingReservationId"
+                    getPendingKey(ownerUid)
                 );
 
                 reservationInProgress = false;
+
                 updateReserveButton();
             }
 
@@ -989,7 +1215,7 @@ function watchReservation(requestRef) {
                 reservationInProgress = false;
 
                 localStorage.removeItem(
-                    "pendingReservationId"
+                    getPendingKey(ownerUid)
                 );
 
                 showError(
@@ -998,11 +1224,17 @@ function watchReservation(requestRef) {
 
                 updateReserveButton();
             }
-
         },
+
         (error) => {
 
             console.error(error);
+
+            if (
+                currentUser?.uid !== ownerUid
+            ) {
+                return;
+            }
 
             reservationInProgress = false;
 
@@ -1014,9 +1246,30 @@ function watchReservation(requestRef) {
         }
     );
 }
+function resetUserReservationUI() {
+
+    reservationSection.style.display = "block";
+
+    ticketSection.style.display = "none";
+
+    myTicketEl.textContent = "---";
+
+    myCodeEl.textContent = "----";
+
+    reservationInProgress = false;
+
+    clearError();
+
+    updateReserveButton();
+}    
 async function createReservation() {
 
-    if (!queueConnected || reservationInProgress) {
+    if (
+        !authReady ||
+        !currentUser ||
+        !queueConnected ||
+        reservationInProgress
+    ) {
         return;
     }
 
@@ -1034,16 +1287,22 @@ async function createReservation() {
             push(requestsRef);
 
         await set(newRequestRef, {
+
             status: "pending",
+
             source: "web",
+
+            user_id: currentUser.uid,
+
             created_at: serverTimestamp()
+
         });
 
+ 
         localStorage.setItem(
-            "pendingReservationId",
-            newRequestRef.key
+         getPendingKey(currentUser.uid),
+        newRequestRef.key
         );
-
         watchReservation(newRequestRef);
 
     } catch (error) {
@@ -1059,7 +1318,45 @@ async function createReservation() {
         updateReserveButton();
     }
 }
+/* =========================================
+   GOOGLE LOGIN
+========================================= */
 
+async function loginWithGoogle() {
+
+    authError.style.display = "none";
+    googleLoginButton.disabled = true;
+
+    try {
+
+        await signInWithPopup(
+            auth,
+            googleProvider
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Google login error:",
+            error
+        );
+
+        if (
+            error.code !==
+            "auth/popup-closed-by-user"
+        ) {
+
+            authError.textContent =
+                "Impossible de se connecter avec Google.";
+
+            authError.style.display = "block";
+        }
+
+    } finally {
+
+        googleLoginButton.disabled = false;
+    }
+}
 /* =====================================================
    BUTTON EVENT
 ===================================================== */
@@ -1068,17 +1365,132 @@ reserveButton.addEventListener(
     "click",
     createReservation
 );
+googleLoginButton.addEventListener(
+    "click",
+    loginWithGoogle
+);
+function restoreUserReservation() {
 
-/* =====================================================
-   RESTORE SAVED RESERVATION
-===================================================== */
+    if (!currentUser) return;
 
-const savedReservation = loadReservation();
+    const savedReservation = loadReservation();
 
-if (savedReservation) {
+    if (savedReservation) {
 
-    showReservation(savedReservation);
+        showReservation(savedReservation);
+    }
+
+    const pendingId = localStorage.getItem(
+        getPendingKey(currentUser.uid)
+    );
+
+    if (pendingId && !savedReservation) {
+
+        reservationInProgress = true;
+
+        const pendingRef = ref(
+            db,
+            "reservation_requests/" + pendingId
+        );
+
+        watchReservation(pendingRef);
+    }
+
+    updateReserveButton();
+}        
+    /* =========================================
+   AUTH STATE MONITOR
+========================================= */
+
+onAuthStateChanged(
+    auth,
+    (user) => {
+
+        // إيقاف مراقبة الحجز السابق
+
+        if (unsubscribeReservation) {
+
+            unsubscribeReservation();
+
+            unsubscribeReservation = null;
+        }
+
+        // تنظيف واجهة الحساب السابق
+
+        resetUserReservationUI();
+
+        currentUser = user;
+
+        authReady = true;
+
+        if (user) {
+
+            loginSection.style.display = "none";
+
+            userSection.style.display = "block";
+
+            userName.textContent =
+                user.displayName || "Utilisateur";
+
+            userEmail.textContent =
+                user.email || "";
+
+            if (user.photoURL) {
+
+                userPhoto.src = user.photoURL;
+
+                userPhoto.style.display =
+                    "inline-block";
+
+            } else {
+
+                userPhoto.removeAttribute("src");
+
+                userPhoto.style.display = "none";
+            }
+
+            // استعادة حجز هذا المستخدم فقط
+
+            restoreUserReservation();
+
+        } else {
+
+            loginSection.style.display = "block";
+
+            userSection.style.display = "none";
+        }
+
+        updateReserveButton();
+    }
+);
+    /* =========================================
+   GOOGLE LOGOUT
+========================================= */
+
+async function logoutGoogle() {
+
+    try {
+
+        await signOut(auth);
+
+    } catch (error) {
+
+        console.error(
+            "Logout error:",
+            error
+        );
+
+        authError.textContent =
+            "Impossible de se déconnecter.";
+
+        authError.style.display = "block";
+    }
 }
+    logoutButton.addEventListener(
+    "click",
+    logoutGoogle
+);
+ 
 
 /*
  ملاحظة:
@@ -1090,20 +1502,7 @@ if (savedReservation) {
  عن الحالة الفعلية باستخدام reservation_id
  ورمز وصول آمن، ثم تحديثها تلقائيًا.
 */
-const pendingId =
-    localStorage.getItem("pendingReservationId");
 
-if (pendingId) {
-
-    reservationInProgress = true;
-
-    const pendingRef = ref(
-        db,
-        "reservation_requests/" + pendingId
-    );
-
-    watchReservation(pendingRef);
-}
 updateReserveButton();
 /* ===== CHECK MASTER EVERY 5 SECONDS ===== */
 
