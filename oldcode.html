@@ -299,7 +299,7 @@ body.popup-open{overflow:hidden}
   </a>
   <div class="bi center" style="margin:-10px 0 16px;gap:2px">
     <span class="ar" lang="ar" style="font-size:15px;font-weight:800;color:var(--title2)">مكتب بريد حي الأمل 6033 قابس</span>
-    <span class="fr" lang="fr" style="font-size:11px;color:var(--muted)">Poste Cité El Amel 6033 Gabès</span>
+    <span class="fr" lang="fr" style="font-size:11px;font-weight:600;color:var(--muted)">Poste Cité El Amel 6033 Gabès</span>
     <div style="margin-bottom:10px"></div>
   </div>
   <h1 class="page-title">
@@ -437,10 +437,6 @@ body.popup-open{overflow:hidden}
         <span class="fr" lang="fr">Veuillez autoriser les notifications afin d'être averti lorsque votre tour approche.</span>
       </span>
     </div>
-    <div id="popupPermissionStatus" class="popup-permission" role="status" aria-live="polite">
-      <span class="bi center">
-      </span>
-    </div>
     <button id="popupEnableBtn" class="popup-enable" type="button">
       <span class="bi center">
         <span class="ar" lang="ar">🔔 تفعيل الإشعارات</span>
@@ -455,7 +451,7 @@ body.popup-open{overflow:hidden}
 <script>
 const QS=new URLSearchParams(location.search);
 const TEST_MODE=QS.get("test")==="1";
-const DB_BASE="https://qms-online-2658d-default-rtdb.firebaseio.com";
+const DB_BASE = "https://qms-online-2658d-default-rtdb.firebaseio.com";
 const SW_URL="./sw.js";
 
 function makeUrl(path,params={}){
@@ -493,7 +489,6 @@ const notificationOverlay=document.getElementById("notificationOverlay");
 const closeNotificationPopupBtn=document.getElementById("closeNotificationPopup");
 const popupEnableBtn=document.getElementById("popupEnableBtn");
 const popupLaterBtn=document.getElementById("popupLaterBtn");
-const popupPermissionStatus=document.getElementById("popupPermissionStatus");
 const testPanel=document.getElementById("testPanel");
 const testTicketInput=document.getElementById("testTicketInput");
 const testApplyBtn=document.getElementById("testApplyBtn");
@@ -621,10 +616,6 @@ function dismissNotificationPopup(){
   hideNotificationPopup();
 }
 
-function setPopupPermission(frText,arText,denied=false){
-  popupPermissionStatus.innerHTML=biHTML(frText,arText);
-  popupPermissionStatus.classList.toggle("denied",denied);
-}
 
 function updatePopupPermission(){
   if(notificationsGranted()){
