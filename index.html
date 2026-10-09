@@ -456,7 +456,10 @@ import { initializeApp } from
 import {
     getDatabase,
     ref,
-    onValue
+    onValue,
+    push,
+    set,
+    serverTimestamp
 } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
@@ -473,9 +476,7 @@ import {
 ===================================================== */
 
 
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+ 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -492,10 +493,7 @@ const firebaseConfig = {
   measurementId: "G-7GQYF8V9V8"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
+ 
     
 
 /* =====================================================
@@ -513,9 +511,7 @@ const analytics = getAnalytics(app);
 
    لا يتم توليد رقم التذكرة في المتصفح.
 ===================================================== */
-
-const RESERVATION_API_URL = "";
-
+ 
 /* =====================================================
    INITIALIZE
 ===================================================== */
@@ -568,7 +564,7 @@ const ticketTitleEl =
 /* =====================================================
    GLOBAL STATE
 ===================================================== */
-
+let reservationInProgress = false;
 let currentTicket = 0;
 let currentConsole = 0;
 let waitingCount = null;
@@ -680,22 +676,13 @@ function checkMasterStatus() {
 }
 function updateReserveButton() {
 
-    const apiReady =
-        RESERVATION_API_URL.length > 0;
-
     reserveButton.disabled =
-        !apiReady || !queueConnected;
+        !queueConnected || reservationInProgress;
 
-    if (!apiReady) {
-
-        reserveButton.textContent =
-            "RÉSERVATION BIENTÔT DISPONIBLE";
-
-    } else {
-
-        reserveButton.textContent =
-            "RÉSERVER UN TICKET";
-    }
+    reserveButton.textContent =
+        reservationInProgress
+            ? "RÉSERVATION EN COURS..."
+            : "RÉSERVER UN TICKET";
 }
 
 function showError(message) {
@@ -948,95 +935,126 @@ function updateReservationStatus(status) {
    }
 
 ===================================================== */
+let unsubscribeReservation = null;
 
+function watchReservation(requestRef) {
+
+    if (unsubscribeReservation) {
+        unsubscribeReservation();
+    }
+
+    unsubscribeReservation = onValue(
+        requestRef,
+        (snapshot) => {
+
+            const data = snapshot.val();
+
+            if (!data) return;
+
+            if (data.status === "pending") {
+
+                reservationInProgress = true;
+                updateReserveButton();
+            }
+
+            else if (data.status === "confirmed") {
+
+                if (
+                    !Number.isInteger(Number(data.ticket)) ||
+                    !/^\d{4}$/.test(String(data.code))
+                ) {
+                    return;
+                }
+
+                const reservation = {
+                    id: requestRef.key,
+                    ticket: Number(data.ticket),
+                    code: String(data.code),
+                    status: "reserved"
+                };
+
+                saveReservation(reservation);
+                showReservation(reservation);
+
+                localStorage.removeItem(
+                    "pendingReservationId"
+                );
+
+                reservationInProgress = false;
+                updateReserveButton();
+            }
+
+            else if (data.status === "rejected") {
+
+                reservationInProgress = false;
+
+                localStorage.removeItem(
+                    "pendingReservationId"
+                );
+
+                showError(
+                    "Réservation refusée."
+                );
+
+                updateReserveButton();
+            }
+
+        },
+        (error) => {
+
+            console.error(error);
+
+            reservationInProgress = false;
+
+            showError(
+                "Erreur de suivi de réservation."
+            );
+
+            updateReserveButton();
+        }
+    );
+}
 async function createReservation() {
 
-    if (!RESERVATION_API_URL) {
-
-        showError(
-            "Le service de réservation n'est pas encore disponible."
-        );
-
+    if (!queueConnected || reservationInProgress) {
         return;
     }
 
     clearError();
 
-    reserveButton.disabled = true;
-
-    reserveButton.textContent =
-        "RÉSERVATION EN COURS...";
+    reservationInProgress = true;
+    updateReserveButton();
 
     try {
 
-        const response = await fetch(
-            RESERVATION_API_URL,
-            {
-                method: "POST",
+        const requestsRef =
+            ref(db, "reservation_requests");
 
-                headers: {
-                    "Content-Type": "application/json"
-                },
+        const newRequestRef =
+            push(requestsRef);
 
-                body: JSON.stringify({
-                    action: "reserve"
-                })
-            }
+        await set(newRequestRef, {
+            status: "pending",
+            source: "web",
+            created_at: serverTimestamp()
+        });
+
+        localStorage.setItem(
+            "pendingReservationId",
+            newRequestRef.key
         );
 
-        if (!response.ok) {
-
-            throw new Error(
-                "Erreur HTTP " + response.status
-            );
-        }
-
-        const result = await response.json();
-
-        if (
-            !result.success ||
-            !result.reservation_id ||
-            !Number.isInteger(Number(result.ticket)) ||
-            !/^\d{4}$/.test(String(result.code))
-        ) {
-
-            throw new Error(
-                "Réponse de réservation invalide"
-            );
-        }
-
-        const reservation = {
-
-            id: result.reservation_id,
-
-            ticket: Number(result.ticket),
-
-            code: String(result.code),
-
-            status: result.status || "reserved"
-        };
-
-        saveReservation(reservation);
-
-        showReservation(reservation);
+        watchReservation(newRequestRef);
 
     } catch (error) {
 
         console.error(error);
 
+        reservationInProgress = false;
+
         showError(
-            "Impossible de réserver pour le moment. Veuillez réessayer."
+            "Impossible d'envoyer la réservation."
         );
-
-        /*
-         مهم:
-         عند تفعيل الخدمة الخلفية، يجب إضافة
-         Idempotency Key ثابت لكل محاولة حجز،
-         حتى لا تؤدي إعادة المحاولة بعد انقطاع
-         الاتصال إلى إنشاء حجزين.
-        */
-
-    } finally {
 
         updateReserveButton();
     }
@@ -1072,7 +1090,20 @@ if (savedReservation) {
  عن الحالة الفعلية باستخدام reservation_id
  ورمز وصول آمن، ثم تحديثها تلقائيًا.
 */
+const pendingId =
+    localStorage.getItem("pendingReservationId");
 
+if (pendingId) {
+
+    reservationInProgress = true;
+
+    const pendingRef = ref(
+        db,
+        "reservation_requests/" + pendingId
+    );
+
+    watchReservation(pendingRef);
+}
 updateReserveButton();
 /* ===== CHECK MASTER EVERY 5 SECONDS ===== */
 
