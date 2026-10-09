@@ -563,7 +563,21 @@ let currentConsole = 0;
 let waitingCount = null;
 
 let queueConnected = false;
+/* ===== MASTER CONNECTION MONITOR ===== */
 
+/* ===== QMS WEBSITE AVAILABILITY ===== */
+
+// 30 minutes without a new ticket call
+const REQUEST_TIMEOUT_MS = 30 * 60 * 1000;
+
+// 10 minutes without MASTER heartbeat
+const HEARTBEAT_TIMEOUT_MS = 10 * 60 * 1000;
+
+let lastMasterHeartbeat = 0;
+let lastTicketRequest = 0;
+
+let firebaseDataAvailable = false;
+let serverTimeOffset = 0;
 const STORAGE_KEY = "poste_elamal_reservation";
 
 /* =====================================================
@@ -601,10 +615,58 @@ function setConnectionStatus(online) {
         statusDotEl.className =
             "status-dot offline";
     }
+    if (!online) {
 
+    currentTicketEl.textContent = "---";
+
+    waitingCountEl.textContent = "--";
+
+} else {
+
+    currentTicketEl.textContent =
+        formatNumber(currentTicket);
+
+    waitingCountEl.textContent =
+        waitingCount !== null
+            ? Math.max(0, waitingCount)
+            : "--";
+}
     updateReserveButton();
 }
+function checkMasterStatus() {
 
+    if (
+        !firebaseDataAvailable ||
+        !lastMasterHeartbeat ||
+        !lastTicketRequest
+    ) {
+
+        setConnectionStatus(false);
+        return;
+    }
+
+    const serverNow =
+        Date.now() + serverTimeOffset;
+
+    const heartbeatAge =
+        serverNow - lastMasterHeartbeat;
+
+    const requestAge =
+        serverNow - lastTicketRequest;
+
+    const heartbeatOK =
+        heartbeatAge >= 0 &&
+        heartbeatAge < HEARTBEAT_TIMEOUT_MS;
+
+    const requestOK =
+        requestAge >= 0 &&
+        requestAge < REQUEST_TIMEOUT_MS;
+
+    const serviceAvailable =
+        heartbeatOK && requestOK;
+
+    setConnectionStatus(serviceAvailable);
+}
 function updateReserveButton() {
 
     const apiReady =
@@ -642,7 +704,18 @@ function clearError() {
 /* =====================================================
    FIREBASE REALTIME QUEUE
 ===================================================== */
+/* ===== FIREBASE SERVER TIME ===== */
 
+onValue(
+    ref(db, ".info/serverTimeOffset"),
+    (snapshot) => {
+
+        serverTimeOffset =
+            Number(snapshot.val() ?? 0);
+
+        checkMasterStatus();
+    }
+);
 const queueRef = ref(db, "queue");
 
 onValue(
@@ -653,9 +726,12 @@ onValue(
 
         const data = snapshot.val();
 
-        if (!data) {
+       if (!data) {
 
-            setConnectionStatus(false);
+            firebaseDataAvailable = false;
+        
+            checkMasterStatus();
+        
             return;
         }
 
@@ -692,7 +768,17 @@ onValue(
             waitingCountEl.textContent = "--";
         }
 
-        setConnectionStatus(true);
+        lastMasterHeartbeat =
+    Number(
+        data.meta?.esp32_last_seen_ms ?? 0
+    );
+lastTicketRequest =
+    Number(
+        data.meta?.last_request_ms ?? 0
+    );
+firebaseDataAvailable = true;
+
+checkMasterStatus();
 
     },
 
@@ -703,7 +789,9 @@ onValue(
             error
         );
 
-        setConnectionStatus(false);
+        firebaseDataAvailable = false;
+
+        checkMasterStatus();
     }
 
 );
@@ -975,7 +1063,12 @@ if (savedReservation) {
 */
 
 updateReserveButton();
+/* ===== CHECK MASTER EVERY 5 SECONDS ===== */
 
+setInterval(
+    checkMasterStatus,
+    5000
+);
 </script>
 
 </body>
