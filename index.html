@@ -921,24 +921,17 @@ onValue(
          waiting_count سيضاف لاحقًا إلى Firebase
          بعد تحديث MASTER وESP32.
         */
+            /* ===== CALCULATE WAITING COUNT ===== */
 
-        if (
-            data.waiting_count !== undefined &&
-            data.waiting_count !== null
-        ) {
-
-            waitingCount =
-                Number(data.waiting_count);
-
-            waitingCountEl.textContent =
-                Math.max(0, waitingCount);
-
-        } else {
-
-            waitingCount = null;
-
-            waitingCountEl.textContent = "--";
-        }
+            const lastIssuedTicket =
+                Number(data.last_issued_ticket ?? 0);
+            
+            waitingCount = Math.max(
+                0,
+                lastIssuedTicket - currentTicket
+            );
+            
+            waitingCountEl.textContent = waitingCount;
 
         lastMasterHeartbeat =
     Number(
