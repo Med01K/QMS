@@ -308,7 +308,40 @@ button:disabled {
     background: #fee2e2;
     color: #991b1b;
 }
+/* Reservation confirmed - waiting for arrival */
 
+.ticket-status.confirmed {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+/* Customer arrived */
+
+.ticket-status.arrived {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* Ticket called */
+
+.ticket-status.called {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+/* Reservation completed */
+
+.ticket-status.completed {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+/* Reservation rejected */
+
+.ticket-status.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
 .error-message {
     display: none;
     background: #fee2e2;
@@ -508,15 +541,41 @@ footer {
         <div class="ticket-status" id="myStatus">
             En attente de confirmation
         </div>
+        <button
+            class="btn-secondary"
+            id="newReservationButton"
+            style="display:none;"
+        >
+            NOUVELLE RÉSERVATION
+        </button>
+   <p class="ticket-message">
 
-        <p class="ticket-message">
-            Présentez ce code à la borne
-            pour imprimer votre ticket.
-            <br><br>
-            Attention : votre réservation sera
-            dépassée si votre numéro est appelé
-            avant votre arrivée.
-        </p>
+    Votre réservation est enregistrée.
+
+    <br><br>
+
+    Présentez-vous à la borne et saisissez
+    votre code de réservation à 4 chiffres.
+
+    <br><br>
+
+    La borne imprimera votre ticket
+    avec le numéro réservé.
+
+    <br><br>
+
+    Votre arrivée sera automatiquement
+    confirmée après validation du code.
+
+    <br><br>
+
+    <strong>Important :</strong>
+
+    Si votre numéro est dépassé avant
+    la récupération du ticket,
+    votre réservation sera annulée.
+
+</p>
 
     </section>
 
@@ -571,12 +630,12 @@ import {
     getDatabase,
     ref,
     onValue,
+    get,
     push,
     set,
     serverTimestamp
 } from
 "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-
 /* =====================================================
    FIREBASE CONFIG
    =====================================================
@@ -704,7 +763,10 @@ const myStatusEl =
 
 const ticketTitleEl =
     document.getElementById("ticketTitle");
-
+    const newReservationButton =
+    document.getElementById(
+        "newReservationButton"
+    );
 /* =====================================================
    GLOBAL STATE
 ===================================================== */
@@ -724,7 +786,7 @@ let queueConnected = false;
 const REQUEST_TIMEOUT_MS = 30 * 60 * 1000;
 
 // 10 minutes without MASTER heartbeat
-const HEARTBEAT_TIMEOUT_MS = 10 * 60 * 1000;
+const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000;
 
 let lastMasterHeartbeat = 0;
 let lastTicketRequest = 0;
@@ -798,15 +860,19 @@ function setConnectionStatus(online) {
 }
     updateReserveButton();
 }
+/* =====================================================
+   MASTER CONNECTION STATUS - V2
+===================================================== */
+
 function checkMasterStatus() {
 
     if (
         !firebaseDataAvailable ||
-        !lastMasterHeartbeat ||
-        !lastTicketRequest
+        !lastMasterHeartbeat
     ) {
 
         setConnectionStatus(false);
+
         return;
     }
 
@@ -816,31 +882,46 @@ function checkMasterStatus() {
     const heartbeatAge =
         serverNow - lastMasterHeartbeat;
 
-    const requestAge =
-        serverNow - lastTicketRequest;
-
     const heartbeatOK =
         heartbeatAge >= 0 &&
         heartbeatAge < HEARTBEAT_TIMEOUT_MS;
 
-    const requestOK =
-        requestAge >= 0 &&
-        requestAge < REQUEST_TIMEOUT_MS;
-
-    const serviceAvailable =
-        heartbeatOK && requestOK;
-
-    setConnectionStatus(serviceAvailable);
+    setConnectionStatus(heartbeatOK);
 }
+/* =====================================================
+   UPDATE RESERVATION BUTTON - V2
+===================================================== */
+
 function updateReserveButton() {
 
     const userLoggedIn =
         authReady && currentUser !== null;
 
+    const savedReservation =
+        userLoggedIn
+            ? loadReservation()
+            : null;
+
+    const activeStatuses = [
+        "pending",
+        "confirmed",
+        "reserved",
+        "arrived",
+        "waiting",
+        "called"
+    ];
+
+    const hasActiveReservation =
+        savedReservation &&
+        activeStatuses.includes(
+            savedReservation.status
+        );
+
     reserveButton.disabled =
         !queueConnected ||
         reservationInProgress ||
-        !userLoggedIn;
+        !userLoggedIn ||
+        hasActiveReservation;
 
     if (reservationInProgress) {
 
@@ -851,6 +932,11 @@ function updateReserveButton() {
 
         reserveButton.textContent =
             "CONNECTEZ-VOUS POUR RÉSERVER";
+
+    } else if (hasActiveReservation) {
+
+        reserveButton.textContent =
+            "VOUS AVEZ DÉJÀ UNE RÉSERVATION";
 
     } else {
 
@@ -926,12 +1012,38 @@ onValue(
             const lastIssuedTicket =
                 Number(data.last_issued_ticket ?? 0);
             
-            waitingCount = Math.max(
-                0,
-                lastIssuedTicket - currentTicket
-            );
+/* =====================================
+   WAITING COUNT WITH 999 WRAP
+===================================== */
+
+if (
+    currentTicket >= 0 &&
+    currentTicket <= 999 &&
+    lastIssuedTicket >= 0 &&
+    lastIssuedTicket <= 999
+) {
+
+    if (lastIssuedTicket >= currentTicket) {
+
+        waitingCount =
+            lastIssuedTicket - currentTicket;
+
+    } else {
+
+        waitingCount =
+            (999 - currentTicket) +
+            lastIssuedTicket;
+    }
+
+} else {
+
+    waitingCount = null;
+}
             
-            waitingCountEl.textContent = waitingCount;
+            waitingCountEl.textContent =
+    waitingCount !== null
+        ? waitingCount
+        : "--";
 
         lastMasterHeartbeat =
     Number(
@@ -1013,8 +1125,9 @@ function loadReservation() {
     }
 }
 
+ 
 /* =====================================================
-   SHOW RESERVATION
+   SHOW RESERVATION - V2
 ===================================================== */
 
 function showReservation(reservation) {
@@ -1026,16 +1139,60 @@ function showReservation(reservation) {
     myTicketEl.textContent =
         formatNumber(reservation.ticket);
 
+   const expiredStatuses = [
+    "skipped",
+    "completed",
+    "rejected",
+    "cancelled"
+];
+
+if (
+    expiredStatuses.includes(
+        reservation.status
+    )
+) {
+
+    myCodeEl.textContent = "----";
+
+} else {
+
     myCodeEl.textContent =
         String(reservation.code).padStart(4, "0");
-
-    updateReservationStatus(
-        reservation.status || "reserved"
-    );
 }
 
+    const status =
+        reservation.status || "pending";
+
+    updateReservationStatus(status);
+
+    /* =====================================
+       NEW RESERVATION BUTTON
+    ===================================== */
+
+    const finishedStatuses = [
+        "skipped",
+        "completed",
+        "rejected",
+        "cancelled"
+    ];
+
+    if (
+        finishedStatuses.includes(status)
+    ) {
+
+        newReservationButton.style.display =
+            "block";
+
+    } else {
+
+        newReservationButton.style.display =
+            "none";
+    }
+}
+ 
+
 /* =====================================================
-   RESERVATION STATUS
+   RESERVATION STATUS - V2
 ===================================================== */
 
 function updateReservationStatus(status) {
@@ -1044,27 +1201,57 @@ function updateReservationStatus(status) {
 
     switch (status) {
 
+        /* =====================================
+           PENDING
+        ===================================== */
+
+        case "pending":
+
+            ticketTitleEl.textContent =
+                "RÉSERVATION EN COURS";
+
+            myStatusEl.textContent =
+                "Votre réservation est en cours de traitement";
+
+            break;
+
+        /* =====================================
+           CONFIRMED
+        ===================================== */
+
+        case "confirmed":
         case "reserved":
 
             ticketTitleEl.textContent =
                 "RÉSERVATION CONFIRMÉE";
 
             myStatusEl.textContent =
-                "En attente de votre arrivée";
+                "Présentez votre code à la borne pour récupérer votre ticket";
+
+            myStatusEl.classList.add("confirmed");
 
             break;
 
+        /* =====================================
+           ARRIVED
+        ===================================== */
+
+        case "arrived":
         case "waiting":
 
             ticketTitleEl.textContent =
-                "TICKET CONFIRMÉ";
+                "ARRIVÉE CONFIRMÉE";
 
             myStatusEl.textContent =
-                "Votre ticket est prêt";
+                "Votre ticket a été récupéré. Veuillez attendre votre tour.";
 
-            myStatusEl.classList.add("waiting");
+            myStatusEl.classList.add("arrived");
 
             break;
+
+        /* =====================================
+           CALLED
+        ===================================== */
 
         case "called":
 
@@ -1074,9 +1261,13 @@ function updateReservationStatus(status) {
             myStatusEl.textContent =
                 "Veuillez vous présenter au guichet";
 
-            myStatusEl.classList.add("waiting");
+            myStatusEl.classList.add("called");
 
             break;
+
+        /* =====================================
+           SKIPPED
+        ===================================== */
 
         case "skipped":
 
@@ -1084,28 +1275,56 @@ function updateReservationStatus(status) {
                 "RÉSERVATION DÉPASSÉE";
 
             myStatusEl.textContent =
-                "Votre numéro a été dépassé";
+                "Votre réservation a été dépassée car votre ticket n'a pas été récupéré à temps.";
 
             myStatusEl.classList.add("skipped");
 
             break;
 
+        /* =====================================
+           COMPLETED
+        ===================================== */
+
+        case "completed":
+
+            ticketTitleEl.textContent =
+                "SERVICE TERMINÉ";
+
+            myStatusEl.textContent =
+                "Votre passage est terminé.";
+
+            myStatusEl.classList.add("completed");
+
+            break;
+
+        /* =====================================
+           REJECTED
+        ===================================== */
+
+        case "rejected":
         case "cancelled":
 
             ticketTitleEl.textContent =
-                "RÉSERVATION ANNULÉE";
+                "RÉSERVATION REFUSÉE";
 
             myStatusEl.textContent =
-                "Cette réservation a été annulée";
+                "Cette réservation n'est plus valide.";
 
-            myStatusEl.classList.add("skipped");
+            myStatusEl.classList.add("rejected");
 
             break;
 
+        /* =====================================
+           UNKNOWN
+        ===================================== */
+
         default:
 
+            ticketTitleEl.textContent =
+                "STATUT DE RÉSERVATION";
+
             myStatusEl.textContent =
-                "Statut en attente";
+                "En attente de mise à jour";
     }
 }
 
@@ -1127,6 +1346,10 @@ function updateReservationStatus(status) {
 ===================================================== */
 let unsubscribeReservation = null;
 
+/* =====================================================
+   RESERVATION REALTIME MONITOR - V2
+===================================================== */
+
 function watchReservation(requestRef) {
 
     if (!currentUser) return;
@@ -1134,7 +1357,10 @@ function watchReservation(requestRef) {
     const ownerUid = currentUser.uid;
 
     if (unsubscribeReservation) {
+
         unsubscribeReservation();
+
+        unsubscribeReservation = null;
     }
 
     unsubscribeReservation = onValue(
@@ -1143,7 +1369,7 @@ function watchReservation(requestRef) {
 
         (snapshot) => {
 
-            // منع عرض بيانات حساب آخر
+            /* CHECK USER */
 
             if (
                 !currentUser ||
@@ -1154,74 +1380,212 @@ function watchReservation(requestRef) {
 
             const data = snapshot.val();
 
-            if (!data) return;
+            /* RESERVATION REMOVED */
+
+           /* =====================================
+   RESERVATION REMOVED
+===================================== */
+
+if (!data) {
+
+    console.log(
+        "[RES] Reservation removed from Firebase"
+    );
+
+    localStorage.removeItem(
+        getReservationKey(ownerUid)
+    );
+
+    localStorage.removeItem(
+        getPendingKey(ownerUid)
+    );
+
+    reservationInProgress = false;
+
+    resetUserReservationUI();
+
+    updateReserveButton();
+
+    return;
+}
+            /* CHECK OWNER */
 
             if (data.user_id !== ownerUid) {
+
+                console.warn(
+                    "[RES] Invalid reservation owner"
+                );
+
                 return;
             }
 
-            if (data.status === "pending") {
+            const status = data.status || "pending";
+
+            console.log(
+                "[RES] Firebase status:",
+                status
+            );
+
+            /* =====================================
+               PENDING
+            ===================================== */
+
+            if (status === "pending") {
 
                 reservationInProgress = true;
 
                 updateReserveButton();
+
+                return;
             }
 
-            else if (data.status === "confirmed") {
+            /* =====================================
+               REJECTED
+            ===================================== */
+/* =====================================
+   REJECTED RESERVATION
+===================================== */
 
-                if (
-                    !Number.isInteger(Number(data.ticket)) ||
-                    !/^\d{4}$/.test(String(data.code))
-                ) {
-                    return;
-                }
+if (status === "rejected") {
 
-                const reservation = {
+    localStorage.removeItem(
+        getPendingKey(ownerUid)
+    );
 
-                    id: requestRef.key,
+    localStorage.removeItem(
+        getReservationKey(ownerUid)
+    );
 
-                    ticket: Number(data.ticket),
+    resetUserReservationUI();
 
-                    code: String(data.code),
+  alert(
+    "Votre réservation est encore active."
+);
 
-                    status: "reserved",
+    reservationInProgress = false;
 
-                    user_id: ownerUid
+    updateReserveButton();
 
-                };
+    return;
+}
 
-                saveReservation(reservation);
+            /* =====================================
+               VALIDATE RESERVATION DATA
+            ===================================== */
 
-                showReservation(reservation);
+            const ticketNumber = Number(data.ticket);
 
-                localStorage.removeItem(
-                    getPendingKey(ownerUid)
+            const reservationCode = String(
+                data.code ?? ""
+            );
+
+            if (
+                !Number.isInteger(ticketNumber) ||
+                ticketNumber < 1 ||
+                ticketNumber > 999 ||
+                !/^\d{4}$/.test(reservationCode)
+            ) {
+
+                console.warn(
+                    "[RES] Invalid reservation data"
                 );
 
-                reservationInProgress = false;
-
-                updateReserveButton();
+                return;
             }
 
-            else if (data.status === "rejected") {
+            /* =====================================
+               SAVE RESERVATION
+            ===================================== */
 
-                reservationInProgress = false;
+            const reservation = {
 
-                localStorage.removeItem(
-                    getPendingKey(ownerUid)
-                );
+                id: requestRef.key,
 
-                showError(
-                    "Réservation refusée."
-                );
+                ticket: ticketNumber,
 
-                updateReserveButton();
+                code: reservationCode,
+
+                status: status,
+
+                user_id: ownerUid
+
+            };
+
+            saveReservation(reservation);
+
+            /* =====================================
+               UPDATE PAGE
+            ===================================== */
+
+            showReservation(reservation);
+
+            /* =====================================
+               REMOVE PENDING REQUEST
+            ===================================== */
+
+            localStorage.removeItem(
+                getPendingKey(ownerUid)
+            );
+
+            reservationInProgress = false;
+
+            updateReserveButton();
+
+            /* =====================================
+               STATUS LOGS
+            ===================================== */
+
+            switch (status) {
+
+                case "confirmed":
+
+                    console.log(
+                        "[RES] Waiting for customer arrival"
+                    );
+
+                    break;
+
+                case "arrived":
+
+                    console.log(
+                        "[RES] Customer arrived"
+                    );
+
+                    break;
+
+                case "called":
+
+                    console.log(
+                        "[RES] Ticket called"
+                    );
+
+                    break;
+
+                case "skipped":
+
+                    console.log(
+                        "[RES] Reservation skipped"
+                    );
+
+                    break;
+
+                case "completed":
+
+                    console.log(
+                        "[RES] Reservation completed"
+                    );
+
+                    break;
             }
+
         },
 
         (error) => {
 
-            console.error(error);
+            console.error(
+                "[RES] Firebase listener error:",
+                error
+            );
 
             if (
                 currentUser?.uid !== ownerUid
@@ -1237,6 +1601,7 @@ function watchReservation(requestRef) {
 
             updateReserveButton();
         }
+
     );
 }
 function resetUserReservationUI() {
@@ -1257,14 +1622,32 @@ function resetUserReservationUI() {
 }    
 async function createReservation() {
 
-    if (
-        !authReady ||
-        !currentUser ||
-        !queueConnected ||
-        reservationInProgress
-    ) {
-        return;
-    }
+ const savedReservation = loadReservation();
+
+const activeStatuses = [
+    "pending",
+    "confirmed",
+    "reserved",
+    "arrived",
+    "waiting",
+    "called"
+];
+
+const hasActiveReservation =
+    savedReservation &&
+    activeStatuses.includes(
+        savedReservation.status
+    );
+
+if (
+    !authReady ||
+    !currentUser ||
+    !queueConnected ||
+    reservationInProgress ||
+    hasActiveReservation
+) {
+    return;
+}
 
     clearError();
 
@@ -1278,7 +1661,10 @@ async function createReservation() {
 
         const newRequestRef =
             push(requestsRef);
-
+            localStorage.setItem(
+            getPendingKey(currentUser.uid),
+            newRequestRef.key
+        );
         await set(newRequestRef, {
 
             status: "pending",
@@ -1358,39 +1744,212 @@ reserveButton.addEventListener(
     "click",
     createReservation
 );
+    /* =====================================================
+   NEW RESERVATION BUTTON
+===================================================== */
+
+/* =====================================================
+   NEW RESERVATION BUTTON - VERIFIED
+===================================================== */
+
+newReservationButton.addEventListener(
+    "click",
+    async () => {
+
+        if (!currentUser) return;
+
+        const uid = currentUser.uid;
+
+        const saved = loadReservation();
+
+        if (!saved || !saved.id) {
+            return;
+        }
+
+        const finishedStatuses = [
+            "skipped",
+            "completed",
+            "rejected",
+            "cancelled"
+        ];
+
+        newReservationButton.disabled = true;
+
+        try {
+
+            /* =====================================
+               CHECK FIREBASE STATUS
+            ===================================== */
+
+            const reservationRef = ref(
+                db,
+                "reservation_requests/" +
+                saved.id
+            );
+
+            const snapshot = await get(
+                reservationRef
+            );
+
+            if (!snapshot.exists()) {
+
+                console.log(
+                    "[RES] Reservation no longer exists"
+                );
+
+            } else {
+
+                const data = snapshot.val();
+
+                if (data.user_id !== uid) {
+                    return;
+                }
+
+                if (
+                    !finishedStatuses.includes(
+                        data.status
+                    )
+                ) {
+
+                    console.log(
+                        "[RES] Reservation still active"
+                    );
+
+                    showError(
+                        "Votre réservation est encore active."
+                    );
+
+                    return;
+                }
+            }
+
+            /* =====================================
+               STOP LISTENER
+            ===================================== */
+
+            if (unsubscribeReservation) {
+
+                unsubscribeReservation();
+
+                unsubscribeReservation = null;
+            }
+
+            /* =====================================
+               REMOVE LOCAL DATA
+            ===================================== */
+
+            localStorage.removeItem(
+                getReservationKey(uid)
+            );
+
+            localStorage.removeItem(
+                getPendingKey(uid)
+            );
+
+            /* =====================================
+               RESET UI
+            ===================================== */
+
+            resetUserReservationUI();
+
+            console.log(
+                "[RES] New reservation allowed"
+            );
+
+} catch (error) {
+
+    console.error(
+        "[RES] Firebase validation failed:",
+        error
+    );
+
+    alert(
+        "Impossible de vérifier votre réservation. Veuillez réessayer."
+    );
+
+} finally {
+
+            newReservationButton.disabled = false;
+        }
+    }
+);
 googleLoginButton.addEventListener(
     "click",
     loginWithGoogle
 );
+/* =====================================================
+   RESTORE USER RESERVATION - V2
+===================================================== */
+
 function restoreUserReservation() {
 
     if (!currentUser) return;
 
+    const uid = currentUser.uid;
+
+    /* =====================================
+       LOAD SAVED RESERVATION
+    ===================================== */
+
     const savedReservation = loadReservation();
 
-    if (savedReservation) {
+    if (
+        savedReservation &&
+        savedReservation.id
+    ) {
+
+        console.log(
+            "[RES] Restoring reservation:",
+            savedReservation.id
+        );
+
+        /* Show cached data immediately */
 
         showReservation(savedReservation);
+
+        /* Firebase is the source of truth */
+
+        const reservationRef = ref(
+            db,
+            "reservation_requests/" +
+            savedReservation.id
+        );
+
+        watchReservation(reservationRef);
+
+        updateReserveButton();
+
+        return;
     }
 
+    /* =====================================
+       RESTORE PENDING REQUEST
+    ===================================== */
+
     const pendingId = localStorage.getItem(
-        getPendingKey(currentUser.uid)
+        getPendingKey(uid)
     );
 
-    if (pendingId && !savedReservation) {
+    if (pendingId) {
+
+        console.log(
+            "[RES] Restoring pending request:",
+            pendingId
+        );
 
         reservationInProgress = true;
 
         const pendingRef = ref(
             db,
-            "reservation_requests/" + pendingId
+            "reservation_requests/" +
+            pendingId
         );
 
         watchReservation(pendingRef);
     }
 
     updateReserveButton();
-}        
+}       
     /* =========================================
    AUTH STATE MONITOR
 ========================================= */
@@ -1410,11 +1969,15 @@ onAuthStateChanged(
 
         // تنظيف واجهة الحساب السابق
 
-        resetUserReservationUI();
+            // تحديث المستخدم أولًا
 
-        currentUser = user;
+currentUser = user;
 
-        authReady = true;
+authReady = true;
+
+// تنظيف واجهة المستخدم
+
+resetUserReservationUI();
 
         if (user) {
 
