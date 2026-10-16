@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#123b74">
+
+<title>POSTE EL AMAL | Réservation de ticket</title>
+
+<style>
+:root {
+    --primary: #123b74;
+    --primary-dark: #09264d;
+    --secondary: #1976d2;
+    --green: #16a34a;
+    --orange: #f59e0b;
+    --red: #dc2626;
+    --background: #f2f5fa;
+    --white: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    min-height: 100vh;
+}
+
+header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: white;
+    text-align: center;
+    padding: 30px 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+}
+
+header h1 {
+    font-size: 27px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+header p {
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.container {
+    max-width: 520px;
+    margin: auto;
+    padding: 20px 15px 40px;
+}
+
+.card {
+    background: white;
+    border-radius: 18px;
+    padding: 25px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+}
+
+.section-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.current-number {
+    text-align: center;
+    font-size: 90px;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 15px 0 5px;
+    line-height: 1.1;
+}
+
+.divider {
+    height: 1px;
+    background: var(--border);
+    margin: 25px 0;
+}
+
+.waiting-box {
+    text-align: center;
+}
+
+.waiting-number {
+    font-size: 55px;
+    font-weight: bold;
+    color: var(--orange);
+    margin-top: 10px;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--orange);
+}
+
+.status-dot.online {
+    background: var(--green);
+}
+
+.status-dot.offline {
+    background: var(--red);
+}
+
+.auth-card {
+    text-align: center;
+}
+
+.auth-card h2 {
+    font-size: 21px;
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.auth-card p {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+.btn-google {
+    background: white;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+}
+
+.btn-google:hover {
+    background: #f8fafc;
+}
+
+.user-photo {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+    object-fit: cover;
+}
+
+.user-name {
+    font-size: 17px;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 6px;
+}
+
+.user-email {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 15px;
+    overflow-wrap: anywhere;
+}
+
+.reservation-card {
+    text-align: center;
+}
+
+.reservation-card h2 {
+    font-size: 21px;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.reservation-card p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+    margin-bottom: 20px;
+}
+
+button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 17px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:not(:disabled):hover {
+    background: var(--primary-dark);
+}
+
+.btn-secondary {
+    background: #e8f0fb;
+    color: var(--primary);
+    margin-top: 15px;
+}
+
+.btn-secondary:hover {
+    background: #d6e4f9;
+}
+
+.ticket-card {
+    display: none;
+    text-align: center;
+    border: 2px dashed var(--secondary);
+}
+
+.ticket-card h2 {
+    color: var(--green);
+    font-size: 21px;
+    margin-bottom: 22px;
+}
+
+.ticket-label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-top: 15px;
+}
+
+.ticket-number {
+    font-size: 75px;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 10px 0 20px;
+}
+
+.reservation-code {
+    display: inline-block;
+    background: #edf5ff;
+    border: 2px solid #c8defa;
+    padding: 15px 30px;
+    border-radius: 12px;
+    color: var(--primary);
+    font-size: 42px;
+    font-weight: bold;
+    letter-spacing: 7px;
+    margin: 15px 0;
+}
+
+.ticket-message {
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--muted);
+    margin-top: 20px;
+}
+
+.ticket-status {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.ticket-status.confirmed {
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.ticket-status.arrived {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.ticket-status.called {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.ticket-status.skipped {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.ticket-status.completed {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.ticket-status.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.error-message {
+    display: none;
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 13px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.info-card {
+    background: #eaf2ff;
+    border-left: 4px solid var(--secondary);
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.8;
+}
+
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 10px 15px 30px;
+}
+
+@media(max-width: 400px) {
+    .current-number { font-size: 75px; }
+    .ticket-number { font-size: 65px; }
+    .reservation-code { font-size: 34px; letter-spacing: 5px; padding: 15px 20px; }
+    header h1 { font-size: 23px; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>POSTE EL AMAL</h1>
+    <p>Système de gestion des files d'attente</p>
+</header>
+
+<main class="container">
+
+    <!-- CURRENT QUEUE -->
+    <section class="card">
+        <div class="section-title">Numéro en cours</div>
+        <div class="current-number" id="currentTicket">---</div>
+        <div class="divider"></div>
+        <div class="waiting-box">
+            <div class="section-title">Personnes en attente</div>
+            <div class="waiting-number" id="waitingCount">--</div>
+        </div>
+        <div class="status">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="connectionStatus">Connexion...</span>
+        </div>
+    </section>
+
+    <!-- GOOGLE AUTHENTICATION -->
+    <section class="card auth-card">
+        <h2>Compte client</h2>
+        <div id="loginSection">
+            <p>Connectez-vous avec votre compte Google pour réserver un ticket.</p>
+            <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
+        </div>
+        <div id="userSection" style="display:none;">
+            <img id="userPhoto" class="user-photo" alt="Photo du profil">
+            <div class="user-name" id="userName"></div>
+            <div class="user-email" id="userEmail"></div>
+            <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
+        </div>
+        <div class="error-message" id="authError"></div>
+    </section>
+
+    <!-- RESERVATION -->
+    <section class="card reservation-card" id="reservationSection">
+        <h2>Réservation en ligne</h2>
+        <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
+        <button class="btn-primary" id="reserveButton" disabled>RÉSERVER UN TICKET</button>
+        <div class="error-message" id="reservationError"></div>
+    </section>
+
+    <!-- USER TICKET -->
+    <section class="card ticket-card" id="ticketSection">
+        <h2 id="ticketTitle">RÉSERVATION CONFIRMÉE</h2>
+
+        <div class="ticket-label">VOTRE NUMÉRO</div>
+        <div class="ticket-number" id="myTicket">---</div>
+
+        <div class="ticket-label">CODE DE RETRAIT</div>
+        <div class="reservation-code" id="myCode">----</div>
+
+        <div class="ticket-status" id="myStatus">En attente de confirmation</div>
+
+        <button class="btn-secondary" id="newReservationButton" style="display:none;">
+            NOUVELLE RÉSERVATION
+        </button>
+
+        <p class="ticket-message">
+            Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>
+            La borne imprimera votre ticket avec le numéro réservé et votre arrivée sera confirmée automatiquement.<br><br>
+            <strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération de votre ticket, votre réservation sera annulée.
+        </p>
+    </section>
+
+    <!-- INFORMATION -->
+    <section class="info-card">
+        <strong>Informations importantes</strong><br><br>
+        • La réservation vous attribue une place dans la file d'attente.<br>
+        • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
+        • Vous pouvez refaire une nouvelle réservation une fois votre tour passé.
+    </section>
+
+</main>
+
+<footer>
+    © 2026 POSTE EL AMAL<br>
+    Système de gestion des files d'attente
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, onValue, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
+  authDomain: "qms-online-2658d.firebaseapp.com",
+  databaseURL: "https://qms-online-2658d-default-rtdb.firebaseio.com",
+  projectId: "qms-online-2658d",
+  storageBucket: "qms-online-2658d.firebasestorage.app",
+  messagingSenderId: "1018632771701",
+  appId: "1:1018632771701:web:2a87f89d70987bdbbdc03c",
+  measurementId: "G-7GQYF8V9V8"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
+
+const googleLoginButton    = document.getElementById("googleLoginButton");
+const logoutButton         = document.getElementById("logoutButton");
+const loginSection         = document.getElementById("loginSection");
+const userSection          = document.getElementById("userSection");
+const userPhoto            = document.getElementById("userPhoto");
+const userName             = document.getElementById("userName");
+const userEmail            = document.getElementById("userEmail");
+const authError            = document.getElementById("authError");
+const currentTicketEl      = document.getElementById("currentTicket");
+const waitingCountEl       = document.getElementById("waitingCount");
+const connectionStatusEl   = document.getElementById("connectionStatus");
+const statusDotEl          = document.getElementById("statusDot");
+const reserveButton        = document.getElementById("reserveButton");
+const reservationError     = document.getElementById("reservationError");
+const reservationSection   = document.getElementById("reservationSection");
+const ticketSection        = document.getElementById("ticketSection");
+const myTicketEl           = document.getElementById("myTicket");
+const myCodeEl             = document.getElementById("myCode");
+const myStatusEl           = document.getElementById("myStatus");
+const ticketTitleEl        = document.getElementById("ticketTitle");
+const newReservationButton = document.getElementById("newReservationButton");
+
+let reservationInProgress = false;
+let currentTicket = 0;
+let currentConsole = 0;
+let waitingCount = null;
+let currentUser = null;
+let authReady = false;
+let queueConnected = false;
+const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000;
+let lastMasterHeartbeat = 0;
+let firebaseDataAvailable = false;
+let serverTimeOffset = 0;
+let unsubscribeReservation = null;
+
+const STORAGE_PREFIX = "poste_elamal_reservation_";
+const PENDING_PREFIX = "poste_elamal_pending_";
+
+function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
+function getPendingKey(uid)     { return PENDING_PREFIX + uid; }
+
+function formatNumber(number) {
+    const n = Number(number);
+    if (!Number.isFinite(n)) return "---";
+    return String(Math.trunc(n)).padStart(3, "0");
+}
+
+function setConnectionStatus(online) {
+    queueConnected = online;
+    if (online) {
+        connectionStatusEl.textContent = "Données disponibles";
+        statusDotEl.className = "status-dot online";
+        currentTicketEl.textContent = formatNumber(currentTicket);
+        waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
+    } else {
+        connectionStatusEl.textContent = "Connexion indisponible";
+        statusDotEl.className = "status-dot offline";
+        currentTicketEl.textContent = "---";
+        waitingCountEl.textContent = "--";
+    }
+    updateReserveButton();
+}
+
+function checkMasterStatus() {
+    if (!firebaseDataAvailable || !lastMasterHeartbeat) {
+        setConnectionStatus(false);
+        return;
+    }
+    const serverNow = Date.now() + serverTimeOffset;
+    const heartbeatAge = serverNow - lastMasterHeartbeat;
+    setConnectionStatus(heartbeatAge >= 0 && heartbeatAge < HEARTBEAT_TIMEOUT_MS);
+}
+
+function updateReserveButton() {
+    const userLoggedIn = authReady && currentUser !== null;
+    const savedReservation = userLoggedIn ? loadReservation() : null;
+
+    // ACTIVE STATUSES: Once a ticket is CALLED or SKIPPED, it is NO LONGER active, allowing a fresh reservation
+    const activeStatuses = [
+        "pending",
+        "confirmed",
+        "reserved",
+        "arrived",
+        "waiting"
+    ];
+
+    const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status);
+
+    reserveButton.disabled = !queueConnected || reservationInProgress || !userLoggedIn || hasActiveReservation;
+
+    if (reservationInProgress) {
+        reserveButton.textContent = "RÉSERVATION EN COURS...";
+    } else if (!userLoggedIn) {
+        reserveButton.textContent = "CONNECTEZ-VOUS POUR RÉSERVER";
+    } else if (hasActiveReservation) {
+        reserveButton.textContent = "VOUS AVEZ DÉJÀ UNE RÉSERVATION";
+    } else {
+        reserveButton.textContent = "RÉSERVER UN TICKET";
+    }
+}
+
+function showError(message) {
+    reservationError.style.display = "block";
+    reservationError.textContent = message;
+}
+
+function clearError() {
+    reservationError.style.display = "none";
+    reservationError.textContent = "";
+}
+
+onValue(ref(db, ".info/serverTimeOffset"), (snapshot) => {
+    serverTimeOffset = Number(snapshot.val() ?? 0);
+    checkMasterStatus();
+});
+
+const queueRef = ref(db, "queue");
+onValue(queueRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+        firebaseDataAvailable = false;
+        checkMasterStatus();
+        return;
+    }
+
+    currentTicket = Number(data.current_ticket ?? 0);
+    currentConsole = Number(data.current_console ?? 0);
+    currentTicketEl.textContent = formatNumber(currentTicket);
+
+    const lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
+    if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
+        if (lastIssuedTicket >= currentTicket) {
+            waitingCount = lastIssuedTicket - currentTicket;
+        } else {
+            waitingCount = (999 - currentTicket) + lastIssuedTicket;
+        }
+    } else {
+        waitingCount = null;
+    }
+
+    waitingCountEl.textContent = waitingCount !== null ? waitingCount : "--";
+    lastMasterHeartbeat = Number(data.meta?.esp32_last_seen_ms ?? 0);
+    firebaseDataAvailable = true;
+    checkMasterStatus();
+}, (error) => {
+    console.error("Firebase connection error:", error);
+    firebaseDataAvailable = false;
+    checkMasterStatus();
+});
+
+function saveReservation(reservation) {
+    if (!currentUser) return;
+    const data = { ...reservation, user_id: currentUser.uid };
+    localStorage.setItem(getReservationKey(currentUser.uid), JSON.stringify(data));
+}
+
+function loadReservation() {
+    if (!currentUser) return null;
+    try {
+        const saved = localStorage.getItem(getReservationKey(currentUser.uid));
+        if (!saved) return null;
+        const res = JSON.parse(saved);
+        return (res.user_id === currentUser.uid) ? res : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function showReservation(reservation) {
+    reservationSection.style.display = "none";
+    ticketSection.style.display = "block";
+    myTicketEl.textContent = formatNumber(reservation.ticket);
+
+    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
+    if (expiredStatuses.includes(reservation.status)) {
+        myCodeEl.textContent = "----";
+    } else {
+        myCodeEl.textContent = String(reservation.code).padStart(4, "0");
+    }
+
+    const status = reservation.status || "pending";
+    updateReservationStatus(status);
+
+    // If status is called or skipped, show the button to make a new reservation
+    if (expiredStatuses.includes(status)) {
+        newReservationButton.style.display = "block";
+        if (status === "called") {
+            newReservationButton.textContent = "FAIRE UNE NOUVELLE RÉSERVATION";
+        } else {
+            newReservationButton.textContent = "RÉSERVER À NOUVEAU";
+        }
+    } else {
+        newReservationButton.style.display = "none";
+    }
+}
+
+function updateReservationStatus(status) {
+    myStatusEl.className = "ticket-status";
+    switch (status) {
+        case "pending":
+            ticketTitleEl.textContent = "RÉSERVATION EN COURS";
+            myStatusEl.textContent = "Votre réservation est en cours de traitement...";
+            break;
+        case "confirmed":
+        case "reserved":
+            ticketTitleEl.textContent = "RÉSERVATION CONFIRMÉE";
+            myStatusEl.textContent = "Présentez votre code à la borne pour imprimer votre ticket.";
+            myStatusEl.classList.add("confirmed");
+            break;
+        case "arrived":
+        case "waiting":
+            ticketTitleEl.textContent = "ARRIVÉE CONFIRMÉE";
+            myStatusEl.textContent = "Ticket récupéré ! Veuillez attendre votre appel.";
+            myStatusEl.classList.add("arrived");
+            break;
+        case "called":
+            ticketTitleEl.textContent = "C'EST VOTRE TOUR";
+            myStatusEl.textContent = "Votre numéro a été appelé au guichet !";
+            myStatusEl.classList.add("called");
+            break;
+        case "skipped":
+            ticketTitleEl.textContent = "RÉSERVATION DÉPASSÉE";
+            myStatusEl.textContent = "Votre tour est passé car le ticket n'a pas été retiré à temps.";
+            myStatusEl.classList.add("skipped");
+            break;
+        case "completed":
+            ticketTitleEl.textContent = "SERVICE TERMINÉ";
+            myStatusEl.textContent = "Votre passage est terminé.";
+            myStatusEl.classList.add("completed");
+            break;
+        default:
+            ticketTitleEl.textContent = "STATUT DE RÉSERVATION";
+            myStatusEl.textContent = "En attente de mise à jour";
+    }
+}
+
+function watchReservation(requestRef) {
+    if (!currentUser) return;
+    const ownerUid = currentUser.uid;
+
+    if (unsubscribeReservation) {
+        unsubscribeReservation();
+        unsubscribeReservation = null;
+    }
+
+    unsubscribeReservation = onValue(requestRef, (snapshot) => {
+        if (!currentUser || currentUser.uid !== ownerUid) return;
+        const data = snapshot.val();
+
+        if (!data) {
+            localStorage.removeItem(getReservationKey(ownerUid));
+            localStorage.removeItem(getPendingKey(ownerUid));
+            reservationInProgress = false;
+            resetUserReservationUI();
+            updateReserveButton();
+            return;
+        }
+
+        if (data.user_id !== ownerUid) return;
+
+        const status = data.status || "pending";
+
+        if (status === "pending") {
+            reservationInProgress = true;
+            updateReserveButton();
+            return;
+        }
+
+        const ticketNumber = Number(data.ticket);
+        const reservationCode = String(data.code ?? "");
+
+        if (!Number.isInteger(ticketNumber) || ticketNumber < 1 || ticketNumber > 999) {
+            return;
+        }
+
+        const reservation = {
+            id: requestRef.key,
+            ticket: ticketNumber,
+            code: reservationCode,
+            status: status,
+            user_id: ownerUid
+        };
+
+        saveReservation(reservation);
+        showReservation(reservation);
+        localStorage.removeItem(getPendingKey(ownerUid));
+        reservationInProgress = false;
+        updateReserveButton();
+    }, (error) => {
+        reservationInProgress = false;
+        showError("Erreur de suivi de réservation.");
+        updateReserveButton();
+    });
+}
+
+function resetUserReservationUI() {
+    reservationSection.style.display = "block";
+    ticketSection.style.display = "none";
+    myTicketEl.textContent = "---";
+    myCodeEl.textContent = "----";
+    reservationInProgress = false;
+    clearError();
+    updateReserveButton();
+}
+
+async function createReservation() {
+    const savedReservation = loadReservation();
+    const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
+    const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status);
+
+    if (!authReady || !currentUser || !queueConnected || reservationInProgress || hasActiveReservation) {
+        return;
+    }
+
+    clearError();
+    reservationInProgress = true;
+    updateReserveButton();
+
+    try {
+        const requestsRef = ref(db, "reservation_requests");
+        const newRequestRef = push(requestsRef);
+        localStorage.setItem(getPendingKey(currentUser.uid), newRequestRef.key);
+
+        await set(newRequestRef, {
+            status: "pending",
+            source: "web",
+            user_id: currentUser.uid,
+            created_at: serverTimestamp()
+        });
+
+        watchReservation(newRequestRef);
+    } catch (error) {
+        console.error(error);
+        reservationInProgress = false;
+        showError("Impossible d'envoyer la réservation.");
+        updateReserveButton();
+    }
+}
+
+// Allows customer to start a new reservation once called or skipped
+newReservationButton.addEventListener("click", () => {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+
+    if (unsubscribeReservation) {
+        unsubscribeReservation();
+        unsubscribeReservation = null;
+    }
+
+    localStorage.removeItem(getReservationKey(uid));
+    localStorage.removeItem(getPendingKey(uid));
+    resetUserReservationUI();
+});
+
+async function loginWithGoogle() {
+    authError.style.display = "none";
+    googleLoginButton.disabled = true;
+    try {
+        await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+        if (error.code !== "auth/popup-closed-by-user") {
+            authError.textContent = "Impossible de se connecter avec Google.";
+            authError.style.display = "block";
+        }
+    } finally {
+        googleLoginButton.disabled = false;
+    }
+}
+
+reserveButton.addEventListener("click", createReservation);
+googleLoginButton.addEventListener("click", loginWithGoogle);
+
+function restoreUserReservation() {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+
+    const savedReservation = loadReservation();
+    if (savedReservation && savedReservation.id) {
+        showReservation(savedReservation);
+        const reservationRef = ref(db, "reservation_requests/" + savedReservation.id);
+        watchReservation(reservationRef);
+        updateReserveButton();
+        return;
+    }
+
+    const pendingId = localStorage.getItem(getPendingKey(uid));
+    if (pendingId) {
+        reservationInProgress = true;
+        const pendingRef = ref(db, "reservation_requests/" + pendingId);
+        watchReservation(pendingRef);
+    }
+    updateReserveButton();
+}
+
+onAuthStateChanged(auth, (user) => {
+    if (unsubscribeReservation) {
+        unsubscribeReservation();
+        unsubscribeReservation = null;
+    }
+
+    currentUser = user;
+    authReady = true;
+    resetUserReservationUI();
+
+    if (user) {
+        loginSection.style.display = "none";
+        userSection.style.display = "block";
+        userName.textContent = user.displayName || "Utilisateur";
+        userEmail.textContent = user.email || "";
+        if (user.photoURL) {
+            userPhoto.src = user.photoURL;
+            userPhoto.style.display = "inline-block";
+        } else {
+            userPhoto.removeAttribute("src");
+            userPhoto.style.display = "none";
+        }
+        restoreUserReservation();
+    } else {
+        loginSection.style.display = "block";
+        userSection.style.display = "none";
+    }
+    updateReserveButton();
+});
+
+logoutButton.addEventListener("click", async () => {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        authError.textContent = "Impossible de se déconnecter.";
+        authError.style.display = "block";
+    }
+});
+
+updateReserveButton();
+setInterval(checkMasterStatus, 5000);
+</script>
+
+</body>
+</html>
