@@ -1,1085 +1,5467 @@
 <!DOCTYPE html>
 <html lang="fr" dir="ltr">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Poste Cité El Amel - Système de gestion de file d'attente</title>
+
 <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96">
 <link rel="icon" type="image/svg+xml" href="./favicon.svg">
 <link rel="shortcut icon" href="./favicon.ico">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
 <link rel="manifest" href="./site.webmanifest">
+
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-touch-icon" content="./apple-touch-icon.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
+
+/* ============================================================
+   BASE
+============================================================ */
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
 :root{
-  --bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;
-  --border:#e5e7eb;--primary:#2563eb;--success:#16a34a;
-  --warn-bg:#fffbeb;--warn-bd:#fde68a;--warn-tx:#92400e;
-  --danger-bg:#fef2f2;--danger-bd:#fecaca;--danger-tx:#991b1b;
-  --online-bg:#ecfdf5;--online-tx:#065f46;--online-dot:#16a34a;
-  --offline-bg:#fef2f2;--offline-tx:#991b1b;--offline-dot:#dc2626;
-  --title2:#161B5D;--closed-bg:#fffbeb;--closed-tx:#92400e;--closed-dot:#f59e0b
+
+  --bg:#f3f4f6;
+  --card:#fff;
+  --text:#111827;
+  --muted:#6b7280;
+
+  --border:#e5e7eb;
+
+  --primary:#2563eb;
+  --success:#16a34a;
+
+  --warn-bg:#fffbeb;
+  --warn-bd:#fde68a;
+  --warn-tx:#92400e;
+
+  --danger-bg:#fef2f2;
+  --danger-bd:#fecaca;
+  --danger-tx:#991b1b;
+
+  --online-bg:#ecfdf5;
+  --online-tx:#065f46;
+  --online-dot:#16a34a;
+
+  --offline-bg:#fef2f2;
+  --offline-tx:#991b1b;
+  --offline-dot:#dc2626;
+
+  --title2:#161B5D;
+
+  --closed-bg:#fffbeb;
+  --closed-tx:#92400e;
+  --closed-dot:#f59e0b;
+
 }
+
 body{
+
   font-family:Inter,'Segoe UI',Tahoma,Arial,sans-serif;
-  text-align:center;background:radial-gradient(1200px 600px at 50% -10%,#e8f0ff,var(--bg));
-  display:flex;justify-content:center;align-items:center;
-  min-height:100vh;padding:16px;color:var(--text)
+
+  text-align:center;
+
+  background:radial-gradient(
+    1200px 600px at 50% -10%,
+    #e8f0ff,
+    var(--bg)
+  );
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  min-height:100vh;
+
+  padding:16px;
+
+  color:var(--text);
+
 }
+
+/* ============================================================
+   CARD
+============================================================ */
+
 .card{
-  background:var(--card);padding:28px 22px;border-radius:22px;
+
+  background:var(--card);
+
+  padding:28px 22px;
+
+  border-radius:22px;
+
   box-shadow:0 18px 50px rgba(17,24,39,.10);
-  max-width:560px;width:100%;border:1px solid rgba(229,231,235,.7)
+
+  max-width:560px;
+
+  width:100%;
+
+  border:1px solid rgba(229,231,235,.7);
+
 }
+
 .brand-logo{
-  max-width:90px;height:auto;margin:0 auto 24px;
-  display:block;object-fit:contain;cursor:pointer
+
+  max-width:90px;
+
+  height:auto;
+
+  margin:0 auto 24px;
+
+  display:block;
+
+  object-fit:contain;
+
+  cursor:pointer;
+
 }
-.bi{display:flex;flex-direction:column;gap:4px}
-.bi .fr,.bi .ar{display:block;line-height:1.2;unicode-bidi:isolate}
-.bi .fr{direction:ltr;text-align:left;font-family:Inter,sans-serif}
-.bi .ar{direction:rtl;text-align:right;font-family:Tajawal,Tahoma,Arial,sans-serif}
-.bi.center .fr,.bi.center .ar{text-align:center}
-.bi.small .fr,.bi.small .ar{font-size:12.5px;font-weight:700;color:var(--muted)}
-.page-title{margin-bottom:12px}
-.page-title .ar{font-size:26px;font-weight:800;color:var(--title2)}
-.page-title .fr{font-size:14.5px;font-weight:700;color:var(--muted)}
+
+/* ============================================================
+   BILINGUAL TEXT
+============================================================ */
+
+.bi{
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:4px;
+
+}
+
+.bi .fr,
+.bi .ar{
+
+  display:block;
+
+  line-height:1.2;
+
+  unicode-bidi:isolate;
+
+}
+
+.bi .fr{
+
+  direction:ltr;
+
+  text-align:left;
+
+  font-family:Inter,sans-serif;
+
+}
+
+.bi .ar{
+
+  direction:rtl;
+
+  text-align:right;
+
+  font-family:Tajawal,Tahoma,Arial,sans-serif;
+
+}
+
+.bi.center .fr,
+.bi.center .ar{
+
+  text-align:center;
+
+}
+
+.bi.small .fr,
+.bi.small .ar{
+
+  font-size:12.5px;
+
+  font-weight:700;
+
+  color:var(--muted);
+
+}
+
+/* ============================================================
+   TITLE
+============================================================ */
+
+.page-title{
+
+  margin-bottom:12px;
+
+}
+
+.page-title .ar{
+
+  font-size:26px;
+
+  font-weight:800;
+
+  color:var(--title2);
+
+}
+
+.page-title .fr{
+
+  font-size:14.5px;
+
+  font-weight:700;
+
+  color:var(--muted);
+
+}
+
+/* ============================================================
+   NUMBER DISPLAY
+============================================================ */
+
 .number-box{
+
   background:linear-gradient(180deg,#f8fafc,#fff);
-  border-radius:18px;padding:14px 12px;margin:14px 0 10px;
-  border:1px solid var(--border)
+
+  border-radius:18px;
+
+  padding:14px 12px;
+
+  margin:14px 0 10px;
+
+  border:1px solid var(--border);
+
 }
+
 .number{
-  font-size:clamp(56px,14vw,96px);color:var(--primary);
-  font-weight:800;line-height:1;letter-spacing:1px;
-  transition:color .25s ease,transform .18s ease
+
+  font-size:clamp(56px,14vw,96px);
+
+  color:var(--primary);
+
+  font-weight:800;
+
+  line-height:1;
+
+  letter-spacing:1px;
+
+  transition:
+    color .25s ease,
+    transform .18s ease;
+
 }
-.number.updated{transform:scale(1.06);color:var(--success)}
-.number.closed{color:var(--muted)}
+
+.number.updated{
+
+  transform:scale(1.06);
+
+  color:var(--success);
+
+}
+
+.number.closed{
+
+  color:var(--muted);
+
+}
+
+/* ============================================================
+   USER SECTION
+============================================================ */
+
 .user-section{
-  background:#f9fafb;padding:16px;border-radius:16px;
-  margin:16px 0;border:1px solid var(--border);text-align:initial
+
+  background:#f9fafb;
+
+  padding:16px;
+
+  border-radius:16px;
+
+  margin:16px 0;
+
+  border:1px solid var(--border);
+
+  text-align:initial;
+
 }
-.user-section h3{margin-bottom:10px}
-.user-section h3 .ar{font-size:15px;font-weight:800;text-align:center}
-.user-section h3 .fr{font-size:12.5px;font-weight:700;color:var(--muted);text-align:center}
-.input-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.input-group label .ar{font-size:13px;font-weight:800}
-.input-group label .fr{font-size:12.5px;font-weight:700;color:var(--muted)}
+
+.user-section h3{
+
+  margin-bottom:10px;
+
+}
+
+.user-section h3 .ar{
+
+  font-size:15px;
+
+  font-weight:800;
+
+  text-align:center;
+
+}
+
+.user-section h3 .fr{
+
+  font-size:12.5px;
+
+  font-weight:700;
+
+  color:var(--muted);
+
+  text-align:center;
+
+}
+
+/* ============================================================
+   INPUTS
+============================================================ */
+
+.input-group{
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:8px;
+
+  margin-bottom:12px;
+
+}
+
+.input-group label .ar{
+
+  font-size:13px;
+
+  font-weight:800;
+
+}
+
+.input-group label .fr{
+
+  font-size:12.5px;
+
+  font-weight:700;
+
+  color:var(--muted);
+
+}
+
 .input-group input{
-  padding:11px 12px;border-radius:10px;border:1px solid var(--border);
-  font-size:14px;outline:none;background:#fff;
-  transition:border-color .2s ease,box-shadow .2s ease
+
+  padding:11px 12px;
+
+  border-radius:10px;
+
+  border:1px solid var(--border);
+
+  font-size:14px;
+
+  outline:none;
+
+  background:#fff;
+
+  transition:
+    border-color .2s ease,
+    box-shadow .2s ease;
+
 }
+
 .input-group input:focus{
+
   border-color:rgba(37,99,235,.55);
-  box-shadow:0 0 0 4px rgba(37,99,235,.12)
+
+  box-shadow:0 0 0 4px rgba(37,99,235,.12);
+
 }
+
 .input-group input:disabled{
-  background:#f3f4f6;color:var(--muted);
-  cursor:not-allowed;box-shadow:none
+
+  background:#f3f4f6;
+
+  color:var(--muted);
+
+  cursor:not-allowed;
+
+  box-shadow:none;
+
 }
+
+/* ============================================================
+   BUTTONS
+============================================================ */
+
 .btn{
-  width:100%;max-width:280px;margin:8px auto 0;display:block;
-  border:1px solid rgba(0,0,0,.06);border-radius:12px;
-  background:var(--primary);color:#fff;padding:12px 14px;
-  cursor:pointer;transition:filter .15s ease,background-color .2s ease
+
+  width:100%;
+
+  max-width:280px;
+
+  margin:8px auto 0;
+
+  display:block;
+
+  border:1px solid rgba(0,0,0,.06);
+
+  border-radius:12px;
+
+  background:var(--primary);
+
+  color:#fff;
+
+  padding:12px 14px;
+
+  cursor:pointer;
+
+  transition:
+    filter .15s ease,
+    background-color .2s ease;
+
 }
-.btn:hover{filter:brightness(.97)}
-.btn .bi .ar{color:#fff;font-weight:900;font-size:16px}
-.btn .bi .fr{color:rgba(255,255,255,.92);font-weight:800;font-size:12.5px}
+
+.btn:hover{
+
+  filter:brightness(.97);
+
+}
+
+.btn .bi .ar{
+
+  color:#fff;
+
+  font-weight:900;
+
+  font-size:16px;
+
+}
+
+.btn .bi .fr{
+
+  color:rgba(255,255,255,.92);
+
+  font-weight:800;
+
+  font-size:12.5px;
+
+}
+
 .btn.active{
-  background:#16a34a;border-color:#15803d;
-  box-shadow:0 0 0 4px rgba(22,163,74,.15),0 8px 22px rgba(22,163,74,.20)
+
+  background:#16a34a;
+
+  border-color:#15803d;
+
+  box-shadow:
+    0 0 0 4px rgba(22,163,74,.15),
+    0 8px 22px rgba(22,163,74,.20);
+
 }
-.btn.active:hover{background:#15803d}
-.btn:disabled{opacity:.65;cursor:not-allowed}
+
+.btn.active:hover{
+
+  background:#15803d;
+
+}
+
+.btn:disabled{
+
+  opacity:.65;
+
+  cursor:not-allowed;
+
+}
+
+/* ============================================================
+   ALERT BANNER
+============================================================ */
+
 .alert-banner{
-  display:none;background:var(--warn-bg);color:var(--warn-tx);
-  border:1px solid var(--warn-bd);padding:12px;
-  border-radius:12px;margin-top:10px;text-align:center
+
+  display:none;
+
+  background:var(--warn-bg);
+
+  color:var(--warn-tx);
+
+  border:1px solid var(--warn-bd);
+
+  padding:12px;
+
+  border-radius:12px;
+
+  margin-top:10px;
+
+  text-align:center;
+
 }
-.alert-banner.active{display:block}
+
+.alert-banner.active{
+
+  display:block;
+
+}
+
 .alert-banner.urgent{
-  background:var(--danger-bg);color:var(--danger-tx);
-  border-color:var(--danger-bd)
+
+  background:var(--danger-bg);
+
+  color:var(--danger-tx);
+
+  border-color:var(--danger-bd);
+
 }
+
 .alert-banner.arrived{
-  background:#ecfdf5;color:#065f46;border-color:#86efac
+
+  background:#ecfdf5;
+
+  color:#065f46;
+
+  border-color:#86efac;
+
 }
-.alert-banner .bi.small .fr,.alert-banner .bi.small .ar{
-  color:inherit;font-weight:800
+
+.alert-banner .bi.small .fr,
+.alert-banner .bi.small .ar{
+
+  color:inherit;
+
+  font-weight:800;
+
 }
+
+/* ============================================================
+   STATUS
+============================================================ */
+
 .status-container{
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:10px 14px;border-radius:16px;width:100%;
-  background:var(--offline-bg);color:var(--offline-tx);
-  border:1px solid rgba(0,0,0,.05)
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  gap:10px;
+
+  padding:10px 14px;
+
+  border-radius:16px;
+
+  width:100%;
+
+  background:var(--offline-bg);
+
+  color:var(--offline-tx);
+
+  border:1px solid rgba(0,0,0,.05);
+
 }
+
 .status-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:var(--offline-dot);display:inline-block;flex:0 0 auto
+
+  width:10px;
+
+  height:10px;
+
+  border-radius:50%;
+
+  background:var(--offline-dot);
+
+  display:inline-block;
+
+  flex:0 0 auto;
+
 }
-.status-container.online{background:var(--online-bg);color:var(--online-tx)}
-.status-container.online .status-dot{background:var(--online-dot)}
-.status-container.closed{background:var(--closed-bg);color:var(--closed-tx)}
-.status-container.closed .status-dot{background:var(--closed-dot)}
+
+.status-container.online{
+
+  background:var(--online-bg);
+
+  color:var(--online-tx);
+
+}
+
+.status-container.online .status-dot{
+
+  background:var(--online-dot);
+
+}
+
+.status-container.closed{
+
+  background:var(--closed-bg);
+
+  color:var(--closed-tx);
+
+}
+
+.status-container.closed .status-dot{
+
+  background:var(--closed-dot);
+
+}
+
+/* ============================================================
+   NOTIFICATION POPUP
+============================================================ */
+
 .notification-overlay{
-  position:fixed;inset:0;background:rgba(15,23,42,.55);
-  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
-  display:flex;align-items:center;justify-content:center;
-  padding:18px;z-index:99999;opacity:0;visibility:hidden;
-  pointer-events:none;transition:opacity .25s ease,visibility .25s ease
+
+  position:fixed;
+
+  inset:0;
+
+  background:rgba(15,23,42,.55);
+
+  backdrop-filter:blur(5px);
+
+  -webkit-backdrop-filter:blur(5px);
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  padding:18px;
+
+  z-index:99999;
+
+  opacity:0;
+
+  visibility:hidden;
+
+  pointer-events:none;
+
+  transition:
+    opacity .25s ease,
+    visibility .25s ease;
+
 }
-.notification-overlay.show{opacity:1;visibility:visible;pointer-events:auto}
+
+.notification-overlay.show{
+
+  opacity:1;
+
+  visibility:visible;
+
+  pointer-events:auto;
+
+}
+
 .notification-popup{
-  position:relative;width:100%;max-width:390px;
-  max-height:90dvh;overflow-y:auto;background:#fff;
-  border-radius:22px;padding:25px 20px 20px;
+
+  position:relative;
+
+  width:100%;
+
+  max-width:390px;
+
+  max-height:90dvh;
+
+  overflow-y:auto;
+
+  background:#fff;
+
+  border-radius:22px;
+
+  padding:25px 20px 20px;
+
   box-shadow:0 25px 70px rgba(0,0,0,.22);
+
   transform:translateY(18px) scale(.96);
-  transition:transform .25s ease;text-align:center
+
+  transition:transform .25s ease;
+
+  text-align:center;
+
 }
-.notification-overlay.show .notification-popup{transform:translateY(0) scale(1)}
+
+.notification-overlay.show .notification-popup{
+
+  transform:translateY(0) scale(1);
+
+}
+
 .popup-close{
-  position:absolute;top:12px;right:12px;width:32px;height:32px;
-  border:none;border-radius:50%;background:#f1f5f9;color:#64748b;
-  font-size:23px;cursor:pointer;display:flex;
-  align-items:center;justify-content:center
+
+  position:absolute;
+
+  top:12px;
+
+  right:12px;
+
+  width:32px;
+
+  height:32px;
+
+  border:none;
+
+  border-radius:50%;
+
+  background:#f1f5f9;
+
+  color:#64748b;
+
+  font-size:23px;
+
+  cursor:pointer;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
 }
-.popup-close:hover{background:#e2e8f0;color:#111827}
+
+.popup-close:hover{
+
+  background:#e2e8f0;
+
+  color:#111827;
+
+}
+
 .popup-icon{
-  width:68px;height:68px;margin:0 auto 15px;border-radius:50%;
-  background:#eff6ff;display:flex;align-items:center;
-  justify-content:center;font-size:34px
+
+  width:68px;
+
+  height:68px;
+
+  margin:0 auto 15px;
+
+  border-radius:50%;
+
+  background:#eff6ff;
+
+  display:flex;
+
+  align-items:center;
+
+  justify-content:center;
+
+  font-size:34px;
+
 }
-.popup-title{margin-bottom:12px}
-.popup-title .ar{color:#1e40af;font-size:21px;font-weight:800}
-.popup-title .fr{color:#64748b;font-size:13px;font-weight:700}
-.popup-description{margin-bottom:16px}
+
+.popup-title{
+
+  margin-bottom:12px;
+
+}
+
+.popup-title .ar{
+
+  color:#1e40af;
+
+  font-size:21px;
+
+  font-weight:800;
+
+}
+
+.popup-title .fr{
+
+  color:#64748b;
+
+  font-size:13px;
+
+  font-weight:700;
+
+}
+
+.popup-description{
+
+  margin-bottom:16px;
+
+}
+
 .popup-description .ar{
-  font-size:14px;line-height:1.7;color:#334155;font-weight:700
+
+  font-size:14px;
+
+  line-height:1.7;
+
+  color:#334155;
+
+  font-weight:700;
+
 }
+
 .popup-description .fr{
-  font-size:12px;line-height:1.6;color:#64748b;font-weight:600
+
+  font-size:12px;
+
+  line-height:1.6;
+
+  color:#64748b;
+
+  font-weight:600;
+
 }
+
 .popup-permission{
-  padding:11px;border-radius:12px;background:#fffbeb;
-  border:1px solid #fde68a;margin-bottom:12px
+
+  padding:11px;
+
+  border-radius:12px;
+
+  background:#fffbeb;
+
+  border:1px solid #fde68a;
+
+  margin-bottom:12px;
+
 }
-.popup-permission[hidden]{display:none}
-.popup-permission .ar,.popup-permission .fr{
-  color:#92400e;font-size:12px;font-weight:700;line-height:1.5
+
+.popup-permission .ar,
+.popup-permission .fr{
+
+  color:#92400e;
+
+  font-size:12px;
+
+  font-weight:700;
+
+  line-height:1.5;
+
 }
-.popup-permission.denied{background:#fef2f2;border-color:#fecaca}
-.popup-permission.denied .ar,.popup-permission.denied .fr{color:#991b1b}
+
+.popup-permission.denied{
+
+  background:#fef2f2;
+
+  border-color:#fecaca;
+
+}
+
+.popup-permission.denied .ar,
+.popup-permission.denied .fr{
+
+  color:#991b1b;
+
+}
+
 .popup-enable{
-  width:100%;border:none;border-radius:12px;
-  background:#2563eb;color:white;padding:13px;
-  cursor:pointer;margin-bottom:10px
+
+  width:100%;
+
+  border:none;
+
+  border-radius:12px;
+
+  background:#2563eb;
+
+  color:white;
+
+  padding:13px;
+
+  cursor:pointer;
+
+  margin-bottom:10px;
+
 }
-.popup-enable .ar{font-size:15px;font-weight:800;color:#fff}
-.popup-enable .fr{font-size:12px;font-weight:700;color:#fff}
-.popup-enable:hover{background:#1d4ed8}
-.popup-enable:disabled{opacity:.6;cursor:not-allowed}
-.popup-enable[hidden]{display:none}
+
+.popup-enable .ar{
+
+  font-size:15px;
+
+  font-weight:800;
+
+  color:#fff;
+
+}
+
+.popup-enable .fr{
+
+  font-size:12px;
+
+  font-weight:700;
+
+  color:#fff;
+
+}
+
+.popup-enable:hover{
+
+  background:#1d4ed8;
+
+}
+
+.popup-enable:disabled{
+
+  opacity:.6;
+
+  cursor:not-allowed;
+
+}
+
+.popup-enable[hidden]{
+
+  display:none;
+
+}
+
 .popup-later{
-  background:none;border:none;color:#64748b;
-  font-size:13px;cursor:pointer;padding:9px
+
+  background:none;
+
+  border:none;
+
+  color:#64748b;
+
+  font-size:13px;
+
+  cursor:pointer;
+
+  padding:9px;
+
 }
-body.popup-open{overflow:hidden}
+
+body.popup-open{
+
+  overflow:hidden;
+
+}
+
+/* ============================================================
+   TEST PANEL
+============================================================ */
+
 .test-panel{
-  margin-top:14px;padding:14px;border-radius:16px;
+
+  margin-top:14px;
+
+  padding:14px;
+
+  border-radius:16px;
+
   border:1px dashed rgba(37,99,235,.35);
-  background:linear-gradient(180deg,#f8fafc,#fff);text-align:initial
+
+  background:linear-gradient(180deg,#f8fafc,#fff);
+
+  text-align:initial;
+
 }
-.test-panel[hidden]{display:none}
-.test-panel h3{margin-bottom:10px}
+
+.test-panel[hidden]{
+
+  display:none;
+
+}
+
+.test-panel h3{
+
+  margin-bottom:10px;
+
+}
+
 .test-row{
-  display:flex;gap:8px;flex-wrap:wrap;
-  justify-content:center;align-items:center;margin-top:10px
+
+  display:flex;
+
+  gap:8px;
+
+  flex-wrap:wrap;
+
+  justify-content:center;
+
+  align-items:center;
+
+  margin-top:10px;
+
 }
+
 .test-row input[type="number"]{
-  width:160px;max-width:100%;padding:10px;
-  border-radius:10px;border:1px solid var(--border)
+
+  width:160px;
+
+  max-width:100%;
+
+  padding:10px;
+
+  border-radius:10px;
+
+  border:1px solid var(--border);
+
 }
-.btn.test-btn{max-width:170px;margin:0;padding:10px 12px;background:#111827}
-.btn.test-btn.secondary{background:#374151}
+
+.btn.test-btn{
+
+  max-width:170px;
+
+  margin:0;
+
+  padding:10px 12px;
+
+  background:#111827;
+
+}
+
+.btn.test-btn.secondary{
+
+  background:#374151;
+
+}
+
 .test-note{
-  margin-top:10px;color:var(--muted);
-  font-size:12.5px;font-weight:700;text-align:center
+
+  margin-top:10px;
+
+  color:var(--muted);
+
+  font-size:12.5px;
+
+  font-weight:700;
+
+  text-align:center;
+
 }
+
+/* ============================================================
+   BROWSER REMINDER
+============================================================ */
+
 .browser-reminder{
-  display:block;background:#eff6ff;border:1px solid #bfdbfe;
-  border-radius:12px;padding:13px 12px;margin-top:12px;
-  text-align:center;color:#1e40af;opacity:0;max-height:0;
-  padding-top:0;padding-bottom:0;margin-top:0;border-width:0;
-  overflow:hidden;visibility:hidden;
-  transition:opacity 1s ease,max-height 1s ease,padding 1s ease,
-    margin 1s ease,border-width 1s ease,visibility 1s ease
+
+  display:block;
+
+  background:#eff6ff;
+
+  border:1px solid #bfdbfe;
+
+  border-radius:12px;
+
+  padding:13px 12px;
+
+  margin-top:12px;
+
+  text-align:center;
+
+  color:#1e40af;
+
+  opacity:0;
+
+  max-height:0;
+
+  padding-top:0;
+
+  padding-bottom:0;
+
+  margin-top:0;
+
+  border-width:0;
+
+  overflow:hidden;
+
+  visibility:hidden;
+
+  transition:
+    opacity 1s ease,
+    max-height 1s ease,
+    padding 1s ease,
+    margin 1s ease,
+    border-width 1s ease,
+    visibility 1s ease;
+
 }
+
 .browser-reminder.show{
-  opacity:1;max-height:200px;padding:13px 12px;
-  margin-top:12px;border-width:1px;visibility:visible
+
+  opacity:1;
+
+  max-height:200px;
+
+  padding:13px 12px;
+
+  margin-top:12px;
+
+  border-width:1px;
+
+  visibility:visible;
+
 }
+
 .browser-reminder .ar{
-  font-family:Tajawal,Tahoma,Arial,sans-serif;font-size:14px;
-  font-weight:800;line-height:1.7;color:#1e40af
+
+  font-family:Tajawal,Tahoma,Arial,sans-serif;
+
+  font-size:14px;
+
+  font-weight:800;
+
+  line-height:1.7;
+
+  color:#1e40af;
+
 }
+
 .browser-reminder .fr{
-  font-family:Inter,sans-serif;font-size:12px;
-  font-weight:700;line-height:1.6;color:#475569
+
+  font-family:Inter,sans-serif;
+
+  font-size:12px;
+
+  font-weight:700;
+
+  line-height:1.6;
+
+  color:#475569;
+
 }
+
+/* ============================================================
+   ACCESSIBILITY
+============================================================ */
+
 @media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{
+
+  *,
+  *::before,
+  *::after{
+
     animation-duration:.01ms!important;
-    transition-duration:.01ms!important
+
+    transition-duration:.01ms!important;
+
   }
+
 }
+
 </style>
+
 </head>
+
 <body>
 
 <div class="card">
+
+  <!-- ========================================================
+       LOGO
+  ======================================================== -->
+
   <a href="./index.html" aria-label="العودة إلى الصفحة الرئيسية">
-    <img src="logo.png" alt="Logo" class="brand-logo">
+
+    <img
+      src="logo.png"
+      alt="Logo"
+      class="brand-logo"
+    >
+
   </a>
 
+  <!-- ========================================================
+       OFFICE NAME
+  ======================================================== -->
+
   <div class="bi center" style="margin:-10px 0 16px;gap:2px">
-    <span class="ar" lang="ar" style="font-size:15px;font-weight:800;color:var(--title2)">مكتب بريد حي الأمل 6033 قابس</span>
-    <span class="fr" lang="fr" style="font-size:11px;font-weight:600;color:var(--muted)">Poste Cité El Amel 6033 Gabès</span>
+
+    <span
+      class="ar"
+      lang="ar"
+      style="font-size:15px;font-weight:800;color:var(--title2)"
+    >
+      مكتب بريد حي الأمل 6033 قابس
+    </span>
+
+    <span
+      class="fr"
+      lang="fr"
+      style="font-size:11px;font-weight:600;color:var(--muted)"
+    >
+      Poste Cité El Amel 6033 Gabès
+    </span>
+
     <div style="margin-bottom:10px"></div>
+
   </div>
+
+  <!-- ========================================================
+       TITLE
+  ======================================================== -->
 
   <h1 class="page-title">
+
     <span class="bi center">
-      <span class="ar" lang="ar" style="font-size:50px">الرقم الحالي</span>
-      <span class="fr" lang="fr" style="font-size:20px">Numéro actuel</span>
+
+      <span class="ar" lang="ar" style="font-size:50px">
+        الرقم الحالي
+      </span>
+
+      <span class="fr" lang="fr" style="font-size:20px">
+        Numéro actuel
+      </span>
+
     </span>
+
   </h1>
 
+  <!-- ========================================================
+       CURRENT TICKET
+  ======================================================== -->
+
   <div class="number-box">
-    <div class="number" id="queueNum" aria-live="polite" aria-atomic="true">--</div>
+
+    <div
+      class="number"
+      id="queueNum"
+      aria-live="polite"
+      aria-atomic="true"
+    >
+      --
+    </div>
+
   </div>
+
+  <!-- ========================================================
+       USER TRACKING
+  ======================================================== -->
 
   <div class="user-section">
+
     <h3>
+
       <span class="bi center">
-        <span class="ar" lang="ar">متابعة دورك</span>
-        <span class="fr" lang="fr">Suivez votre tour</span>
+
+        <span class="ar" lang="ar">
+          متابعة دورك
+        </span>
+
+        <span class="fr" lang="fr">
+          Suivez votre tour
+        </span>
+
       </span>
+
     </h3>
 
+    <!-- MY TICKET -->
+
     <div class="input-group">
+
       <label for="myTicketInput">
+
         <span class="bi">
-          <span class="ar" lang="ar">رقمك</span>
-          <span class="fr" lang="fr">Votre numéro</span>
+
+          <span class="ar" lang="ar">
+            رقمك
+          </span>
+
+          <span class="fr" lang="fr">
+            Votre numéro
+          </span>
+
         </span>
+
       </label>
-      <input type="number" inputmode="numeric" step="1" id="myTicketInput" min="1" max="999">
+
+      <input
+        type="number"
+        inputmode="numeric"
+        step="1"
+        id="myTicketInput"
+        min="1"
+        max="999"
+      >
+
     </div>
+
+    <!-- THRESHOLD -->
 
     <div class="input-group">
+
       <label for="thresholdInput">
+
         <span class="bi">
-          <span class="ar" lang="ar">هامش التنبيه (عدد الأشخاص قبلك)</span>
-          <span class="fr" lang="fr">Marge d'alerte (personnes avant vous)</span>
+
+          <span class="ar" lang="ar">
+            هامش التنبيه (عدد الأشخاص قبلك)
+          </span>
+
+          <span class="fr" lang="fr">
+            Marge d'alerte (personnes avant vous)
+          </span>
+
         </span>
+
       </label>
-      <input type="number" inputmode="numeric" step="1" id="thresholdInput" value="10" min="0">
+
+      <input
+        type="number"
+        inputmode="numeric"
+        step="1"
+        id="thresholdInput"
+        value="10"
+        min="0"
+      >
+
     </div>
 
-    <div id="browserReminder" class="browser-reminder" role="status">
+    <!-- BROWSER REMINDER -->
+
+    <div
+      id="browserReminder"
+      class="browser-reminder"
+      role="status"
+    >
+
       <span class="bi center">
-        <span class="ar" lang="ar">يُرجى إبقاء المتصفح مفتوحًا لضمان تلقي الإشعارات.</span>
-        <span class="fr" lang="fr">Veuillez garder le navigateur ouvert pour recevoir les notifications.</span>
+
+        <span class="ar" lang="ar">
+          يُرجى إبقاء المتصفح مفتوحًا لضمان تلقي الإشعارات.
+        </span>
+
+        <span class="fr" lang="fr">
+          Veuillez garder le navigateur ouvert pour recevoir les notifications.
+        </span>
+
       </span>
+
     </div>
 
-    <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
+    <!-- TRACK BUTTON -->
+
+    <button
+      id="verifyBtn"
+      class="btn"
+      type="button"
+      aria-pressed="false"
+    >
+
       <span class="bi center">
-        <span class="ar" id="verifyBtnAr" lang="ar">متابعة</span>
-        <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
+
+        <span
+          class="ar"
+          id="verifyBtnAr"
+          lang="ar"
+        >
+          متابعة
+        </span>
+
+        <span
+          class="fr"
+          id="verifyBtnFr"
+          lang="fr"
+        >
+          Suivi
+        </span>
+
       </span>
+
     </button>
 
-    <div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
+    <!-- ALERT -->
+
+    <div
+      id="alertBanner"
+      class="alert-banner"
+      role="status"
+      aria-live="polite"
+    ></div>
+
   </div>
 
-  <div class="status-container" id="statusContainer">
-    <span class="status-dot" aria-hidden="true"></span>
-    <div id="statusText" style="width:100%"></div>
+  <!-- ========================================================
+       SYSTEM STATUS
+  ======================================================== -->
+
+  <div
+    class="status-container"
+    id="statusContainer"
+  >
+
+    <span
+      class="status-dot"
+      aria-hidden="true"
+    ></span>
+
+    <div
+      id="statusText"
+      style="width:100%"
+    ></div>
+
   </div>
 
-  <div id="testPanel" class="test-panel" hidden>
+  <!-- ========================================================
+       TEST PANEL
+  ======================================================== -->
+
+  <div
+    id="testPanel"
+    class="test-panel"
+    hidden
+  >
+
     <h3>
+
       <span class="bi center">
-        <span class="ar" lang="ar">وضع الاختبار (بدون ESP32)</span>
-        <span class="fr" lang="fr">Mode test (sans ESP32)</span>
+
+        <span class="ar" lang="ar">
+          وضع الاختبار (بدون ESP32)
+        </span>
+
+        <span class="fr" lang="fr">
+          Mode test (sans ESP32)
+        </span>
+
       </span>
+
     </h3>
+
     <div class="test-row">
-      <input id="testTicketInput" type="number" min="1" max="999" step="1" placeholder="Ticket courant">
-      <button id="testApplyBtn" class="btn test-btn secondary" type="button">
+
+      <input
+        id="testTicketInput"
+        type="number"
+        min="1"
+        max="999"
+        step="1"
+        placeholder="Ticket courant"
+      >
+
+      <button
+        id="testApplyBtn"
+        class="btn test-btn secondary"
+        type="button"
+      >
+
         <span class="bi center">
-          <span class="ar" lang="ar">تطبيق</span>
-          <span class="fr" lang="fr">Appliquer</span>
+
+          <span class="ar" lang="ar">
+            تطبيق
+          </span>
+
+          <span class="fr" lang="fr">
+            Appliquer
+          </span>
+
         </span>
+
       </button>
+
     </div>
+
     <div class="test-row">
-      <button id="testDecBtn" class="btn test-btn secondary" type="button">
-        <span class="bi center"><span class="ar">- 1</span><span class="fr">- 1</span></span>
+
+      <button
+        id="testDecBtn"
+        class="btn test-btn secondary"
+        type="button"
+      >
+
+        <span class="bi center">
+
+          <span class="ar">- 1</span>
+          <span class="fr">- 1</span>
+
+        </span>
+
       </button>
-      <button id="testIncBtn" class="btn test-btn" type="button">
-        <span class="bi center"><span class="ar">+ 1</span><span class="fr">+ 1</span></span>
+
+      <button
+        id="testIncBtn"
+        class="btn test-btn"
+        type="button"
+      >
+
+        <span class="bi center">
+
+          <span class="ar">+ 1</span>
+          <span class="fr">+ 1</span>
+
+        </span>
+
       </button>
+
     </div>
+
     <div class="test-row">
+
       <label style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap">
-        <input id="testAutoToggle" type="checkbox">
+
+        <input
+          id="testAutoToggle"
+          type="checkbox"
+        >
+
         <span class="bi center small">
-          <span class="ar" lang="ar">زيادة تلقائية</span>
-          <span class="fr" lang="fr">Auto-incrément</span>
+
+          <span class="ar" lang="ar">
+            زيادة تلقائية
+          </span>
+
+          <span class="fr" lang="fr">
+            Auto-incrément
+          </span>
+
         </span>
+
       </label>
-      <input id="testAutoPeriod" type="number" min="1" step="1" value="5" style="width:90px">
+
+      <input
+        id="testAutoPeriod"
+        type="number"
+        min="1"
+        step="1"
+        value="5"
+        style="width:90px"
+      >
+
       <span class="bi center small">
-        <span class="ar" lang="ar">ثوانٍ</span>
-        <span class="fr" lang="fr">secondes</span>
+
+        <span class="ar" lang="ar">
+          ثوانٍ
+        </span>
+
+        <span class="fr" lang="fr">
+          secondes
+        </span>
+
       </span>
+
     </div>
+
     <div class="test-note">
+
       <span class="bi center small">
-        <span class="ar" lang="ar">هذا الوضع يعمل فقط عند إضافة test=1 للرابط.</span>
-        <span class="fr" lang="fr">Ce mode fonctionne uniquement avec test=1 dans l’URL.</span>
+
+        <span class="ar" lang="ar">
+          هذا الوضع يعمل فقط عند إضافة test=1 للرابط.
+        </span>
+
+        <span class="fr" lang="fr">
+          Ce mode fonctionne uniquement avec test=1 dans l’URL.
+        </span>
+
       </span>
+
     </div>
+
   </div>
+
 </div>
 
-<div id="notificationOverlay" class="notification-overlay" role="dialog"
-     aria-modal="true" aria-labelledby="notificationPopupTitle" aria-hidden="true">
+<!-- ============================================================
+     NOTIFICATION POPUP
+============================================================ -->
+
+<div
+  id="notificationOverlay"
+  class="notification-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="notificationPopupTitle"
+  aria-hidden="true"
+>
+
   <div class="notification-popup">
-    <button id="closeNotificationPopup" class="popup-close" type="button" aria-label="Fermer / إغلاق">&times;</button>
-    <div class="popup-icon">🔔</div>
-    <h2 id="notificationPopupTitle" class="popup-title">
-      <span class="bi center">
-        <span class="ar" lang="ar">تفعيل الإشعارات</span>
-        <span class="fr" lang="fr">Activer les notifications</span>
-      </span>
-    </h2>
-    <div class="popup-description">
-      <span class="bi center">
-        <span class="ar" lang="ar">يُرجى السماح بالإشعارات حتى نتمكن من تنبيهك عند اقتراب دورك.</span>
-        <span class="fr" lang="fr">Veuillez autoriser les notifications afin d'être averti lorsque votre tour approche.</span>
-      </span>
-    </div>
-    <div id="popupPermission" class="popup-permission" hidden></div>
-    <button id="popupEnableBtn" class="popup-enable" type="button">
-      <span class="bi center">
-        <span class="ar" lang="ar">🔔 تفعيل الإشعارات</span>
-        <span class="fr" lang="fr">Activer les notifications</span>
-      </span>
+
+    <button
+      id="closeNotificationPopup"
+      class="popup-close"
+      type="button"
+      aria-label="Fermer / إغلاق"
+    >
+      &times;
     </button>
-    <button id="popupLaterBtn" class="popup-later" type="button">لاحقًا / Plus tard</button>
+
+    <div class="popup-icon">
+      🔔
+    </div>
+
+    <h2
+      id="notificationPopupTitle"
+      class="popup-title"
+    >
+
+      <span class="bi center">
+
+        <span class="ar" lang="ar">
+          تفعيل الإشعارات
+        </span>
+
+        <span class="fr" lang="fr">
+          Activer les notifications
+        </span>
+
+      </span>
+
+    </h2>
+
+    <div class="popup-description">
+
+      <span class="bi center">
+
+        <span class="ar" lang="ar">
+          يُرجى السماح بالإشعارات حتى نتمكن من تنبيهك عند اقتراب دورك.
+        </span>
+
+        <span class="fr" lang="fr">
+          Veuillez autoriser les notifications afin d'être averti lorsque votre tour approche.
+        </span>
+
+      </span>
+
+    </div>
+
+    <!-- PERMISSION MESSAGE -->
+
+    <div
+      id="popupPermission"
+      class="popup-permission"
+      hidden
+    ></div>
+
+    <button
+      id="popupEnableBtn"
+      class="popup-enable"
+      type="button"
+    >
+
+      <span class="bi center">
+
+        <span class="ar" lang="ar">
+          🔔 تفعيل الإشعارات
+        </span>
+
+        <span class="fr" lang="fr">
+          Activer les notifications
+        </span>
+
+      </span>
+
+    </button>
+
+    <button
+      id="popupLaterBtn"
+      class="popup-later"
+      type="button"
+    >
+      لاحقًا / Plus tard
+    </button>
+
   </div>
+
 </div>
 
 <script>
+
+/* ============================================================
+   QMS WEB CLIENT
+   VERSION 2.1
+============================================================ */
+
 "use strict";
 
-const QS=new URLSearchParams(location.search);
-const TEST_MODE=QS.get("test")==="1";
-const DB_BASE="https://qms-online-2658d-default-rtdb.firebaseio.com";
-const SW_URL="./sw.js";
+/* ============================================================
+   CONFIGURATION
+============================================================ */
+
+const QS = new URLSearchParams(location.search);
+
+const TEST_MODE = QS.get("test") === "1";
+
+const DB_BASE =
+  "https://qms-online-2658d-default-rtdb.firebaseio.com";
+
+const SW_URL = "./sw.js";
+
+/* ============================================================
+   FIREBASE URL
+============================================================ */
 
 function makeUrl(path,params={}){
-  const url=new URL(DB_BASE.replace(/\/$/,"")+"/"+path.replace(/^\//,"")+".json");
-  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,String(v)));
+
+  const url = new URL(
+    DB_BASE.replace(/\/$/,"") +
+    "/" +
+    path.replace(/^\//,"") +
+    ".json"
+  );
+
+  Object.entries(params).forEach(
+    ([key,value]) => {
+
+      url.searchParams.set(
+        key,
+        String(value)
+      );
+
+    }
+  );
+
   return url.toString();
 }
 
-const STREAM_URL=makeUrl("queue",{print:"silent"});
-const QUEUE_URL=makeUrl("queue");
-const TICKET_URL=makeUrl("queue/current_ticket");
-const META_URL=makeUrl("queue/meta");
+const STREAM_URL = makeUrl("queue",{
+  print:"silent"
+});
 
-const HEARTBEAT_CLOSE_MS=3*60*1000;
-const REQUEST_CLOSE_MS=30*60*1000;
-const CHECK_MS=10000;
-const POLL_VISIBLE_MS=8000;
-const POLL_HIDDEN_MS=15000;
-const RECONNECT_MS=4000;
-const OFFLINE_GRACE_MS=2500;
+const QUEUE_URL = makeUrl("queue");
 
-const $=id=>document.getElementById(id);
-const queueNumEl=$("queueNum"),statusContainer=$("statusContainer"),statusText=$("statusText");
-const myTicketInput=$("myTicketInput"),thresholdInput=$("thresholdInput"),alertBanner=$("alertBanner");
-const verifyBtn=$("verifyBtn"),verifyBtnAr=$("verifyBtnAr"),verifyBtnFr=$("verifyBtnFr");
-const notificationOverlay=$("notificationOverlay"),popupEnableBtn=$("popupEnableBtn");
-const popupLaterBtn=$("popupLaterBtn"),closeNotificationPopupBtn=$("closeNotificationPopup");
-const popupPermission=$("popupPermission"),browserReminder=$("browserReminder");
-const testPanel=$("testPanel"),testTicketInput=$("testTicketInput"),testApplyBtn=$("testApplyBtn");
-const testDecBtn=$("testDecBtn"),testIncBtn=$("testIncBtn");
-const testAutoToggle=$("testAutoToggle"),testAutoPeriod=$("testAutoPeriod");
+const TICKET_URL = makeUrl("queue/current_ticket");
 
-const LS_KEY="queue_tracker_settings_v1";
-const REMINDER_KEY="browser_reminder_seen_v1";
-const DEFAULT_THRESHOLD=String(thresholdInput.defaultValue||"10");
-let savedThreshold=DEFAULT_THRESHOLD;
+const META_URL = makeUrl("queue/meta");
 
-const state={
-  current_ticket:null,lastAlertedDiff:null,trackingEnabled:false,userEditing:false,
-  isOnline:false,systemClosed:false,serverOffset:0,serverTimeAvailable:false,
-  esp32_last_seen_ms:null,last_request_ms:null,metaLoaded:false,
-  arrived:false,trackingTicket:null,trackingThreshold:null
+/* ============================================================
+   SYSTEM CLOSURE CONFIG
+============================================================ */
+
+/*
+ * Heartbeat missing for 3 minutes:
+ * SYSTEM CLOSED
+ */
+
+const HEARTBEAT_CLOSE_MS =
+  3 * 60 * 1000;
+
+/*
+ * No ticket request for 30 minutes:
+ * SYSTEM CLOSED
+ */
+
+const REQUEST_CLOSE_MS =
+  30 * 60 * 1000;
+
+/*
+ * No additional grace period.
+ */
+
+const HEARTBEAT_GRACE_MS = 0;
+
+const REQUEST_GRACE_MS = 0;
+
+/*
+ * Check system state every 10 seconds.
+ */
+
+const CHECK_MS = 10000;
+
+/*
+ * Ticket polling.
+ */
+
+const POLL_VISIBLE_MS = 8000;
+
+const POLL_HIDDEN_MS = 15000;
+
+/*
+ * Reconnect.
+ */
+
+const RECONNECT_MS = 4000;
+
+const OFFLINE_GRACE_MS = 2500;
+
+/* ============================================================
+   DOM ELEMENTS
+============================================================ */
+
+const queueNumEl =
+  document.getElementById("queueNum");
+
+const statusContainer =
+  document.getElementById("statusContainer");
+
+const statusText =
+  document.getElementById("statusText");
+
+const myTicketInput =
+  document.getElementById("myTicketInput");
+
+const thresholdInput =
+  document.getElementById("thresholdInput");
+
+const alertBanner =
+  document.getElementById("alertBanner");
+
+const verifyBtn =
+  document.getElementById("verifyBtn");
+
+const verifyBtnAr =
+  document.getElementById("verifyBtnAr");
+
+const verifyBtnFr =
+  document.getElementById("verifyBtnFr");
+
+const notificationOverlay =
+  document.getElementById("notificationOverlay");
+
+const closeNotificationPopupBtn =
+  document.getElementById("closeNotificationPopup");
+
+const popupEnableBtn =
+  document.getElementById("popupEnableBtn");
+
+const popupLaterBtn =
+  document.getElementById("popupLaterBtn");
+
+const popupPermission =
+  document.getElementById("popupPermission");
+
+const browserReminder =
+  document.getElementById("browserReminder");
+
+const testPanel =
+  document.getElementById("testPanel");
+
+const testTicketInput =
+  document.getElementById("testTicketInput");
+
+const testApplyBtn =
+  document.getElementById("testApplyBtn");
+
+const testDecBtn =
+  document.getElementById("testDecBtn");
+
+const testIncBtn =
+  document.getElementById("testIncBtn");
+
+const testAutoToggle =
+  document.getElementById("testAutoToggle");
+
+const testAutoPeriod =
+  document.getElementById("testAutoPeriod");
+
+/* ============================================================
+   DEFAULT SETTINGS
+============================================================ */
+
+const DEFAULT_THRESHOLD =
+  String(thresholdInput.defaultValue || "10");
+
+let savedThreshold = DEFAULT_THRESHOLD;
+
+/* ============================================================
+   SYSTEM STATE
+============================================================ */
+
+const state = {
+
+  current_ticket:null,
+
+  lastAlertedDiff:null,
+
+  trackingEnabled:false,
+
+  userEditing:false,
+
+  isOnline:false,
+
+  systemClosed:false,
+
+  serverOffset:0,
+
+  serverTimeAvailable:false,
+
+  esp32_last_seen_ms:null,
+
+  last_request_ms:null,
+
+  metaLoaded:false,
+
+  arrived:false,
+
+  trackingTicket:null,
+
+  trackingThreshold:null
+
 };
 
-let es=null,reconnectTimer=null,offlineUiTimer=null,pollTimer=null;
-let popupDismissed=false,popupPreviousFocus=null,reminderTimer=null,audioCtx=null;
-let streamGeneration=0,streamVersion=0,trackingGeneration=0;
-let pollInFlight=false,initialFetchInFlight=false,animationTimer=null;
-let lastTimeSyncAttempt=0;
+/* ============================================================
+   INTERNAL STATE
+============================================================ */
 
-const validInt=(v,min,max=Number.MAX_SAFE_INTEGER)=>{
-  if(v===null||v===undefined||String(v).trim()==="")return false;
-  const n=Number(v);
-  return Number.isSafeInteger(n)&&n>=min&&n<=max;
-};
+let es = null;
 
-function escapeHtml(v){
-  return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;")
-    .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-}
-function biHTML(fr,ar){
-  return `<span class="bi center small"><span class="ar" lang="ar">${escapeHtml(ar)}</span><span class="fr" lang="fr">${escapeHtml(fr)}</span></span>`;
-}
-function setStatus(fr,ar){statusText.innerHTML=biHTML(fr,ar)}
-function setBanner(fr,ar,{urgent=false,arrived=false}={}){
-  alertBanner.innerHTML=biHTML(fr,ar);
-  alertBanner.classList.toggle("active",true);
-  alertBanner.classList.toggle("urgent",urgent);
-  alertBanner.classList.toggle("arrived",arrived);
-}
-function clearBanner(){
-  alertBanner.classList.remove("active","urgent","arrived");
-  alertBanner.innerHTML="";
-}
-function serverNow(){return Date.now()+state.serverOffset}
+let reconnectTimer = null;
 
-function syncTimeFromResponse(response,start,end){
-  const date=response.headers.get("Date");
-  if(!date)return false;
-  const ms=Date.parse(date);
-  if(!Number.isFinite(ms))return false;
-  state.serverOffset=ms-(start+end)/2;
-  state.serverTimeAvailable=true;
-  return true;
+let offlineUiTimer = null;
+
+let pollTimer = null;
+
+let statusCheckTimer = null;
+
+let popupDismissedForSession = false;
+
+let popupPreviousFocus = null;
+
+let browserReminderTimer = null;
+
+let audioCtx = null;
+
+let streamGeneration = 0;
+
+let streamOpened = false;
+
+let streamVersion = 0;
+
+let pollInFlight = false;
+
+let trackingGeneration = 0;
+
+let ticketAnimationTimer = null;
+
+let lastServerTimeSync = 0;
+
+let initialFetchInFlight = false;
+
+/* ============================================================
+   STORAGE
+============================================================ */
+
+const LS_KEY =
+  "queue_tracker_settings_v1";
+
+const BROWSER_REMINDER_SEEN_KEY =
+  "browser_reminder_seen_v1";
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+
+function escapeHtml(value){
+
+  return String(value)
+
+    .replaceAll("&","&amp;")
+
+    .replaceAll("<","&lt;")
+
+    .replaceAll(">","&gt;")
+
+    .replaceAll('"',"&quot;")
+
+    .replaceAll("'","&#039;");
+
+}
+
+function biHTML(frText,arText,extraClass="small"){
+
+  return `
+
+    <span class="bi center ${extraClass}">
+
+      <span class="ar" lang="ar">
+        ${escapeHtml(arText)}
+      </span>
+
+      <span class="fr" lang="fr">
+        ${escapeHtml(frText)}
+      </span>
+
+    </span>
+
+  `;
+}
+
+function isValidInteger(value,min,max=Number.MAX_SAFE_INTEGER){
+
+  const number = Number(value);
+
+  return (
+    String(value).trim() !== "" &&
+    Number.isSafeInteger(number) &&
+    number >= min &&
+    number <= max
+  );
+}
+
+/* ============================================================
+   SERVER TIME
+============================================================ */
+
+/*
+ * Try to calculate clock offset using the
+ * HTTP Date response header.
+ *
+ * Browsers may hide this header because
+ * of CORS restrictions.
+ *
+ * In that case local device time is used.
+ */
+
+function updateServerTimeFromResponse(
+  response,
+  requestStart,
+  requestEnd
+){
+
+  try{
+
+    const dateHeader =
+      response.headers.get("Date");
+
+    if(!dateHeader){
+      return false;
+    }
+
+    const serverTimestamp =
+      Date.parse(dateHeader);
+
+    if(!Number.isFinite(serverTimestamp)){
+      return false;
+    }
+
+    const midpoint =
+      requestStart +
+      (requestEnd-requestStart)/2;
+
+    state.serverOffset =
+      serverTimestamp-midpoint;
+
+    state.serverTimeAvailable = true;
+
+    lastServerTimeSync = Date.now();
+
+    return true;
+
+  }catch{
+
+    return false;
+
+  }
+}
+
+function serverNow(){
+
+  return Date.now() +
+    (state.serverOffset || 0);
+
 }
 
 async function fetchServerOffset(){
-  if(TEST_MODE)return;
-  lastTimeSyncAttempt=Date.now();
+
+  if(TEST_MODE){
+
+    state.serverOffset = 0;
+
+    state.serverTimeAvailable = true;
+
+    return;
+  }
+
   try{
-    const start=Date.now();
-    const r=await fetch(META_URL,{cache:"no-store"});
-    const end=Date.now();
-    syncTimeFromResponse(r,start,end);
-  }catch{}
+
+    const start = Date.now();
+
+    const response = await fetch(
+      META_URL,
+      {
+        method:"GET",
+        cache:"no-store"
+      }
+    );
+
+    const end = Date.now();
+
+    updateServerTimeFromResponse(
+      response,
+      start,
+      end
+    );
+
+  }catch{
+
+    /*
+     * Preserve previous valid offset.
+     */
+
+  }
 }
+
+/* ============================================================
+   SERVICE WORKER
+============================================================ */
 
 async function registerServiceWorker(){
+
   try{
-    if(!("serviceWorker" in navigator))return false;
-    await navigator.serviceWorker.register(SW_URL,{scope:"./"});
+
+    if(!("serviceWorker" in navigator)){
+      return false;
+    }
+
+    await navigator.serviceWorker.register(
+      SW_URL,
+      {
+        scope:"./"
+      }
+    );
+
     return true;
-  }catch{return false}
+
+  }catch(error){
+
+    console.warn(
+      "[SW] Registration failed",
+      error
+    );
+
+    return false;
+  }
 }
+
+/* ============================================================
+   LOAD SETTINGS
+============================================================ */
 
 function loadSettings(){
+
   try{
-    const s=JSON.parse(localStorage.getItem(LS_KEY));
-    if(!s||typeof s!=="object")return;
-    if(validInt(s.myTicket,1,999))myTicketInput.value=String(s.myTicket);
-    if(validInt(s.threshold,0)){
-      savedThreshold=String(s.threshold);
-      thresholdInput.value=savedThreshold;
+
+    const raw =
+      localStorage.getItem(LS_KEY);
+
+    if(!raw){
+      return;
     }
-  }catch{}
+
+    const settings =
+      JSON.parse(raw);
+
+    if(
+      !settings ||
+      typeof settings !== "object"
+    ){
+      return;
+    }
+
+    if(
+      isValidInteger(
+        settings.myTicket,
+        1,
+        999
+      )
+    ){
+
+      myTicketInput.value =
+        String(settings.myTicket);
+
+    }
+
+    if(
+      isValidInteger(
+        settings.threshold,
+        0
+      )
+    ){
+
+      savedThreshold =
+        String(settings.threshold);
+
+      thresholdInput.value =
+        savedThreshold;
+
+    }
+
+  }catch(error){
+
+    console.warn(
+      "[Storage] Load failed",
+      error
+    );
+
+  }
 }
+
+/* ============================================================
+   SAVE SETTINGS
+============================================================ */
+
 function saveSettings(){
+
   try{
-    localStorage.setItem(LS_KEY,JSON.stringify({
-      myTicket:myTicketInput.value,threshold:savedThreshold
-    }));
-  }catch{}
+
+    localStorage.setItem(
+      LS_KEY,
+      JSON.stringify({
+
+        myTicket:myTicketInput.value,
+
+        threshold:savedThreshold
+
+      })
+    );
+
+  }catch(error){
+
+    console.warn(
+      "[Storage] Save failed",
+      error
+    );
+
+  }
 }
+
+/* ============================================================
+   STATUS TEXT
+============================================================ */
+
+function setStatus(frText,arText){
+
+  statusText.innerHTML =
+    biHTML(frText,arText);
+
+}
+
+/* ============================================================
+   ALERT BANNER
+============================================================ */
+
+function setBanner(
+  frText,
+  arText,
+  {
+    active=true,
+    urgent=false,
+    arrived=false
+  }={}
+){
+
+  alertBanner.innerHTML =
+    biHTML(frText,arText);
+
+  alertBanner.classList.toggle(
+    "active",
+    !!active
+  );
+
+  alertBanner.classList.toggle(
+    "urgent",
+    !!urgent
+  );
+
+  alertBanner.classList.toggle(
+    "arrived",
+    !!arrived
+  );
+
+}
+
+function clearBanner(){
+
+  alertBanner.classList.remove(
+    "active",
+    "urgent",
+    "arrived"
+  );
+
+  alertBanner.innerHTML = "";
+
+}
+
+/* ============================================================
+   NOTIFICATION PERMISSION
+============================================================ */
 
 function notificationsGranted(){
-  return "Notification" in window&&window.isSecureContext&&Notification.permission==="granted";
-}
-function hideNotificationPopup(){
-  const open=notificationOverlay.classList.contains("show");
-  notificationOverlay.classList.remove("show");
-  notificationOverlay.setAttribute("aria-hidden","true");
-  document.body.classList.remove("popup-open");
-  if(open){
-    const target=popupPreviousFocus;
-    if(target?.isConnected&&!target.disabled)target.focus();
-    else if(!verifyBtn.disabled)verifyBtn.focus();
-  }
-  popupPreviousFocus=null;
-}
-function dismissNotificationPopup(){
-  popupDismissed=true;
-  hideNotificationPopup();
-}
-function setPopupPermission(fr,ar,denied=false){
-  popupPermission.hidden=false;
-  popupPermission.innerHTML=biHTML(fr,ar);
-  popupPermission.classList.toggle("denied",denied);
-}
-function updatePopupPermission(){
-  popupPermission.hidden=true;
-  popupPermission.innerHTML="";
-  popupEnableBtn.hidden=false;
-  if(!("Notification" in window)||!window.isSecureContext){
-    setPopupPermission("Notifications indisponibles dans ce navigateur.",
-      "الإشعارات غير متاحة في هذا المتصفح أو في طريقة فتح الصفحة.",true);
-    popupEnableBtn.hidden=true;
-  }else if(Notification.permission==="denied"){
-    setPopupPermission("Notifications bloquées. Modifiez les paramètres du navigateur.",
-      "الإشعارات محظورة. يمكن تفعيلها من إعدادات المتصفح.",true);
-    popupEnableBtn.hidden=true;
-  }
-}
-function showNotificationPopup(){
-  if(!state.trackingEnabled||notificationsGranted()||popupDismissed)return;
-  updatePopupPermission();
-  popupPreviousFocus=document.activeElement;
-  notificationOverlay.classList.add("show");
-  notificationOverlay.setAttribute("aria-hidden","false");
-  document.body.classList.add("popup-open");
-  closeNotificationPopupBtn.focus();
-}
-popupLaterBtn.addEventListener("click",dismissNotificationPopup);
-closeNotificationPopupBtn.addEventListener("click",dismissNotificationPopup);
-notificationOverlay.addEventListener("click",e=>{
-  if(e.target===notificationOverlay)dismissNotificationPopup();
-});
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape"&&notificationOverlay.classList.contains("show"))dismissNotificationPopup();
-});
-notificationOverlay.addEventListener("keydown",e=>{
-  if(e.key!=="Tab"||!notificationOverlay.classList.contains("show"))return;
-  const buttons=[...notificationOverlay.querySelectorAll('button:not([disabled]):not([hidden])')]
-    .filter(el=>el.getClientRects().length);
-  if(!buttons.length)return;
-  const first=buttons[0],last=buttons[buttons.length-1];
-  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
-  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
-});
-popupEnableBtn.addEventListener("click",async()=>{
-  popupEnableBtn.disabled=true;
-  try{
-    if("Notification" in window&&window.isSecureContext&&Notification.permission==="default")
-      await Notification.requestPermission();
-    if(notificationsGranted()){
-      popupDismissed=true;
-      hideNotificationPopup();
-      registerServiceWorker();
-    }else updatePopupPermission();
-  }catch{updatePopupPermission()}
-  finally{popupEnableBtn.disabled=false}
-});
 
-function setVerifyBtnActive(active){
-  verifyBtn.classList.toggle("active",active);
-  verifyBtn.setAttribute("aria-pressed",active?"true":"false");
-  verifyBtnAr.textContent=active?"جاري المتابعة - اضغط للإيقاف":"متابعة";
-  verifyBtnFr.textContent=active?"Suivi activé - Appuyez pour arrêter":"Suivi";
-  verifyBtn.title=active?"اضغط لإيقاف المتابعة / Appuyez pour arrêter":"بدء المتابعة / Démarrer le suivi";
-}
-function setInputsFrozen(frozen){
-  if(frozen){myTicketInput.blur();thresholdInput.blur()}
-  myTicketInput.disabled=frozen;
-  thresholdInput.disabled=frozen;
-}
-function updateStatusUI(){
-  statusContainer.classList.remove("online","closed");
-  if(TEST_MODE){
-    statusContainer.classList.add("online");
-    setStatus("Mode test activé (test=1)","تم تفعيل وضع الاختبار (test=1)");
-  }else if(!state.isOnline){
-    setStatus("Hors ligne - Reconnexion...","غير متصل - جارٍ إعادة الاتصال...");
-  }else if(state.systemClosed){
-    statusContainer.classList.add("closed");
-    setStatus("Système fermé","النظام مغلق");
-  }else{
-    statusContainer.classList.add("online");
-    setStatus("Système connecté","النظام متصل");
-  }
-}
-function setOnline(online){
-  state.isOnline=online;
-  updateStatusUI();
-}
-function renderTicketNumber(){
-  queueNumEl.classList.toggle("closed",state.systemClosed);
-  queueNumEl.textContent=state.systemClosed?"--":
-    validInt(state.current_ticket,0,999)?String(state.current_ticket):"--";
-}
-function updateThresholdConstraints(){
-  if(!state.trackingEnabled){thresholdInput.value=savedThreshold;return}
-  const diff=state.trackingTicket-Number(state.current_ticket);
-  thresholdInput.value=String(
-    state.current_ticket===null?state.trackingThreshold:
-    Math.max(0,Math.min(state.trackingThreshold,diff))
+  return (
+
+    "Notification" in window &&
+
+    window.isSecureContext &&
+
+    Notification.permission === "granted"
+
   );
 }
-function stopPolling(){
-  if(pollTimer){clearInterval(pollTimer);pollTimer=null}
-}
-function stopTrackingHard({preserveBanner=false}={}){
-  trackingGeneration++;
-  state.trackingEnabled=false;
-  state.lastAlertedDiff=null;
-  state.trackingTicket=null;
-  state.trackingThreshold=null;
-  stopPolling();
-  hideBrowserReminder();
-  hideNotificationPopup();
-  popupDismissed=false;
-  setVerifyBtnActive(false);
-  thresholdInput.value=savedThreshold;
-  if(!preserveBanner)clearBanner();
-}
-function setSystemClosed(closed){
-  if(state.systemClosed===closed)return;
-  state.systemClosed=closed;
-  if(closed)stopTrackingHard();
-  verifyBtn.disabled=closed;
-  setInputsFrozen(closed);
-  renderTicketNumber();
-  updateStatusUI();
-}
-function evaluateClosedState(){
-  if(TEST_MODE){setSystemClosed(false);return}
-  if(!state.metaLoaded)return;
-  const now=serverNow();
-  const hb=Number(state.esp32_last_seen_ms);
-  const req=Number(state.last_request_ms);
-  const hbStale=state.esp32_last_seen_ms==null||!Number.isFinite(hb)||now-hb>=HEARTBEAT_CLOSE_MS;
-  const reqStale=state.last_request_ms==null||!Number.isFinite(req)||now-req>=REQUEST_CLOSE_MS;
-  setSystemClosed(hbStale||reqStale);
+
+/* ============================================================
+   POPUP PERMISSION MESSAGE
+============================================================ */
+
+function setPopupPermission(
+  frText,
+  arText,
+  denied=false
+){
+
+  if(!popupPermission){
+    return;
+  }
+
+  popupPermission.hidden = false;
+
+  popupPermission.innerHTML =
+    biHTML(frText,arText);
+
+  popupPermission.classList.toggle(
+    "denied",
+    !!denied
+  );
+
 }
 
-async function sendNotification(fr,ar,{urgent=false,tag="queue-alert"}={}){
-  if(!notificationsGranted())return false;
-  const title=urgent?"تنبيه مهم / Alerte importante":"تنبيه الدور / Alerte de file";
-  const options={
-    body:`${ar}\n${fr}`,tag,icon:"logo.png",
-    vibrate:urgent?[200,100,200,100,200]:[150],data:{url:"./"}
-  };
+function clearPopupPermission(){
+
+  if(!popupPermission){
+    return;
+  }
+
+  popupPermission.hidden = true;
+
+  popupPermission.innerHTML = "";
+
+  popupPermission.classList.remove(
+    "denied"
+  );
+
+}
+
+/* ============================================================
+   POPUP DISPLAY
+============================================================ */
+
+function showNotificationPopup(){
+
+  if(!state.trackingEnabled){
+    return;
+  }
+
+  if(notificationsGranted()){
+
+    hideNotificationPopup();
+
+    return;
+  }
+
+  if(popupDismissedForSession){
+    return;
+  }
+
+  updatePopupPermission();
+
+  popupPreviousFocus =
+    document.activeElement;
+
+  notificationOverlay.classList.add(
+    "show"
+  );
+
+  notificationOverlay.setAttribute(
+    "aria-hidden",
+    "false"
+  );
+
+  document.body.classList.add(
+    "popup-open"
+  );
+
+  closeNotificationPopupBtn.focus();
+
+}
+
+function hideNotificationPopup(){
+
+  const wasOpen =
+    notificationOverlay.classList.contains(
+      "show"
+    );
+
+  notificationOverlay.classList.remove(
+    "show"
+  );
+
+  notificationOverlay.setAttribute(
+    "aria-hidden",
+    "true"
+  );
+
+  document.body.classList.remove(
+    "popup-open"
+  );
+
+  if(wasOpen){
+
+    const target =
+      popupPreviousFocus;
+
+    if(
+      target &&
+      typeof target.focus === "function" &&
+      target.isConnected &&
+      !target.disabled
+    ){
+
+      target.focus();
+
+    }else if(!verifyBtn.disabled){
+
+      verifyBtn.focus();
+
+    }
+  }
+
+  popupPreviousFocus = null;
+
+}
+
+function dismissNotificationPopup(){
+
+  popupDismissedForSession = true;
+
+  hideNotificationPopup();
+
+}
+
+/* ============================================================
+   UPDATE POPUP PERMISSION
+============================================================ */
+
+function updatePopupPermission(){
+
+  if(notificationsGranted()){
+
+    hideNotificationPopup();
+
+    return;
+  }
+
+  clearPopupPermission();
+
+  if(
+    !("Notification" in window) ||
+    !window.isSecureContext
+  ){
+
+    setPopupPermission(
+
+      "Les notifications ne sont pas disponibles dans ce navigateur ou ce contexte.",
+
+      "الإشعارات غير متاحة في هذا المتصفح أو في طريقة فتح الصفحة الحالية.",
+
+      true
+
+    );
+
+    popupEnableBtn.hidden = true;
+
+    return;
+  }
+
+  if(Notification.permission === "denied"){
+
+    setPopupPermission(
+
+      "Notifications bloquées. Autorisez-les depuis les paramètres du navigateur.",
+
+      "الإشعارات محظورة. يمكنك السماح بها من إعدادات المتصفح.",
+
+      true
+
+    );
+
+    popupEnableBtn.hidden = true;
+
+    return;
+  }
+
+  popupEnableBtn.hidden = false;
+
+}
+
+/* ============================================================
+   ENABLE NOTIFICATIONS
+============================================================ */
+
+async function ensureNotificationsEnabled(){
+
+  if(
+    !("Notification" in window) ||
+    !window.isSecureContext
+  ){
+
+    return false;
+  }
+
+  if(Notification.permission === "granted"){
+
+    return true;
+  }
+
+  if(Notification.permission === "denied"){
+
+    return false;
+  }
+
   try{
+
+    const permission =
+      await Notification.requestPermission();
+
+    return permission === "granted";
+
+  }catch{
+
+    return false;
+  }
+}
+
+/* ============================================================
+   POPUP EVENTS
+============================================================ */
+
+closeNotificationPopupBtn.addEventListener(
+  "click",
+  dismissNotificationPopup
+);
+
+popupLaterBtn.addEventListener(
+  "click",
+  dismissNotificationPopup
+);
+
+popupEnableBtn.addEventListener(
+  "click",
+  async()=>{
+
+    popupEnableBtn.disabled = true;
+
+    let permissionGranted = false;
+
+    try{
+
+      permissionGranted =
+        await ensureNotificationsEnabled();
+
+    }finally{
+
+      popupEnableBtn.disabled = false;
+
+    }
+
+    if(permissionGranted){
+
+      popupDismissedForSession = true;
+
+      hideNotificationPopup();
+
+      registerServiceWorker().catch(()=>{});
+
+    }else{
+
+      updatePopupPermission();
+
+    }
+  }
+);
+
+notificationOverlay.addEventListener(
+  "click",
+  event=>{
+
+    if(event.target === notificationOverlay){
+
+      dismissNotificationPopup();
+
+    }
+  }
+);
+
+document.addEventListener(
+  "keydown",
+  event=>{
+
+    if(
+      event.key === "Escape" &&
+      notificationOverlay.classList.contains("show")
+    ){
+
+      dismissNotificationPopup();
+
+    }
+  }
+);
+
+/* ============================================================
+   POPUP FOCUS TRAP
+============================================================ */
+
+notificationOverlay.addEventListener(
+  "keydown",
+  event=>{
+
+    if(
+      event.key !== "Tab" ||
+      !notificationOverlay.classList.contains("show")
+    ){
+
+      return;
+    }
+
+    const focusable = Array.from(
+
+      notificationOverlay.querySelectorAll(
+        'button:not([disabled]):not([hidden])'
+      )
+
+    ).filter(
+      el=>el.getClientRects().length > 0
+    );
+
+    if(!focusable.length){
+      return;
+    }
+
+    const first = focusable[0];
+
+    const last =
+      focusable[focusable.length-1];
+
+    if(
+      event.shiftKey &&
+      document.activeElement === first
+    ){
+
+      event.preventDefault();
+
+      last.focus();
+
+    }else if(
+      !event.shiftKey &&
+      document.activeElement === last
+    ){
+
+      event.preventDefault();
+
+      first.focus();
+
+    }
+  }
+);
+
+/* ============================================================
+   TRACK BUTTON
+============================================================ */
+
+function setVerifyBtnActive(isActive){
+
+  verifyBtn.classList.toggle(
+    "active",
+    !!isActive
+  );
+
+  verifyBtn.setAttribute(
+    "aria-pressed",
+    isActive ? "true" : "false"
+  );
+
+  if(isActive){
+
+    verifyBtnAr.textContent =
+      "جاري المتابعة - اضغط للإيقاف";
+
+    verifyBtnFr.textContent =
+      "Suivi activé - Appuyez pour arrêter";
+
+    verifyBtn.title =
+      "اضغط لإيقاف المتابعة / Appuyez pour arrêter";
+
+  }else{
+
+    verifyBtnAr.textContent =
+      "متابعة";
+
+    verifyBtnFr.textContent =
+      "Suivi";
+
+    verifyBtn.title =
+      "بدء المتابعة / Démarrer le suivi";
+
+  }
+}
+
+/* ============================================================
+   INPUT FREEZE
+============================================================ */
+
+function setInputsFrozen(frozen){
+
+  const shouldFreeze = !!frozen;
+
+  if(shouldFreeze){
+
+    myTicketInput.blur();
+
+    thresholdInput.blur();
+
+  }
+
+  myTicketInput.disabled = shouldFreeze;
+
+  thresholdInput.disabled = shouldFreeze;
+
+}
+
+/* ============================================================
+   SYSTEM CLOSURE REASONS
+============================================================ */
+
+function computeClosedReasons(){
+
+  const now = serverNow();
+
+  const lastSeen =
+    state.esp32_last_seen_ms == null
+      ? NaN
+      : Number(state.esp32_last_seen_ms);
+
+  const lastRequest =
+    state.last_request_ms == null
+      ? NaN
+      : Number(state.last_request_ms);
+
+  const hbStale =
+
+    !Number.isFinite(lastSeen) ||
+
+    now-lastSeen >=
+      HEARTBEAT_CLOSE_MS+HEARTBEAT_GRACE_MS;
+
+  const reqStale =
+
+    !Number.isFinite(lastRequest) ||
+
+    now-lastRequest >=
+      REQUEST_CLOSE_MS+REQUEST_GRACE_MS;
+
+  return {
+    hbStale,
+    reqStale
+  };
+}
+
+/* ============================================================
+   STATUS UI
+============================================================ */
+
+function updateStatusUI(){
+
+  statusContainer.classList.remove(
+    "online",
+    "closed"
+  );
+
+  if(TEST_MODE){
+
+    statusContainer.classList.add(
+      "online"
+    );
+
+    setStatus(
+      "Mode test activé (test=1)",
+      "تم تفعيل وضع الاختبار (test=1)"
+    );
+
+    return;
+  }
+
+  if(!state.isOnline){
+
+    setStatus(
+      "Hors ligne - Reconnexion...",
+      "غير متصل - جارٍ إعادة الاتصال..."
+    );
+
+    return;
+  }
+
+  if(state.systemClosed){
+
+    statusContainer.classList.add(
+      "closed"
+    );
+
+    setStatus(
+      "Système fermé",
+      "النظام مغلق"
+    );
+
+    return;
+  }
+
+  statusContainer.classList.add(
+    "online"
+  );
+
+  setStatus(
+    "Système connecté",
+    "النظام متصل"
+  );
+
+}
+
+function setOnline(isOnline){
+
+  state.isOnline = !!isOnline;
+
+  updateStatusUI();
+
+}
+
+/* ============================================================
+   RENDER CURRENT TICKET
+============================================================ */
+
+function renderTicketNumber(){
+
+  if(state.systemClosed){
+
+    queueNumEl.textContent = "--";
+
+    queueNumEl.classList.add(
+      "closed"
+    );
+
+    return;
+  }
+
+  queueNumEl.classList.remove(
+    "closed"
+  );
+
+  const value =
+    state.current_ticket === null
+      ? NaN
+      : Number(state.current_ticket);
+
+  queueNumEl.textContent =
+    Number.isSafeInteger(value)
+      ? String(value)
+      : "--";
+
+}
+
+/* ============================================================
+   THRESHOLD
+============================================================ */
+
+function getEffectiveThreshold(){
+
+  const originalThreshold =
+    Number(savedThreshold);
+
+  const myTicket =
+    Number(myTicketInput.value);
+
+  const current =
+    state.current_ticket;
+
+  if(
+    !Number.isSafeInteger(originalThreshold) ||
+    originalThreshold < 0
+  ){
+
+    return Number(DEFAULT_THRESHOLD);
+  }
+
+  if(
+    current === null ||
+    !Number.isSafeInteger(Number(current)) ||
+    !Number.isSafeInteger(myTicket) ||
+    myTicket < 1
+  ){
+
+    return originalThreshold;
+  }
+
+  const diff =
+    myTicket-Number(current);
+
+  if(diff <= 0){
+    return 0;
+  }
+
+  return Math.min(
+    originalThreshold,
+    diff
+  );
+}
+
+function updateThresholdConstraints(){
+
+  thresholdInput.removeAttribute(
+    "max"
+  );
+
+  thresholdInput.value =
+    state.trackingEnabled
+      ? String(getEffectiveThreshold())
+      : savedThreshold;
+
+}
+
+function restoreSavedThreshold(){
+
+  thresholdInput.value =
+    savedThreshold;
+
+  thresholdInput.removeAttribute(
+    "max"
+  );
+
+}
+
+/* ============================================================
+   POLLING
+============================================================ */
+
+function stopPolling(){
+
+  if(pollTimer){
+
+    clearInterval(pollTimer);
+
+    pollTimer = null;
+
+  }
+}
+
+/* ============================================================
+   STOP TRACKING
+============================================================ */
+
+function stopTrackingHard({
+  preserveBanner=false,
+  preserveReminder=false
+}={}){
+
+  trackingGeneration++;
+
+  state.trackingEnabled = false;
+
+  state.lastAlertedDiff = null;
+
+  state.trackingTicket = null;
+
+  state.trackingThreshold = null;
+
+  if(!preserveBanner){
+
+    clearBanner();
+
+  }
+
+  stopPolling();
+
+  if(!preserveReminder){
+
+    hideBrowserReminder();
+
+  }
+
+  setVerifyBtnActive(false);
+
+  restoreSavedThreshold();
+
+  hideNotificationPopup();
+
+  popupDismissedForSession = false;
+
+}
+
+/* ============================================================
+   SYSTEM CLOSED STATE
+============================================================ */
+
+function setSystemClosed(isClosed){
+
+  const next = !!isClosed;
+
+  if(state.systemClosed === next){
+
+    return;
+  }
+
+  state.systemClosed = next;
+
+  if(next){
+
+    stopTrackingHard();
+
+    verifyBtn.disabled = true;
+
+    setInputsFrozen(true);
+
+  }else{
+
+    verifyBtn.disabled = false;
+
+    setInputsFrozen(false);
+
+    updateThresholdConstraints();
+
+  }
+
+  renderTicketNumber();
+
+  updateStatusUI();
+
+}
+
+/* ============================================================
+   EVALUATE CLOSED STATE
+============================================================ */
+
+function evaluateClosedState(){
+
+  if(TEST_MODE){
+
+    setSystemClosed(false);
+
+    return;
+  }
+
+  if(!state.metaLoaded){
+
+    return;
+  }
+
+  const {
+    hbStale,
+    reqStale
+  } = computeClosedReasons();
+
+  /*
+   * Either condition closes the system.
+   */
+
+  setSystemClosed(
+    hbStale || reqStale
+  );
+
+}
+
+/* ============================================================
+   SEND NOTIFICATION
+============================================================ */
+
+async function sendNotification(
+  frText,
+  arText,
+  {
+    urgent=false,
+    tag="queue-alert"
+  }={}
+){
+
+  try{
+
+    if(!notificationsGranted()){
+
+      return false;
+    }
+
+    const title = urgent
+
+      ? "تنبيه مهم / Alerte importante"
+
+      : "تنبيه الدور / Alerte de file";
+
+    const body =
+      `${arText}\n${frText}`;
+
     if("serviceWorker" in navigator){
-      const reg=await navigator.serviceWorker.getRegistration()||
-        await navigator.serviceWorker.register(SW_URL,{scope:"./"});
-      if(reg?.showNotification){
-        await reg.showNotification(title,{...options,renotify:true});
+
+      let reg =
+        await navigator.serviceWorker.getRegistration();
+
+      if(!reg){
+
+        try{
+
+          reg =
+            await navigator.serviceWorker.register(
+              SW_URL,
+              {
+                scope:"./"
+              }
+            );
+
+        }catch{}
+      }
+
+      if(reg && reg.showNotification){
+
+        await reg.showNotification(
+          title,
+          {
+
+            body,
+
+            tag,
+
+            renotify:true,
+
+            icon:"logo.png",
+
+            vibrate:urgent
+              ? [200,100,200,100,200]
+              : [150],
+
+            data:{
+              url:"./"
+            }
+
+          }
+        );
+
         return true;
       }
     }
-    new Notification(title,options);
+
+    new Notification(
+      title,
+      {
+        body,
+        tag,
+        icon:"logo.png"
+      }
+    );
+
     return true;
-  }catch{return false}
+
+  }catch(error){
+
+    console.warn(
+      "[Notification] Failed",
+      error
+    );
+
+    return false;
+  }
 }
+
+/* ============================================================
+   AUDIO
+============================================================ */
 
 function ensureAudio(){
-  try{
-    if(!audioCtx){
-      const AudioClass=window.AudioContext||window.webkitAudioContext;
-      if(!AudioClass)return Promise.resolve();
-      audioCtx=new AudioClass();
+
+  if(!audioCtx){
+
+    const AudioContextClass =
+      window.AudioContext ||
+      window.webkitAudioContext;
+
+    if(!AudioContextClass){
+
+      return Promise.resolve();
     }
-    return audioCtx.state==="suspended"?audioCtx.resume():Promise.resolve();
-  }catch{return Promise.resolve()}
+
+    audioCtx =
+      new AudioContextClass();
+
+  }
+
+  if(audioCtx.state === "suspended"){
+
+    return audioCtx.resume();
+
+  }
+
+  return Promise.resolve();
+
 }
-function playTone(frequency,time,duration,volume=.25){
-  const oscillator=audioCtx.createOscillator();
-  const gain=audioCtx.createGain();
-  oscillator.type="triangle";
-  oscillator.frequency.setValueAtTime(frequency,time);
-  gain.gain.setValueAtTime(volume,time);
-  gain.gain.exponentialRampToValueAtTime(.00001,time+duration);
+
+/* ============================================================
+   AUDIO TONE
+============================================================ */
+
+function playTone(
+  frequency,
+  time,
+  duration,
+  volume=.25
+){
+
+  if(!audioCtx){
+    return;
+  }
+
+  const oscillator =
+    audioCtx.createOscillator();
+
+  const gain =
+    audioCtx.createGain();
+
+  oscillator.type = "triangle";
+
+  oscillator.frequency.setValueAtTime(
+    frequency,
+    time
+  );
+
+  gain.gain.setValueAtTime(
+    volume,
+    time
+  );
+
+  gain.gain.exponentialRampToValueAtTime(
+    .00001,
+    time+duration
+  );
+
   oscillator.connect(gain);
-  gain.connect(audioCtx.destination);
+
+  gain.connect(
+    audioCtx.destination
+  );
+
   oscillator.start(time);
-  oscillator.stop(time+duration);
+
+  oscillator.stop(
+    time+duration
+  );
+
 }
-function playAlertBeep(arrival=false){
+
+/* ============================================================
+   NORMAL ALERT BEEP
+============================================================ */
+
+function playAlertBeep(){
+
   ensureAudio().then(()=>{
-    if(!audioCtx||audioCtx.state!=="running")return;
-    const now=audioCtx.currentTime;
-    if(arrival){
-      playTone(880,now,.25,.3);
-      playTone(1174.66,now+.32,.25,.3);
-      playTone(1567.98,now+.64,.5,.3);
-      playTone(1567.98,now+1.3,.5,.3);
-    }else{
-      playTone(987.77,now,.25);
-      playTone(1318.51,now+.3,.4);
+
+    if(!audioCtx){
+      return;
     }
+
+    const now =
+      audioCtx.currentTime;
+
+    playTone(
+      987.77,
+      now,
+      .25
+    );
+
+    playTone(
+      1318.51,
+      now+.3,
+      .4
+    );
+
   }).catch(()=>{});
+
 }
-["pointerdown","touchstart","mousedown","keydown"].forEach(name=>{
-  window.addEventListener(name,()=>ensureAudio(),{once:true,passive:true});
+
+/* ============================================================
+   ARRIVAL ALERT BEEP
+============================================================ */
+
+function playArrivalBeep(){
+
+  ensureAudio().then(()=>{
+
+    if(!audioCtx){
+      return;
+    }
+
+    const now =
+      audioCtx.currentTime;
+
+    playTone(
+      880,
+      now,
+      .25,
+      .3
+    );
+
+    playTone(
+      1174.66,
+      now+.32,
+      .25,
+      .3
+    );
+
+    playTone(
+      1567.98,
+      now+.64,
+      .5,
+      .3
+    );
+
+    playTone(
+      1567.98,
+      now+1.3,
+      .5,
+      .3
+    );
+
+  }).catch(()=>{});
+
+}
+
+/* ============================================================
+   AUDIO UNLOCK
+============================================================ */
+
+[
+  "pointerdown",
+  "touchstart",
+  "mousedown",
+  "keydown"
+].forEach(eventName=>{
+
+  window.addEventListener(
+    eventName,
+    ()=>{
+
+      ensureAudio().catch(()=>{});
+
+    },
+    {
+      once:true,
+      passive:true
+    }
+  );
+
 });
+
+/* ============================================================
+   TICKET ARRIVAL
+============================================================ */
 
 function handleTicketArrival(){
-  if(!state.trackingEnabled||state.arrived)return;
-  state.arrived=true;
-  const fr="🔔 C'est votre tour ! Veuillez vous présenter au guichet.";
-  const ar="🔔 لقد وصل دورك! يُرجى التوجّه إلى الشباك.";
-  stopTrackingHard({preserveBanner:true});
-  setBanner(fr,ar,{arrived:true});
-  playAlertBeep(true);
-  sendNotification(fr,ar,{urgent:true,tag:"queue-arrived"});
-  saveSettings();
-}
-function checkUserAlert(currentTicket){
-  if(state.systemClosed||!state.trackingEnabled||currentTicket===null)return;
-  const my=state.trackingTicket,threshold=state.trackingThreshold;
-  const current=Number(currentTicket);
-  if(!validInt(my,1,999)||!validInt(threshold,0)||!validInt(current,0,999))return;
-  const diff=my-current;
-  updateThresholdConstraints();
-  if(diff<=0){handleTicketArrival();return}
-  if(diff>threshold||threshold===0){
-    clearBanner();
-    state.lastAlertedDiff=diff;
+
+  if(!state.trackingEnabled){
+
     return;
   }
-  const urgent=diff===1;
-  const fr=urgent
-    ?"Il ne reste qu'une seule personne avant vous. Veuillez vous préparer à vous présenter au guichet."
-    :`Attention ! Il reste ${diff} personnes avant votre tour.`;
-  const ar=urgent
-    ?"تبقّى شخص واحد فقط قبلك، يُرجى الاستعداد للتوجّه إلى الشباك."
-    :`تنبيه! تبقّى ${diff} أشخاص قبلك.`;
-  setBanner(fr,ar,{urgent});
-  if(state.lastAlertedDiff!==diff){
-    state.lastAlertedDiff=diff;
-    playAlertBeep();
-    sendNotification(fr,ar,{urgent});
+
+  if(state.arrived){
+
+    return;
+  }
+
+  state.arrived = true;
+
+  const fr =
+    "🔔 C'est votre tour ! Veuillez vous présenter au guichet.";
+
+  const ar =
+    "🔔 لقد وصل دورك! يُرجى التوجّه إلى الشباك.";
+
+  /*
+   * Stop tracking before displaying
+   * the final arrival message.
+   */
+
+  stopTrackingHard({
+    preserveBanner:true
+  });
+
+  setBanner(
+    fr,
+    ar,
+    {
+      active:true,
+      arrived:true
+    }
+  );
+
+  playArrivalBeep();
+
+  sendNotification(
+    fr,
+    ar,
+    {
+      urgent:true,
+      tag:"queue-arrived"
+    }
+  ).catch(()=>{});
+
+  saveSettings();
+
+}
+
+/* ============================================================
+   CHECK USER ALERT
+============================================================ */
+
+function checkUserAlert(currentTicket){
+
+  if(
+    state.systemClosed ||
+    !state.trackingEnabled
+  ){
+
+    return;
+  }
+
+  const myTicket =
+    state.trackingTicket;
+
+  const originalThreshold =
+    state.trackingThreshold;
+
+  const current =
+    Number(currentTicket);
+
+  if(
+    !Number.isSafeInteger(myTicket) ||
+    myTicket < 1 ||
+    !Number.isSafeInteger(originalThreshold) ||
+    originalThreshold < 0 ||
+    currentTicket === null ||
+    !Number.isSafeInteger(current)
+  ){
+
+    clearBanner();
+
+    state.lastAlertedDiff = null;
+
+    return;
+  }
+
+  const diff =
+    myTicket-current;
+
+  updateThresholdConstraints();
+
+  /*
+   * TICKET ARRIVED
+   */
+
+  if(diff <= 0){
+
+    handleTicketArrival();
+
+    return;
+  }
+
+  /*
+   * OUTSIDE ALERT THRESHOLD
+   */
+
+  if(
+    diff > originalThreshold ||
+    originalThreshold === 0
+  ){
+
+    clearBanner();
+
+    state.lastAlertedDiff = diff;
+
+    return;
+  }
+
+  /*
+   * ONE PERSON REMAINING
+   */
+
+  if(diff === 1){
+
+    const fr =
+      "Il ne reste qu'une seule personne avant vous. Veuillez vous préparer à vous présenter au guichet.";
+
+    const ar =
+      "تبقّى شخص واحد فقط قبلك، يُرجى الاستعداد للتوجّه إلى الشباك.";
+
+    setBanner(
+      fr,
+      ar,
+      {
+        active:true,
+        urgent:true
+      }
+    );
+
+    if(state.lastAlertedDiff !== 1){
+
+      state.lastAlertedDiff = 1;
+
+      playAlertBeep();
+
+      sendNotification(
+        fr,
+        ar,
+        {
+          urgent:true,
+          tag:"queue-alert"
+        }
+      ).catch(()=>{});
+
+    }
+
+    return;
+  }
+
+  /*
+   * NORMAL ALERT
+   */
+
+  if(
+    diff > 1 &&
+    diff <= originalThreshold
+  ){
+
+    const fr =
+      `Attention ! Il reste ${diff} personnes avant votre tour.`;
+
+    const ar =
+      `تنبيه! تبقّى ${diff} أشخاص قبلك.`;
+
+    setBanner(
+      fr,
+      ar,
+      {
+        active:true,
+        urgent:false
+      }
+    );
+
+    if(state.lastAlertedDiff !== diff){
+
+      state.lastAlertedDiff = diff;
+
+      playAlertBeep();
+
+      sendNotification(
+        fr,
+        ar,
+        {
+          urgent:false,
+          tag:"queue-alert"
+        }
+      ).catch(()=>{});
+
+    }
   }
 }
+
+/* ============================================================
+   POLL CURRENT TICKET
+============================================================ */
 
 async function pollCurrentTicketOnce(){
-  if(!state.trackingEnabled||state.systemClosed||pollInFlight)return;
-  if(TEST_MODE){setTicket(testSim.ticket);return}
-  pollInFlight=true;
-  const generation=trackingGeneration,version=streamVersion;
+
+  if(
+    state.systemClosed ||
+    !state.trackingEnabled
+  ){
+
+    return;
+  }
+
+  if(TEST_MODE){
+
+    setTicket(testSim.ticket);
+
+    return;
+  }
+
+  if(pollInFlight){
+
+    return;
+  }
+
+  pollInFlight = true;
+
+  const generation =
+    trackingGeneration;
+
+  const version =
+    streamVersion;
+
   try{
-    const r=await fetch(TICKET_URL,{cache:"no-store"});
-    if(!r.ok)throw Error("Polling failed");
-    const ticket=await r.json();
-    if(generation===trackingGeneration&&version===streamVersion&&
-       state.trackingEnabled&&!state.systemClosed)setTicket(ticket);
-  }catch{}
-  finally{pollInFlight=false}
+
+    const response =
+      await fetch(
+        TICKET_URL,
+        {
+          cache:"no-store"
+        }
+      );
+
+    if(!response.ok){
+
+      throw new Error(
+        "Ticket polling failed"
+      );
+    }
+
+    const ticket =
+      await response.json();
+
+    /*
+     * Ignore responses from an
+     * old tracking session.
+     */
+
+    if(
+      generation !== trackingGeneration ||
+      !state.trackingEnabled ||
+      state.systemClosed
+    ){
+
+      return;
+    }
+
+    /*
+     * Avoid replacing a newer SSE value
+     * with an older HTTP response.
+     */
+
+    if(version !== streamVersion){
+
+      return;
+    }
+
+    setTicket(ticket);
+
+  }catch(error){
+
+    console.warn(
+      "[Polling] Failed",
+      error
+    );
+
+  }finally{
+
+    pollInFlight = false;
+
+  }
 }
+
+/* ============================================================
+   START POLLING
+============================================================ */
+
 function startPolling(){
+
   stopPolling();
-  if(!state.trackingEnabled||state.systemClosed)return;
-  pollTimer=setInterval(pollCurrentTicketOnce,
-    document.visibilityState==="visible"?POLL_VISIBLE_MS:POLL_HIDDEN_MS);
+
+  if(
+    !state.trackingEnabled ||
+    state.systemClosed
+  ){
+
+    return;
+  }
+
+  const period =
+    document.visibilityState === "visible"
+      ? POLL_VISIBLE_MS
+      : POLL_HIDDEN_MS;
+
+  pollTimer = setInterval(
+    pollCurrentTicketOnce,
+    period
+  );
+
   pollCurrentTicketOnce();
+
 }
+
+/* ============================================================
+   INPUT VALIDATION
+============================================================ */
+
+function inputsAreValidOrShowMessage(){
+
+  const myTicket =
+    Number(myTicketInput.value);
+
+  const threshold =
+    Number(thresholdInput.value);
+
+  if(
+    !isValidInteger(
+      myTicketInput.value,
+      1,
+      999
+    )
+  ){
+
+    setBanner(
+
+      "Veuillez saisir un numéro de ticket valide (1 à 999).",
+
+      "يرجى إدخال رقم تذكرة صحيح من 1 إلى 999.",
+
+      {
+        active:true,
+        urgent:true
+      }
+
+    );
+
+    return false;
+  }
+
+  if(
+    !isValidInteger(
+      thresholdInput.value,
+      0
+    )
+  ){
+
+    setBanner(
+
+      "Veuillez saisir une marge d'alerte valide (>= 0).",
+
+      "يرجى إدخال هامش تنبيه صحيح (0 أو أكثر).",
+
+      {
+        active:true,
+        urgent:true
+      }
+
+    );
+
+    return false;
+  }
+
+  return true;
+}
+
+/* ============================================================
+   START / STOP TRACKING
+============================================================ */
 
 function startTrackingOnly(){
-  if(state.systemClosed)return;
-  if(state.trackingEnabled){stopTrackingHard();saveSettings();return}
-  if(!validInt(myTicketInput.value,1,999)){
-    setBanner("Veuillez saisir un numéro de ticket valide (1 à 999).",
-      "يرجى إدخال رقم تذكرة صحيح من 1 إلى 999.",{urgent:true});
+
+  if(state.systemClosed){
+
     return;
   }
-  if(!validInt(thresholdInput.value,0)){
-    setBanner("Veuillez saisir une marge d'alerte valide (>= 0).",
-      "يرجى إدخال هامش تنبيه صحيح (0 أو أكثر).",{urgent:true});
+
+  /*
+   * Stop current tracking.
+   */
+
+  if(state.trackingEnabled){
+
+    stopTrackingHard();
+
+    saveSettings();
+
     return;
   }
-  savedThreshold=String(Number(thresholdInput.value));
+
+  if(!inputsAreValidOrShowMessage()){
+
+    return;
+  }
+
+  const value =
+    Number(thresholdInput.value);
+
+  if(
+    Number.isSafeInteger(value) &&
+    value >= 0
+  ){
+
+    savedThreshold =
+      String(value);
+
+  }
+
   saveSettings();
+
+  state.trackingEnabled = true;
+
+  state.arrived = false;
+
+  state.lastAlertedDiff = null;
+
+  state.trackingTicket =
+    Number(myTicketInput.value);
+
+  state.trackingThreshold =
+    Number(savedThreshold);
+
   trackingGeneration++;
-  state.trackingEnabled=true;
-  state.arrived=false;
-  state.lastAlertedDiff=null;
-  state.trackingTicket=Number(myTicketInput.value);
-  state.trackingThreshold=Number(savedThreshold);
-  popupDismissed=false;
+
+  popupDismissedForSession = false;
+
   clearBanner();
+
   showBrowserReminder();
+
   setVerifyBtnActive(true);
+
   updateThresholdConstraints();
-  registerServiceWorker();
-  ensureAudio();
+
+  registerServiceWorker().catch(()=>{});
+
+  ensureAudio().catch(()=>{});
+
   startPolling();
-  checkUserAlert(state.current_ticket);
-  if(state.trackingEnabled&&!notificationsGranted())showNotificationPopup();
+
+  /*
+   * Check current ticket immediately.
+   */
+
+  checkUserAlert(
+    state.current_ticket
+  );
+
+  if(
+    state.trackingEnabled &&
+    !notificationsGranted()
+  ){
+
+    showNotificationPopup();
+
+  }
 }
-verifyBtn.addEventListener("click",startTrackingOnly);
-myTicketInput.addEventListener("input",()=>{
-  stopTrackingHard();state.arrived=false;saveSettings();
-});
-thresholdInput.addEventListener("input",()=>{
-  const valid=validInt(thresholdInput.value,0);
-  if(valid)savedThreshold=String(Number(thresholdInput.value));
-  if(state.trackingEnabled)stopTrackingHard();
-  if(valid)saveSettings();
-});
-myTicketInput.addEventListener("focus",()=>state.userEditing=true);
-myTicketInput.addEventListener("blur",()=>{
-  state.userEditing=false;saveSettings();
-});
-thresholdInput.addEventListener("focus",()=>state.userEditing=true);
-thresholdInput.addEventListener("blur",()=>{
-  state.userEditing=false;
-  if(validInt(thresholdInput.value,0))
-    savedThreshold=String(Number(thresholdInput.value));
-  else thresholdInput.value=savedThreshold;
-  saveSettings();
-});
+
+verifyBtn.addEventListener(
+  "click",
+  startTrackingOnly
+);
+
+/* ============================================================
+   INPUT EVENTS
+============================================================ */
+
+myTicketInput.addEventListener(
+  "input",
+  ()=>{
+
+    stopTrackingHard();
+
+    state.arrived = false;
+
+    saveSettings();
+
+  }
+);
+
+thresholdInput.addEventListener(
+  "input",
+  ()=>{
+
+    const value =
+      Number(thresholdInput.value);
+
+    const valid =
+      isValidInteger(
+        thresholdInput.value,
+        0
+      );
+
+    if(valid){
+
+      savedThreshold =
+        String(value);
+
+    }
+
+    if(state.trackingEnabled){
+
+      stopTrackingHard();
+
+    }
+
+    if(valid){
+
+      saveSettings();
+
+    }
+  }
+);
+
+myTicketInput.addEventListener(
+  "focus",
+  ()=>{
+
+    state.userEditing = true;
+
+  }
+);
+
+myTicketInput.addEventListener(
+  "blur",
+  ()=>{
+
+    state.userEditing = false;
+
+    saveSettings();
+
+  }
+);
+
+thresholdInput.addEventListener(
+  "focus",
+  ()=>{
+
+    state.userEditing = true;
+
+  }
+);
+
+thresholdInput.addEventListener(
+  "blur",
+  ()=>{
+
+    state.userEditing = false;
+
+    if(
+      isValidInteger(
+        thresholdInput.value,
+        0
+      )
+    ){
+
+      savedThreshold =
+        String(Number(thresholdInput.value));
+
+    }else{
+
+      thresholdInput.value =
+        savedThreshold;
+
+    }
+
+    saveSettings();
+
+  }
+);
+
+/* ============================================================
+   NUMBER ANIMATION
+============================================================ */
+
+function triggerUpdateAnimation(){
+
+  if(ticketAnimationTimer){
+
+    clearTimeout(
+      ticketAnimationTimer
+    );
+
+  }
+
+  queueNumEl.classList.remove(
+    "updated"
+  );
+
+  void queueNumEl.offsetWidth;
+
+  queueNumEl.classList.add(
+    "updated"
+  );
+
+  ticketAnimationTimer = setTimeout(
+    ()=>{
+
+      queueNumEl.classList.remove(
+        "updated"
+      );
+
+      ticketAnimationTimer = null;
+
+    },
+    260
+  );
+
+}
+
+/* ============================================================
+   SET CURRENT TICKET
+============================================================ */
 
 function setTicket(value){
-  if(!validInt(value,0,999))return;
-  const number=Number(value),old=state.current_ticket;
-  state.current_ticket=number;
-  renderTicketNumber();
-  if(state.trackingEnabled&&!state.userEditing&&!state.systemClosed)checkUserAlert(number);
-  if(old!==null&&old!==number&&!state.systemClosed){
-    if(animationTimer)clearTimeout(animationTimer);
-    queueNumEl.classList.remove("updated");
-    void queueNumEl.offsetWidth;
-    queueNumEl.classList.add("updated");
-    animationTimer=setTimeout(()=>queueNumEl.classList.remove("updated"),260);
-  }
-}
 
-function applyMeta(meta){
-  state.esp32_last_seen_ms=meta&&typeof meta==="object"?meta.esp32_last_seen_ms??null:null;
-  state.last_request_ms=meta&&typeof meta==="object"?meta.last_request_ms??null:null;
-  state.metaLoaded=true;
-  evaluateClosedState();
-}
-function applyFirebaseValue(path,value){
-  if(path==="/current_ticket")setTicket(value);
-  else if(path==="/meta")applyMeta(value);
-  else if(path==="/meta/esp32_last_seen_ms"){
-    state.esp32_last_seen_ms=value;
-    state.metaLoaded=true;
-    evaluateClosedState();
-  }else if(path==="/meta/last_request_ms"){
-    state.last_request_ms=value;
-    state.metaLoaded=true;
-    evaluateClosedState();
-  }
-}
-function applyStreamPayload(payload,type){
-  if(!payload||typeof payload!=="object")return;
-  streamVersion++;
-  const path=typeof payload.path==="string"?payload.path:"/";
-  const data=payload.data;
-  if(path==="/"&&type==="put"){
-    if(data&&typeof data==="object"){
-      if("current_ticket" in data)setTicket(data.current_ticket);
-      applyMeta("meta" in data?data.meta:null);
-    }else applyMeta(null);
+  if(
+    value === null ||
+    typeof value === "undefined"
+  ){
+
     return;
   }
-  if(type==="patch"&&data&&typeof data==="object"&&!Array.isArray(data)){
-    for(const [key,value] of Object.entries(data)){
-      const fullPath=(path==="/"?"":path.replace(/\/$/,""))+"/"+key.replace(/^\/+/,"");
-      applyFirebaseValue(fullPath,value);
-    }
-  }else applyFirebaseValue(path,data);
+
+  const number =
+    Number(value);
+
+  if(
+    !Number.isSafeInteger(number) ||
+    number < 0 ||
+    number > 999
+  ){
+
+    return;
+  }
+
+  const oldTicket =
+    state.current_ticket;
+
+  const changed =
+    oldTicket !== number;
+
+  state.current_ticket = number;
+
+  renderTicketNumber();
+
+  if(
+    state.trackingEnabled &&
+    !state.userEditing &&
+    !state.systemClosed
+  ){
+
+    checkUserAlert(
+      state.current_ticket
+    );
+
+  }
+
+  if(
+    changed &&
+    oldTicket !== null &&
+    !state.systemClosed
+  ){
+
+    triggerUpdateAnimation();
+
+  }
 }
+
+/* ============================================================
+   FIREBASE META
+============================================================ */
+
+function applyMetaObject(meta){
+
+  if(
+    meta &&
+    typeof meta === "object"
+  ){
+
+    state.esp32_last_seen_ms =
+      meta.esp32_last_seen_ms ?? null;
+
+    state.last_request_ms =
+      meta.last_request_ms ?? null;
+
+  }else{
+
+    state.esp32_last_seen_ms = null;
+
+    state.last_request_ms = null;
+
+  }
+
+  state.metaLoaded = true;
+
+  evaluateClosedState();
+
+}
+
+/* ============================================================
+   FETCH META
+============================================================ */
+
+async function fetchMetaOnce(){
+
+  const version =
+    streamVersion;
+
+  try{
+
+    const start = Date.now();
+
+    const response =
+      await fetch(
+        META_URL,
+        {
+          cache:"no-store"
+        }
+      );
+
+    const end = Date.now();
+
+    updateServerTimeFromResponse(
+      response,
+      start,
+      end
+    );
+
+    if(!response.ok){
+
+      throw new Error(
+        "Meta fetch failed"
+      );
+    }
+
+    const meta =
+      await response.json();
+
+    /*
+     * Do not overwrite newer SSE data.
+     */
+
+    if(version !== streamVersion){
+
+      return;
+    }
+
+    applyMetaObject(meta);
+
+  }catch(error){
+
+    console.warn(
+      "[Firebase] Meta fetch failed",
+      error
+    );
+
+  }
+}
+
+/* ============================================================
+   FIREBASE STREAM HELPERS
+============================================================ */
+
+/*
+ * Firebase can send:
+ *
+ * put:
+ * {
+ *   path:"/",
+ *   data:{...}
+ * }
+ *
+ * patch:
+ * {
+ *   path:"/",
+ *   data:{
+ *     current_ticket:125,
+ *     "meta/esp32_last_seen_ms":123456789
+ *   }
+ * }
+ *
+ * This handler supports relative
+ * nested paths.
+ */
+
+function applyFirebaseValue(path,value){
+
+  if(!path){
+
+    return;
+  }
+
+  if(path === "/current_ticket"){
+
+    setTicket(value);
+
+    return;
+  }
+
+  if(path === "/meta"){
+
+    applyMetaObject(value);
+
+    return;
+  }
+
+  if(path === "/meta/esp32_last_seen_ms"){
+
+    state.esp32_last_seen_ms =
+      value;
+
+    state.metaLoaded = true;
+
+    evaluateClosedState();
+
+    return;
+  }
+
+  if(path === "/meta/last_request_ms"){
+
+    state.last_request_ms =
+      value;
+
+    state.metaLoaded = true;
+
+    evaluateClosedState();
+
+    return;
+  }
+}
+
+/* ============================================================
+   FIREBASE PATCH PROCESSING
+============================================================ */
+
+function applyFirebasePatchData(
+  basePath,
+  data
+){
+
+  if(
+    data === null ||
+    typeof data !== "object" ||
+    Array.isArray(data)
+  ){
+
+    applyFirebaseValue(
+      basePath,
+      data
+    );
+
+    return;
+  }
+
+  /*
+   * Process individual keys.
+   *
+   * Example:
+   *
+   * basePath = "/"
+   * key = "meta/last_request_ms"
+   */
+
+  for(const [key,value] of Object.entries(data)){
+
+    const normalizedBase =
+      basePath === "/"
+        ? ""
+        : basePath.replace(/\/$/,"");
+
+    const normalizedKey =
+      key.replace(/^\/+/,"");
+
+    const fullPath =
+      normalizedBase +
+      "/" +
+      normalizedKey;
+
+    /*
+     * Entire meta object.
+     */
+
+    if(fullPath === "/meta"){
+
+      applyMetaObject(value);
+
+      continue;
+    }
+
+    /*
+     * Direct tracked values.
+     */
+
+    if(
+      fullPath === "/current_ticket" ||
+      fullPath === "/meta/esp32_last_seen_ms" ||
+      fullPath === "/meta/last_request_ms"
+    ){
+
+      applyFirebaseValue(
+        fullPath,
+        value
+      );
+
+      continue;
+    }
+
+    /*
+     * Root object may contain
+     * nested children.
+     */
+
+    if(
+      fullPath === "/" &&
+      value &&
+      typeof value === "object"
+    ){
+
+      applyFirebasePatchData(
+        "/",
+        value
+      );
+
+    }
+  }
+}
+
+/* ============================================================
+   FIREBASE STREAM PAYLOAD
+============================================================ */
+
+function applyStreamPayload(
+  payload,
+  eventType="put"
+){
+
+  if(
+    !payload ||
+    typeof payload !== "object"
+  ){
+
+    return;
+  }
+
+  const path =
+    typeof payload.path === "string"
+      ? payload.path
+      : "/";
+
+  const data =
+    payload.data;
+
+  streamVersion++;
+
+  /*
+   * Root snapshot.
+   */
+
+  if(
+    eventType === "put" &&
+    path === "/"
+  ){
+
+    if(
+      data &&
+      typeof data === "object"
+    ){
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          data,
+          "current_ticket"
+        )
+      ){
+
+        setTicket(
+          data.current_ticket
+        );
+
+      }
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          data,
+          "meta"
+        )
+      ){
+
+        applyMetaObject(
+          data.meta
+        );
+
+      }else{
+
+        applyMetaObject(null);
+
+      }
+
+    }else{
+
+      applyMetaObject(null);
+
+    }
+
+    return;
+  }
+
+  /*
+   * Firebase patch.
+   */
+
+  if(eventType === "patch"){
+
+    applyFirebasePatchData(
+      path,
+      data
+    );
+
+    return;
+  }
+
+  /*
+   * Individual PUT.
+   */
+
+  applyFirebaseValue(
+    path,
+    data
+  );
+}
+
+/* ============================================================
+   STREAM CONNECTION
+============================================================ */
 
 function closeStream(){
+
   streamGeneration++;
-  if(es){es.close();es=null}
+
+  if(es){
+
+    try{
+
+      es.close();
+
+    }catch{}
+
+    es = null;
+
+  }
+
+  streamOpened = false;
+
 }
-function cancelOfflineUI(){
-  if(offlineUiTimer){clearTimeout(offlineUiTimer);offlineUiTimer=null}
-}
+
+/* ============================================================
+   OFFLINE UI
+============================================================ */
+
 function requestOfflineUI(){
-  if(offlineUiTimer)return;
-  offlineUiTimer=setTimeout(()=>{
-    offlineUiTimer=null;
-    if(!es||es.readyState!==EventSource.OPEN)setOnline(false);
-  },OFFLINE_GRACE_MS);
+
+  if(offlineUiTimer){
+
+    return;
+  }
+
+  offlineUiTimer = setTimeout(
+    ()=>{
+
+      offlineUiTimer = null;
+
+      if(
+        !es ||
+        es.readyState !== EventSource.OPEN
+      ){
+
+        setOnline(false);
+
+      }
+
+    },
+    OFFLINE_GRACE_MS
+  );
+
 }
+
+function cancelOfflineUI(){
+
+  if(!offlineUiTimer){
+
+    return;
+  }
+
+  clearTimeout(
+    offlineUiTimer
+  );
+
+  offlineUiTimer = null;
+
+}
+
+/* ============================================================
+   RECONNECT TIMER
+============================================================ */
+
+function scheduleReconnect(){
+
+  if(reconnectTimer){
+
+    return;
+  }
+
+  reconnectTimer = setTimeout(
+    ()=>{
+
+      reconnectTimer = null;
+
+      connectStream();
+
+    },
+    RECONNECT_MS
+  );
+
+}
+
+function cancelReconnect(){
+
+  if(!reconnectTimer){
+
+    return;
+  }
+
+  clearTimeout(
+    reconnectTimer
+  );
+
+  reconnectTimer = null;
+
+}
+
+/* ============================================================
+   CONNECT FIREBASE STREAM
+============================================================ */
+
 function connectStream(){
-  if(TEST_MODE)return;
-  if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null}
+
+  if(TEST_MODE){
+
+    return;
+  }
+
+  /*
+   * Close previous connection.
+   */
+
   closeStream();
-  const generation=streamGeneration;
+
+  cancelReconnect();
+
+  const generation =
+    streamGeneration;
+
+  if(!state.isOnline){
+
+    setStatus(
+      "Connexion au système...",
+      "جارٍ الاتصال بالنظام..."
+    );
+
+  }
+
   try{
-    es=new EventSource(STREAM_URL);
-    es.onopen=()=>{
-      if(generation!==streamGeneration)return;
+
+    es = new EventSource(
+      STREAM_URL
+    );
+
+    streamOpened = false;
+
+    es.onopen = ()=>{
+
+      if(
+        generation !== streamGeneration
+      ){
+
+        return;
+      }
+
+      streamOpened = true;
+
       cancelOfflineUI();
+
       setOnline(true);
+
+      console.log(
+        "[Firebase] Stream connected"
+      );
+
     };
-    for(const type of ["put","patch"]){
-      es.addEventListener(type,event=>{
-        if(generation!==streamGeneration)return;
-        try{applyStreamPayload(JSON.parse(event.data),type)}catch{}
-      });
-    }
-    es.onerror=()=>{
-      if(generation!==streamGeneration)return;
-      closeStream();
+
+    es.addEventListener(
+      "put",
+      event=>{
+
+        if(
+          generation !== streamGeneration
+        ){
+
+          return;
+        }
+
+        try{
+
+          applyStreamPayload(
+            JSON.parse(event.data),
+            "put"
+          );
+
+        }catch(error){
+
+          console.warn(
+            "[Firebase] Invalid PUT",
+            error
+          );
+
+        }
+      }
+    );
+
+    es.addEventListener(
+      "patch",
+      event=>{
+
+        if(
+          generation !== streamGeneration
+        ){
+
+          return;
+        }
+
+        try{
+
+          applyStreamPayload(
+            JSON.parse(event.data),
+            "patch"
+          );
+
+        }catch(error){
+
+          console.warn(
+            "[Firebase] Invalid PATCH",
+            error
+          );
+
+        }
+      }
+    );
+
+    es.onmessage = event=>{
+
+      if(
+        generation !== streamGeneration
+      ){
+
+        return;
+      }
+
+      try{
+
+        applyStreamPayload(
+          JSON.parse(event.data),
+          "put"
+        );
+
+      }catch{}
+    };
+
+    es.onerror = ()=>{
+
+      if(
+        generation !== streamGeneration
+      ){
+
+        return;
+      }
+
+      console.warn(
+        "[Firebase] Stream error"
+      );
+
       requestOfflineUI();
-      if(!reconnectTimer)reconnectTimer=setTimeout(()=>{
-        reconnectTimer=null;connectStream();
-      },RECONNECT_MS);
+
+      /*
+       * Close and reconnect using
+       * our own reconnect timer.
+       */
+
+      closeStream();
+
+      scheduleReconnect();
+
     };
-  }catch{
+
+  }catch(error){
+
+    console.warn(
+      "[Firebase] Stream failed",
+      error
+    );
+
     requestOfflineUI();
-    if(!reconnectTimer)reconnectTimer=setTimeout(()=>{
-      reconnectTimer=null;connectStream();
-    },RECONNECT_MS);
+
+    scheduleReconnect();
+
   }
 }
+
+/* ============================================================
+   INITIAL FIREBASE FETCH
+============================================================ */
 
 async function initialFetch(){
-  if(TEST_MODE||initialFetchInFlight)return;
-  initialFetchInFlight=true;
-  const version=streamVersion;
+
+  if(TEST_MODE){
+
+    return;
+  }
+
+  if(initialFetchInFlight){
+
+    return;
+  }
+
+  initialFetchInFlight = true;
+
+  const version =
+    streamVersion;
+
+  let metaReceived = false;
+
   try{
-    const start=Date.now();
-    const r=await fetch(QUEUE_URL,{cache:"no-store"});
-    const end=Date.now();
-    syncTimeFromResponse(r,start,end);
-    if(!r.ok)throw Error("Firebase fetch failed");
-    const data=await r.json();
-    if(version!==streamVersion)return;
-    if(data&&typeof data==="object"){
-      if("current_ticket" in data)setTicket(data.current_ticket);
-      applyMeta(data.meta??null);
-    }else applyMeta(null);
-  }catch{}
-  finally{initialFetchInFlight=false}
+
+    const start = Date.now();
+
+    const response =
+      await fetch(
+        QUEUE_URL,
+        {
+          cache:"no-store"
+        }
+      );
+
+    const end = Date.now();
+
+    updateServerTimeFromResponse(
+      response,
+      start,
+      end
+    );
+
+    if(!response.ok){
+
+      throw new Error(
+        "Initial Firebase fetch failed"
+      );
+    }
+
+    const data =
+      await response.json();
+
+    /*
+     * Ignore old HTTP snapshot
+     * if SSE already delivered newer data.
+     */
+
+    if(version !== streamVersion){
+
+      return;
+    }
+
+    if(
+      data &&
+      typeof data === "object"
+    ){
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          data,
+          "current_ticket"
+        )
+      ){
+
+        setTicket(
+          data.current_ticket
+        );
+
+      }
+
+      if(
+        Object.prototype.hasOwnProperty.call(
+          data,
+          "meta"
+        )
+      ){
+
+        applyMetaObject(
+          data.meta
+        );
+
+        metaReceived = true;
+
+      }
+    }
+
+  }catch(error){
+
+    console.warn(
+      "[Firebase] Initial fetch failed",
+      error
+    );
+
+  }finally{
+
+    initialFetchInFlight = false;
+
+  }
+
+  if(
+    !metaReceived &&
+    !state.metaLoaded
+  ){
+
+    await fetchMetaOnce();
+
+  }
+
+  evaluateClosedState();
+
 }
 
-document.addEventListener("visibilitychange",async()=>{
-  if(notificationsGranted())hideNotificationPopup();
-  if(!TEST_MODE&&document.visibilityState==="visible"){
-    await initialFetch();
-    if(!es||es.readyState!==EventSource.OPEN)connectStream();
-  }
-  if(state.trackingEnabled&&!state.systemClosed)startPolling();
-  else stopPolling();
-});
+/* ============================================================
+   PERIODIC STATUS CHECK
+============================================================ */
 
-let reminderTimer=null;
+function startStatusChecks(){
+
+  if(statusCheckTimer){
+
+    clearInterval(
+      statusCheckTimer
+    );
+
+  }
+
+  statusCheckTimer = setInterval(
+    ()=>{
+
+      if(TEST_MODE){
+
+        setSystemClosed(false);
+
+        return;
+      }
+
+      evaluateClosedState();
+
+      /*
+       * Resynchronize server clock
+       * periodically when possible.
+       */
+
+      if(
+        Date.now()-lastServerTimeSync >=
+        5*60*1000
+      ){
+
+        fetchServerOffset().catch(()=>{});
+
+      }
+
+    },
+    CHECK_MS
+  );
+
+}
+
+/* ============================================================
+   VISIBILITY CHANGE
+============================================================ */
+
+document.addEventListener(
+  "visibilitychange",
+  async()=>{
+
+    if(notificationsGranted()){
+
+      hideNotificationPopup();
+
+    }
+
+    if(TEST_MODE){
+
+      if(
+        state.trackingEnabled &&
+        !state.systemClosed
+      ){
+
+        startPolling();
+
+      }else{
+
+        stopPolling();
+
+      }
+
+      return;
+    }
+
+    if(
+      document.visibilityState === "visible"
+    ){
+
+      await fetchServerOffset();
+
+      await initialFetch();
+
+      /*
+       * Reconnect if stream is missing.
+       * Do not unnecessarily replace
+       * a healthy connection.
+       */
+
+      if(
+        !es ||
+        es.readyState !== EventSource.OPEN
+      ){
+
+        connectStream();
+
+      }
+    }
+
+    if(
+      state.trackingEnabled &&
+      !state.systemClosed
+    ){
+
+      startPolling();
+
+    }else{
+
+      stopPolling();
+
+    }
+  }
+);
+
+/* ============================================================
+   BROWSER REMINDER
+============================================================ */
+
 function showBrowserReminder(){
-  try{
-    if(localStorage.getItem(REMINDER_KEY)==="1")return;
-    localStorage.setItem(REMINDER_KEY,"1");
-  }catch{}
-  browserReminder.classList.add("show");
-  clearTimeout(reminderTimer);
-  reminderTimer=setTimeout(hideBrowserReminder,15000);
-}
-function hideBrowserReminder(){
-  clearTimeout(reminderTimer);
-  browserReminder.classList.remove("show");
-}
 
-const testSim={ticket:1,autoTimer:null};
-function testSetTicket(value){
-  const n=Math.max(1,Math.min(999,Math.floor(Number(value)||1)));
-  testSim.ticket=n;
-  testTicketInput.value=n;
-  setTicket(n);
-  try{localStorage.setItem("queue_test_ticket_v1",String(n))}catch{}
-}
-function stopTestAuto(){
-  if(testSim.autoTimer){clearInterval(testSim.autoTimer);testSim.autoTimer=null}
-}
-function startTestAuto(){
-  stopTestAuto();
-  const sec=Math.max(1,Math.floor(Number(testAutoPeriod.value)||5));
-  testSim.autoTimer=setInterval(()=>{
-    testSetTicket(testSim.ticket>=999?1:testSim.ticket+1);
-  },sec*1000);
-}
-function initTestMode(){
-  testPanel.hidden=false;
-  state.metaLoaded=true;
-  state.serverOffset=0;
-  state.systemClosed=false;
-  setOnline(true);
-  let saved=1;
-  try{saved=Number(localStorage.getItem("queue_test_ticket_v1"))||1}catch{}
-  testSetTicket(saved);
-  testApplyBtn.addEventListener("click",()=>testSetTicket(testTicketInput.value));
-  testDecBtn.addEventListener("click",()=>testSetTicket(testSim.ticket-1));
-  testIncBtn.addEventListener("click",()=>testSetTicket(testSim.ticket>=999?1:testSim.ticket+1));
-  testTicketInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter")testSetTicket(testTicketInput.value);
-  });
-  testAutoToggle.addEventListener("change",()=>{
-    if(testAutoToggle.checked)startTestAuto();
-    else stopTestAuto();
-  });
-  testAutoPeriod.addEventListener("input",()=>{
-    if(testAutoToggle.checked)startTestAuto();
-  });
-  updateStatusUI();
-}
+  if(!browserReminder){
 
-window.addEventListener("pagehide",()=>{
-  closeStream();
-  if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null}
-  cancelOfflineUI();
-  stopPolling();
-});
-window.addEventListener("pageshow",event=>{
-  if(event.persisted&&!TEST_MODE){
-    initialFetch();
-    connectStream();
-    if(state.trackingEnabled&&!state.systemClosed)startPolling();
+    return;
   }
-});
+
+  try{
+
+    if(
+      localStorage.getItem(
+        BROWSER_REMINDER_SEEN_KEY
+      ) === "1"
+    ){
+
+      return;
+    }
+
+  }catch{}
+
+  try{
+
+    localStorage.setItem(
+      BROWSER_REMINDER_SEEN_KEY,
+      "1"
+    );
+
+  }catch{}
+
+  if(browserReminderTimer){
+
+    clearTimeout(
+      browserReminderTimer
+    );
+
+    browserReminderTimer = null;
+
+  }
+
+  browserReminder.classList.add(
+    "show"
+  );
+
+  /*
+   * Automatically hide after
+   * 15 seconds.
+   */
+
+  browserReminderTimer = setTimeout(
+    ()=>{
+
+      hideBrowserReminder();
+
+    },
+    15000
+  );
+
+}
+
+function hideBrowserReminder(){
+
+  if(browserReminderTimer){
+
+    clearTimeout(
+      browserReminderTimer
+    );
+
+    browserReminderTimer = null;
+
+  }
+
+  if(browserReminder){
+
+    browserReminder.classList.remove(
+      "show"
+    );
+
+  }
+}
+
+/* ============================================================
+   TEST MODE
+============================================================ */
+
+const testSim = {
+
+  ticket:1,
+
+  heartbeatTimer:null,
+
+  autoTimer:null,
+
+  LS_KEY_TICKET:
+    "queue_test_ticket_v1"
+
+};
+
+/* ============================================================
+   TEST STORAGE
+============================================================ */
+
+function testLoadTicket(){
+
+  try{
+
+    const saved =
+      Number(
+        localStorage.getItem(
+          testSim.LS_KEY_TICKET
+        )
+      );
+
+    if(
+      Number.isSafeInteger(saved) &&
+      saved >= 1 &&
+      saved <= 999
+    ){
+
+      return saved;
+    }
+
+  }catch{}
+
+  return 1;
+}
+
+function testSaveTicket(){
+
+  try{
+
+    localStorage.setItem(
+      testSim.LS_KEY_TICKET,
+      String(testSim.ticket)
+    );
+
+  }catch{}
+}
+
+/* ============================================================
+   TEST SET TICKET
+============================================================ */
+
+function testSetTicket(n){
+
+  const number =
+    Math.floor(Number(n) || 1);
+
+  const value =
+    Math.max(
+      1,
+      Math.min(
+        999,
+        number
+      )
+    );
+
+  testSim.ticket = value;
+
+  if(testTicketInput){
+
+    testTicketInput.value =
+      String(value);
+
+  }
+
+  setTicket(value);
+
+  testSaveTicket();
+
+}
+
+/* ============================================================
+   TEST META
+============================================================ */
+
+function testTouchMeta(){
+
+  const now =
+    serverNow();
+
+  state.esp32_last_seen_ms = now;
+
+  state.last_request_ms = now;
+
+  state.metaLoaded = true;
+
+  setSystemClosed(false);
+
+}
+
+/* ============================================================
+   TEST HEARTBEAT
+============================================================ */
+
+function startTestHeartbeat(){
+
+  stopTestHeartbeat();
+
+  testSim.heartbeatTimer = setInterval(
+    testTouchMeta,
+    20000
+  );
+
+  testTouchMeta();
+
+}
+
+function stopTestHeartbeat(){
+
+  if(testSim.heartbeatTimer){
+
+    clearInterval(
+      testSim.heartbeatTimer
+    );
+
+    testSim.heartbeatTimer = null;
+
+  }
+}
+
+/* ============================================================
+   TEST AUTO INCREMENT
+============================================================ */
+
+function startTestAutoIncrement(){
+
+  stopTestAutoIncrement();
+
+  const sec =
+    Math.max(
+      1,
+      Math.floor(
+        Number(testAutoPeriod?.value) || 5
+      )
+    );
+
+  testSim.autoTimer = setInterval(
+    ()=>{
+
+      const next =
+        testSim.ticket >= 999
+          ? 1
+          : testSim.ticket+1;
+
+      testSetTicket(next);
+
+    },
+    sec*1000
+  );
+
+}
+
+function stopTestAutoIncrement(){
+
+  if(testSim.autoTimer){
+
+    clearInterval(
+      testSim.autoTimer
+    );
+
+    testSim.autoTimer = null;
+
+  }
+}
+
+/* ============================================================
+   INITIALIZE TEST MODE
+============================================================ */
+
+function initTestMode(){
+
+  if(testPanel){
+
+    testPanel.hidden = false;
+
+  }
+
+  setOnline(true);
+
+  state.metaLoaded = true;
+
+  state.serverOffset = 0;
+
+  state.serverTimeAvailable = true;
+
+  startTestHeartbeat();
+
+  testSetTicket(
+    testLoadTicket()
+  );
+
+  testApplyBtn?.addEventListener(
+    "click",
+    ()=>{
+
+      testSetTicket(
+        testTicketInput.value
+      );
+
+    }
+  );
+
+  testDecBtn?.addEventListener(
+    "click",
+    ()=>{
+
+      const next =
+        testSim.ticket <= 1
+          ? 1
+          : testSim.ticket-1;
+
+      testSetTicket(next);
+
+    }
+  );
+
+  testIncBtn?.addEventListener(
+    "click",
+    ()=>{
+
+      const next =
+        testSim.ticket >= 999
+          ? 1
+          : testSim.ticket+1;
+
+      testSetTicket(next);
+
+    }
+  );
+
+  testTicketInput?.addEventListener(
+    "keydown",
+    event=>{
+
+      if(event.key === "Enter"){
+
+        testSetTicket(
+          testTicketInput.value
+        );
+
+      }
+    }
+  );
+
+  testAutoToggle?.addEventListener(
+    "change",
+    ()=>{
+
+      if(testAutoToggle.checked){
+
+        startTestAutoIncrement();
+
+      }else{
+
+        stopTestAutoIncrement();
+
+      }
+    }
+  );
+
+  testAutoPeriod?.addEventListener(
+    "input",
+    ()=>{
+
+      if(testAutoToggle?.checked){
+
+        startTestAutoIncrement();
+
+      }
+    }
+  );
+
+  setSystemClosed(false);
+
+  renderTicketNumber();
+
+  updateStatusUI();
+
+  setInputsFrozen(false);
+
+  updateThresholdConstraints();
+
+}
+
+/* ============================================================
+   PAGE CLEANUP
+============================================================ */
+
+window.addEventListener(
+  "pagehide",
+  ()=>{
+
+    /*
+     * Stop network listeners.
+     *
+     * Browser will initialize again
+     * when page is loaded normally.
+     */
+
+    closeStream();
+
+    cancelReconnect();
+
+    cancelOfflineUI();
+
+    stopPolling();
+
+  }
+);
+
+/* ============================================================
+   PAGE RESTORE FROM BFCache
+============================================================ */
+
+window.addEventListener(
+  "pageshow",
+  event=>{
+
+    if(
+      event.persisted &&
+      !TEST_MODE
+    ){
+
+      initialFetch().catch(()=>{});
+
+      connectStream();
+
+      if(
+        state.trackingEnabled &&
+        !state.systemClosed
+      ){
+
+        startPolling();
+
+      }
+    }
+  }
+);
+
+/* ============================================================
+   START APPLICATION
+============================================================ */
 
 (async function start(){
+
+  console.log(
+    "[QMS WEB] Version 2.1"
+  );
+
+  /* ========================================================
+     LOAD SETTINGS
+  ======================================================== */
+
   loadSettings();
-  thresholdInput.value=savedThreshold;
-  setStatus("Connexion en cours...","جارٍ الاتصال...");
-  registerServiceWorker();
-  if(TEST_MODE){initTestMode();return}
-  setInterval(()=>{
-    evaluateClosedState();
-    if(Date.now()-lastTimeSyncAttempt>=5*60*1000)fetchServerOffset();
-  },CHECK_MS);
+
+  restoreSavedThreshold();
+
+  /* ========================================================
+     INITIAL STATUS
+  ======================================================== */
+
+  setStatus(
+    "Connexion en cours...",
+    "جارٍ الاتصال..."
+  );
+
+  /* ========================================================
+     SERVICE WORKER
+  ======================================================== */
+
+  registerServiceWorker().catch(()=>{});
+
+  /* ========================================================
+     STATUS TIMER
+  ======================================================== */
+
+  startStatusChecks();
+
+  /* ========================================================
+     TEST MODE
+  ======================================================== */
+
+  if(TEST_MODE){
+
+    initTestMode();
+
+    return;
+  }
+
+  /* ========================================================
+     SERVER TIME
+  ======================================================== */
+
   await fetchServerOffset();
+
+  /* ========================================================
+     INITIAL FIREBASE FETCH
+  ======================================================== */
+
   await initialFetch();
+
+  /* ========================================================
+     FIREBASE STREAM
+  ======================================================== */
+
   connectStream();
+
+  /* ========================================================
+     RENDER
+  ======================================================== */
+
   renderTicketNumber();
+
   updateStatusUI();
+
+  setInputsFrozen(
+    state.systemClosed
+  );
+
+  updateThresholdConstraints();
+
+  console.log(
+    "[QMS WEB] Startup complete"
+  );
+
 })();
+
+/* ============================================================
+   END QMS WEB CLIENT V2.1
+============================================================ */
+
 </script>
+
 </body>
 </html>
