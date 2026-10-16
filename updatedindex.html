@@ -128,6 +128,10 @@ header p {
     background: var(--red);
 }
 
+.status-dot.warning {
+    background: var(--orange);
+}
+
 .auth-card {
     text-align: center;
 }
@@ -287,35 +291,12 @@ button:disabled {
     font-size: 14px;
 }
 
-.ticket-status.confirmed {
-    background: #fff7ed;
-    color: #9a3412;
-}
-
-.ticket-status.arrived {
-    background: #dcfce7;
-    color: #166534;
-}
-
-.ticket-status.called {
-    background: #dbeafe;
-    color: #1d4ed8;
-}
-
-.ticket-status.skipped {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.ticket-status.completed {
-    background: #e2e8f0;
-    color: #334155;
-}
-
-.ticket-status.rejected {
-    background: #fee2e2;
-    color: #991b1b;
-}
+.ticket-status.confirmed { background: #fff7ed; color: #9a3412; }
+.ticket-status.arrived   { background: #dcfce7; color: #166534; }
+.ticket-status.called    { background: #dbeafe; color: #1d4ed8; }
+.ticket-status.skipped   { background: #fee2e2; color: #991b1b; }
+.ticket-status.completed { background: #e2e8f0; color: #334155; }
+.ticket-status.rejected  { background: #fee2e2; color: #991b1b; }
 
 .error-message {
     display: none;
@@ -326,6 +307,19 @@ button:disabled {
     margin-top: 15px;
     font-size: 14px;
     line-height: 1.6;
+}
+
+.warning-banner {
+    display: none;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 14px;
+    border-radius: 12px;
+    margin-top: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
 }
 
 .info-card {
@@ -398,7 +392,14 @@ footer {
     <section class="card reservation-card" id="reservationSection">
         <h2>Réservation en ligne</h2>
         <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
+        
         <button class="btn-primary" id="reserveButton" disabled>RÉSERVER UN TICKET</button>
+        
+        <div class="warning-banner" id="printerOfflineBanner">
+            ⚠️ <strong>Service temporairement suspendu :</strong><br>
+            La borne d'impression est actuellement hors ligne. Veuillez patienter ou prendre votre ticket directement sur place.
+        </div>
+
         <div class="error-message" id="reservationError"></div>
     </section>
 
@@ -420,7 +421,7 @@ footer {
 
         <p class="ticket-message">
             Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>
-            La borne imprimera votre ticket avec le numéro réservé et votre arrivée sera confirmée automatiquement.<br><br>
+            La borne imprimera votre ticket avec le numéro réservé.<br><br>
             <strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération de votre ticket, votre réservation sera annulée.
         </p>
     </section>
@@ -430,7 +431,7 @@ footer {
         <strong>Informations importantes</strong><br><br>
         • La réservation vous attribue une place dans la file d'attente.<br>
         • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
-        • Vous pouvez refaire une nouvelle réservation une fois votre tour passé.
+        • La réservation est automatiquement suspendue si la borne est éteinte.
     </section>
 
 </main>
@@ -475,6 +476,7 @@ const connectionStatusEl   = document.getElementById("connectionStatus");
 const statusDotEl          = document.getElementById("statusDot");
 const reserveButton        = document.getElementById("reserveButton");
 const reservationError     = document.getElementById("reservationError");
+const printerOfflineBanner = document.getElementById("printerOfflineBanner");
 const reservationSection   = document.getElementById("reservationSection");
 const ticketSection        = document.getElementById("ticketSection");
 const myTicketEl           = document.getElementById("myTicket");
@@ -490,6 +492,12 @@ let waitingCount = null;
 let currentUser = null;
 let authReady = false;
 let queueConnected = false;
+
+// Kill Switch States from ESP32 Master
+let serviceAvailable = false;
+let printerOnline = false;
+let printerStatus = 0;
+
 const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000;
 let lastMasterHeartbeat = 0;
 let firebaseDataAvailable = false;
@@ -508,18 +516,28 @@ function formatNumber(number) {
     return String(Math.trunc(n)).padStart(3, "0");
 }
 
-function setConnectionStatus(online) {
-    queueConnected = online;
-    if (online) {
-        connectionStatusEl.textContent = "Données disponibles";
-        statusDotEl.className = "status-dot online";
-        currentTicketEl.textContent = formatNumber(currentTicket);
-        waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
-    } else {
-        connectionStatusEl.textContent = "Connexion indisponible";
+function setConnectionStatus(masterOnline) {
+    queueConnected = masterOnline;
+
+    if (!masterOnline) {
+        connectionStatusEl.textContent = "Système central déconnecté";
         statusDotEl.className = "status-dot offline";
         currentTicketEl.textContent = "---";
         waitingCountEl.textContent = "--";
+    } else {
+        currentTicketEl.textContent = formatNumber(currentTicket);
+        waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
+
+        if (!printerOnline) {
+            connectionStatusEl.textContent = "Borne d'accueil hors ligne";
+            statusDotEl.className = "status-dot warning";
+        } else if (printerStatus !== 0) {
+            connectionStatusEl.textContent = "Borne : Papier épuisé";
+            statusDotEl.className = "status-dot warning";
+        } else {
+            connectionStatusEl.textContent = "Service disponible";
+            statusDotEl.className = "status-dot online";
+        }
     }
     updateReserveButton();
 }
@@ -538,18 +556,25 @@ function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const savedReservation = userLoggedIn ? loadReservation() : null;
 
-    // ACTIVE STATUSES: Once a ticket is CALLED or SKIPPED, it is NO LONGER active, allowing a fresh reservation
-    const activeStatuses = [
-        "pending",
-        "confirmed",
-        "reserved",
-        "arrived",
-        "waiting"
-    ];
-
+    const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
     const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status);
 
-    reserveButton.disabled = !queueConnected || reservationInProgress || !userLoggedIn || hasActiveReservation;
+    // KILL SWITCH: Both Master AND Printer must be online and healthy
+    const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
+
+    // Banner visibility
+    if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
+        printerOfflineBanner.style.display = "block";
+        if (!printerOnline) {
+            printerOfflineBanner.innerHTML = "⚠️ <strong>Borne d'impression hors ligne :</strong><br>Le guichet physique n'est pas connecté. Les réservations en ligne sont suspendues.";
+        } else if (printerStatus !== 0) {
+            printerOfflineBanner.innerHTML = "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.";
+        }
+    } else {
+        printerOfflineBanner.style.display = "none";
+    }
+
+    reserveButton.disabled = !isHardwareReady || reservationInProgress || !userLoggedIn || hasActiveReservation;
 
     if (reservationInProgress) {
         reserveButton.textContent = "RÉSERVATION EN COURS...";
@@ -557,6 +582,14 @@ function updateReserveButton() {
         reserveButton.textContent = "CONNECTEZ-VOUS POUR RÉSERVER";
     } else if (hasActiveReservation) {
         reserveButton.textContent = "VOUS AVEZ DÉJÀ UNE RÉSERVATION";
+    } else if (!queueConnected) {
+        reserveButton.textContent = "SYSTÈME HORS LIGNE";
+    } else if (!printerOnline) {
+        reserveButton.textContent = "BORNE HORS LIGNE (RÉSERVATION FERMÉE)";
+    } else if (printerStatus !== 0) {
+        reserveButton.textContent = "PAPIER ÉPUISÉ (RÉSERVATION FERMÉE)";
+    } else if (!serviceAvailable) {
+        reserveButton.textContent = "SERVICE MOMENTANÉMENT SUSPENDU";
     } else {
         reserveButton.textContent = "RÉSERVER UN TICKET";
     }
@@ -588,7 +621,11 @@ onValue(queueRef, (snapshot) => {
 
     currentTicket = Number(data.current_ticket ?? 0);
     currentConsole = Number(data.current_console ?? 0);
-    currentTicketEl.textContent = formatNumber(currentTicket);
+
+    // READ PRINTER & SERVICE HEALTH FROM FIREBASE
+    serviceAvailable = (data.service_available === true);
+    printerOnline    = (data.printer_online === true);
+    printerStatus    = Number(data.printer_status ?? 0);
 
     const lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
     if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
@@ -601,7 +638,6 @@ onValue(queueRef, (snapshot) => {
         waitingCount = null;
     }
 
-    waitingCountEl.textContent = waitingCount !== null ? waitingCount : "--";
     lastMasterHeartbeat = Number(data.meta?.esp32_last_seen_ms ?? 0);
     firebaseDataAvailable = true;
     checkMasterStatus();
@@ -644,14 +680,11 @@ function showReservation(reservation) {
     const status = reservation.status || "pending";
     updateReservationStatus(status);
 
-    // If status is called or skipped, show the button to make a new reservation
     if (expiredStatuses.includes(status)) {
         newReservationButton.style.display = "block";
-        if (status === "called") {
-            newReservationButton.textContent = "FAIRE UNE NOUVELLE RÉSERVATION";
-        } else {
-            newReservationButton.textContent = "RÉSERVER À NOUVEAU";
-        }
+        newReservationButton.textContent = (status === "called") 
+            ? "FAIRE UNE NOUVELLE RÉSERVATION" 
+            : "RÉSERVER À NOUVEAU";
     } else {
         newReservationButton.style.display = "none";
     }
@@ -722,7 +755,6 @@ function watchReservation(requestRef) {
         if (data.user_id !== ownerUid) return;
 
         const status = data.status || "pending";
-
         if (status === "pending") {
             reservationInProgress = true;
             updateReserveButton();
@@ -771,7 +803,13 @@ async function createReservation() {
     const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
     const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status);
 
-    if (!authReady || !currentUser || !queueConnected || reservationInProgress || hasActiveReservation) {
+    // STRICT KILL-SWITCH ENFORCEMENT
+    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+        showError("La borne d'accueil est déconnectée. Impossible de réserver pour le moment.");
+        return;
+    }
+
+    if (!authReady || !currentUser || reservationInProgress || hasActiveReservation) {
         return;
     }
 
@@ -800,7 +838,6 @@ async function createReservation() {
     }
 }
 
-// Allows customer to start a new reservation once called or skipped
 newReservationButton.addEventListener("click", () => {
     if (!currentUser) return;
     const uid = currentUser.uid;
