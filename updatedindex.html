@@ -430,10 +430,10 @@ footer {
         <div class="error-message" id="reservationError"></div>
     </section>
 
-    <!-- 2 (بديل). قصاصة التذكرة المحجوزة -->
+    <!-- 2 (بديل). بطاقة التذكرة المحجوزة -->
     <section class="card ticket-card" id="ticketSection">
         <div class="info-banner" id="duplicateNotice">
-            ℹ️ <strong>Réservation active trouvée :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
+            ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
         </div>
 
         <h2 id="ticketTitle">RÉSERVATION CONFIRMÉE</h2>
@@ -552,13 +552,11 @@ const HEARTBEAT_TIMEOUT_MS = 200 * 1000;
 let lastMasterHeartbeat = 0;
 let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
-let unsubscribeReservation = null;
 
-const STORAGE_PREFIX = "poste_elamal_reservation_";
-const PENDING_PREFIX = "poste_elamal_pending_";
+let unsubscribeDirectTicket = null;
+let unsubscribeRequestRef = null;
 
-function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
-function getPendingKey(uid)     { return PENDING_PREFIX + uid; }
+let activeUserTicketData = null;
 
 function formatNumber(number) {
     const n = Number(number);
@@ -574,44 +572,6 @@ function isTicketOvertaken(userTicket, curTicket) {
 
     const passedDistance = (c >= u) ? (c - u) : (999 - u + c);
     return (passedDistance > 0 && passedDistance <= 450);
-}
-
-async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
-    if (!currentUser || !res) return;
-    const uid = currentUser.uid;
-    const oldTicketNum = formatNumber(res.ticket);
-    const wasAlreadyServed = (res.status === "called" || res.status === "completed");
-    const isPhysicalInHall = (res.status === "arrived" || res.status === "waiting");
-
-    if (unsubscribeReservation) {
-        unsubscribeReservation();
-        unsubscribeReservation = null;
-    }
-
-    try {
-        await set(ref(db, `user_active_booking/${uid}`), null);
-    } catch (e) {}
-
-    if (res.id && !wasAlreadyServed && !isPhysicalInHall) {
-        try {
-            await set(ref(db, `reservation_requests/${res.id}/status`), "skipped");
-        } catch (e) {
-            console.warn("Could not patch status to skipped:", e);
-        }
-    }
-
-    localStorage.removeItem(getReservationKey(uid));
-    localStorage.removeItem(getPendingKey(uid));
-    resetUserReservationUI();
-
-    if (!wasAlreadyServed && !isPhysicalInHall) {
-        if (reason === "overtaken") {
-            showError(`Votre ticket (#${oldTicketNum}) est dépassé (Guichet au #${formatNumber(currentTicket)}). Vous pouvez prendre un nouveau ticket.`);
-        } else {
-            showError(`Votre ancienne réservation (#${oldTicketNum}) a expiré.`);
-        }
-    }
-    updateReserveButton();
 }
 
 function setConnectionStatus(masterOnline) {
@@ -658,44 +618,65 @@ function checkMasterStatus() {
     setConnectionStatus(isOnline);
 }
 
-let clientDisconnectTimer = null;
-
 onValue(ref(db, ".info/connected"), (snapshot) => {
-    const isConnected = (snapshot.val() === true);
-    
-    if (!isConnected) {
-        if (!clientDisconnectTimer) {
-            clientDisconnectTimer = setTimeout(() => {
-                isClientInternetConnected = false;
-                connectionStatusEl.textContent = "Connexion internet perdue...";
-                statusDotEl.className = "status-dot warning";
-                clientDisconnectTimer = null;
-            }, 4000);
+    isClientInternetConnected = (snapshot.val() === true);
+    checkMasterStatus();
+});
+
+onValue(ref(db, ".info/serverTimeOffset"), (snapshot) => {
+    serverTimeOffset = Number(snapshot.val() ?? 0);
+    checkMasterStatus();
+});
+
+const queueRef = ref(db, "queue");
+onValue(queueRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+        firebaseDataAvailable = false;
+        checkMasterStatus();
+        return;
+    }
+
+    currentTicket = Number(data.current_ticket ?? 0);
+    currentConsole = Number(data.current_console ?? 0);
+
+    serviceAvailable = (data.service_available === true);
+    printerOnline    = (data.printer_online === true);
+    printerStatus    = Number(data.printer_status ?? 0);
+    lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
+
+    if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
+        if (lastIssuedTicket >= currentTicket) {
+            waitingCount = lastIssuedTicket - currentTicket;
+        } else if (lastIssuedTicket < 150 && currentTicket > 850) {
+            waitingCount = (999 - currentTicket) + lastIssuedTicket;
+        } else {
+            waitingCount = 0;
         }
     } else {
-        if (clientDisconnectTimer) {
-            clearTimeout(clientDisconnectTimer);
-            clientDisconnectTimer = null;
-        }
-        isClientInternetConnected = true;
-        checkMasterStatus();
+        waitingCount = null;
     }
+
+    lastMasterHeartbeat = Number(data.meta?.esp32_last_seen_ms ?? 0);
+    firebaseDataAvailable = true;
+    checkMasterStatus();
+
+    // فحص إذا تم تجاوز تذكرة الزبون المعروضة
+    if (activeUserTicketData && activeUserTicketData.ticket > 0) {
+        if (isTicketOvertaken(activeUserTicketData.ticket, currentTicket)) {
+            updateReservationStatus("skipped");
+        } else if (currentTicket === activeUserTicketData.ticket) {
+            updateReservationStatus("called");
+        }
+    }
+}, (error) => {
+    firebaseDataAvailable = false;
+    checkMasterStatus();
 });
 
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
-    const savedReservation = userLoggedIn ? loadReservation() : null;
-
-    const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
-    let hasActiveReservation = false;
-
-    if (savedReservation && activeStatuses.includes(savedReservation.status)) {
-        if (currentTicket > 0 && isTicketOvertaken(savedReservation.ticket, currentTicket)) {
-            hasActiveReservation = false;
-        } else {
-            hasActiveReservation = true;
-        }
-    }
+    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting", "pending"].includes(activeUserTicketData.status);
 
     const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
 
@@ -741,98 +722,19 @@ function clearError() {
     reservationError.textContent = "";
 }
 
-onValue(ref(db, ".info/serverTimeOffset"), (snapshot) => {
-    serverTimeOffset = Number(snapshot.val() ?? 0);
-    checkMasterStatus();
-});
-
-const queueRef = ref(db, "queue");
-onValue(queueRef, (snapshot) => {
-    const data = snapshot.val();
-    if (!data) {
-        firebaseDataAvailable = false;
-        checkMasterStatus();
-        return;
-    }
-
-    currentTicket = Number(data.current_ticket ?? 0);
-    currentConsole = Number(data.current_console ?? 0);
-
-    serviceAvailable = (data.service_available === true);
-    printerOnline    = (data.printer_online === true);
-    printerStatus    = Number(data.printer_status ?? 0);
-    lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
-
-    if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
-        if (lastIssuedTicket >= currentTicket) {
-            waitingCount = lastIssuedTicket - currentTicket;
-        } else if (lastIssuedTicket < 150 && currentTicket > 850) {
-            waitingCount = (999 - currentTicket) + lastIssuedTicket;
-        } else {
-            waitingCount = 0;
-        }
-    } else {
-        waitingCount = null;
-    }
-
-    lastMasterHeartbeat = Number(data.meta?.esp32_last_seen_ms ?? 0);
-    firebaseDataAvailable = true;
-    checkMasterStatus();
-
-    const currentRes = loadReservation();
-    if (currentRes) {
-        const isTooOld = currentRes.saved_at && (Date.now() - currentRes.saved_at > 8 * 3600 * 1000);
-        const overtaken = isTicketOvertaken(currentRes.ticket, currentTicket);
-
-        if (isTooOld) {
-            handleOvertakenOrExpiredReservation(currentRes, "expired");
-        } else if (overtaken) {
-            handleOvertakenOrExpiredReservation(currentRes, "overtaken");
-        } else {
-            showReservation(currentRes);
-        }
-    }
-
-}, (error) => {
-    firebaseDataAvailable = false;
-    checkMasterStatus();
-});
-
-function saveReservation(reservation) {
-    if (!currentUser) return;
-    const data = { 
-        ...reservation, 
-        user_id: currentUser.uid,
-        saved_at: reservation.saved_at || Date.now()
-    };
-    localStorage.setItem(getReservationKey(currentUser.uid), JSON.stringify(data));
-}
-
-function loadReservation() {
-    if (!currentUser) return null;
-    try {
-        const saved = localStorage.getItem(getReservationKey(currentUser.uid));
-        if (!saved) return null;
-        const res = JSON.parse(saved);
-        return (res.user_id === currentUser.uid) ? res : null;
-    } catch (e) {
-        return null;
-    }
-}
-
 function showReservation(reservation, isDuplicateNotice = false) {
+    activeUserTicketData = reservation;
     reservationSection.style.display = "none";
     ticketSection.style.display = "block";
     myTicketEl.textContent = formatNumber(reservation.ticket);
 
-    if (isDuplicateNotice) {
+    if (isDuplicateNotice || reservation.is_duplicate === true) {
         duplicateNoticeEl.style.display = "block";
     } else {
         duplicateNoticeEl.style.display = "none";
     }
 
     let status = reservation.status || "pending";
-
     if (currentTicket > 0 && reservation.ticket === currentTicket) {
         status = "called";
     }
@@ -855,6 +757,7 @@ function showReservation(reservation, isDuplicateNotice = false) {
     } else {
         newReservationButton.style.display = "none";
     }
+    updateReserveButton();
 }
 
 function updateReservationStatus(status) {
@@ -881,7 +784,7 @@ function updateReservationStatus(status) {
             break;
         case "called":
             ticketTitleEl.textContent = "C'EST VOTRE TOUR";
-            myStatusEl.textContent = `Votre numéro (#${formatNumber(currentTicket)}) est appelé au guichet !`;
+            myStatusEl.textContent = `Votre numéro (#${formatNumber(activeUserTicketData?.ticket || currentTicket)}) est appelé au guichet !`;
             myStatusEl.classList.add("called");
             ticketMessageEl.innerHTML = "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.";
             break;
@@ -903,172 +806,8 @@ function updateReservationStatus(status) {
     }
 }
 
-// دالة ذكية وشاملة للبحث واسترجاع التذكرة الأولى النشطة للزبون
-async function findActiveReservation(uid) {
-    if (!uid) return null;
-
-    // 1. الفحص الفوري من المسار المباشر للزبون (سريع جداً ومضمون)
-    try {
-        const userActiveSnap = await get(ref(db, `user_active_booking/${uid}`));
-        if (userActiveSnap.exists()) {
-            const activeMeta = userActiveSnap.val();
-            if (activeMeta && activeMeta.request_id) {
-                const reqSnap = await get(ref(db, `reservation_requests/${activeMeta.request_id}`));
-                if (reqSnap.exists()) {
-                    const reqData = reqSnap.val();
-                    const st = String(reqData.status || "").toLowerCase();
-                    const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
-                    if (activeStatuses.includes(st)) {
-                        const ticketNum = Number(reqData.ticket || 0);
-                        if (!(ticketNum > 0 && currentTicket > 0 && isTicketOvertaken(ticketNum, currentTicket))) {
-                            return { id: activeMeta.request_id, ...reqData, ticket: ticketNum };
-                        }
-                    }
-                }
-            }
-        }
-    } catch (err) {
-        console.warn("User active path check error:", err);
-    }
-
-    // 2. الفحص الشامل لجدول الحجوزات لتجاوز مشكلة الفهارس والذاكرة
-    try {
-        const snapshot = await get(ref(db, "reservation_requests"));
-        if (snapshot.exists()) {
-            const data = snapshot.val();
-            let oldestActiveTicket = null;
-            let oldestTimestamp = Infinity;
-
-            for (const key in data) {
-                const item = data[key];
-                if (!item) continue;
-                const itemUid = item.user_id || item.userId || item.uid;
-                if (itemUid !== uid) continue;
-
-                const st = String(item.status || "").toLowerCase();
-                const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
-                if (!activeStatuses.includes(st)) continue;
-
-                const ticketNum = Number(item.ticket || 0);
-                if (ticketNum > 0 && currentTicket > 0 && isTicketOvertaken(ticketNum, currentTicket)) {
-                    continue;
-                }
-
-                // تجنب التذاكر القديمة المنتهية
-                const createdRaw = Number(item.created_at || item.confirmed_at || 0);
-                const createdMs = (createdRaw > 0 && createdRaw < 10000000000) ? createdRaw * 1000 : createdRaw;
-                if (createdMs > 0 && (Date.now() - createdMs > 12 * 3600 * 1000)) {
-                    continue;
-                }
-
-                const compareTime = createdMs > 0 ? createdMs : 0;
-                if (compareTime < oldestTimestamp || oldestActiveTicket === null) {
-                    oldestTimestamp = compareTime;
-                    oldestActiveTicket = { id: key, ...item, ticket: ticketNum };
-                }
-            }
-
-            if (oldestActiveTicket) {
-                // حفظ الرابط في المسار المباشر لتسريع المرات القادمة
-                try {
-                    await set(ref(db, `user_active_booking/${uid}`), {
-                        request_id: oldestActiveTicket.id,
-                        status: oldestActiveTicket.status,
-                        updated_at: serverTimestamp()
-                    });
-                } catch (e) {}
-                return oldestActiveTicket;
-            }
-        }
-    } catch (err) {
-        console.warn("Full reservation scan error:", err);
-    }
-
-    return null;
-}
-
-function watchReservation(requestRef) {
-    if (!currentUser) return;
-    const ownerUid = currentUser.uid;
-
-    if (unsubscribeReservation) {
-        unsubscribeReservation();
-        unsubscribeReservation = null;
-    }
-
-    unsubscribeReservation = onValue(requestRef, async (snapshot) => {
-        if (!currentUser || currentUser.uid !== ownerUid) return;
-        const data = snapshot.val();
-
-        if (!data) {
-            localStorage.removeItem(getReservationKey(ownerUid));
-            localStorage.removeItem(getPendingKey(ownerUid));
-            reservationInProgress = false;
-            resetUserReservationUI();
-            updateReserveButton();
-            return;
-        }
-
-        if (data.user_id !== ownerUid && data.userId !== ownerUid) return;
-
-        const status = data.status || "pending";
-        if (status === "pending") {
-            reservationInProgress = true;
-            updateReserveButton();
-            return;
-        }
-
-        // في حال تم رفض الطلب لتكراره: جلب الطلب الأصلي فوراً وعرضه للمستخدم
-        if (status === "rejected") {
-            reservationInProgress = false;
-            localStorage.removeItem(getPendingKey(ownerUid));
-            const originalTicket = await findActiveReservation(ownerUid);
-            if (originalTicket) {
-                saveReservation(originalTicket);
-                showReservation(originalTicket, true);
-                watchReservation(ref(db, "reservation_requests/" + originalTicket.id));
-            } else {
-                showError("Votre demande a été refusée ou le service est indisponible.");
-                resetUserReservationUI();
-            }
-            updateReserveButton();
-            return;
-        }
-
-        const ticketNumber = Number(data.ticket);
-        const reservationCode = String(data.code ?? "");
-
-        if (!Number.isInteger(ticketNumber) || ticketNumber < 1 || ticketNumber > 999) {
-            return;
-        }
-
-        const reservation = {
-            id: requestRef.key,
-            ticket: ticketNumber,
-            code: reservationCode,
-            status: status,
-            user_id: ownerUid,
-            saved_at: Date.now()
-        };
-
-        if (isTicketOvertaken(ticketNumber, currentTicket)) {
-            handleOvertakenOrExpiredReservation(reservation, "overtaken");
-            return;
-        }
-
-        saveReservation(reservation);
-        showReservation(reservation);
-        localStorage.removeItem(getPendingKey(ownerUid));
-        reservationInProgress = false;
-        updateReserveButton();
-    }, (error) => {
-        reservationInProgress = false;
-        showError("Erreur de suivi de réservation.");
-        updateReserveButton();
-    });
-}
-
 function resetUserReservationUI() {
+    activeUserTicketData = null;
     reservationSection.style.display = "block";
     ticketSection.style.display = "none";
     duplicateNoticeEl.style.display = "none";
@@ -1079,6 +818,39 @@ function resetUserReservationUI() {
     updateReserveButton();
 }
 
+// دالة الاستماع المباشر لتذكرة الزبون الخاصة به
+function listenToUserDirectTicket(uid) {
+    if (unsubscribeDirectTicket) {
+        unsubscribeDirectTicket();
+        unsubscribeDirectTicket = null;
+    }
+
+    const userTicketRef = ref(db, "user_active_tickets/" + uid);
+    unsubscribeDirectTicket = onValue(userTicketRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+            resetUserReservationUI();
+            return;
+        }
+
+        const status = data.status || "";
+        const ticketNum = Number(data.ticket || 0);
+
+        if (["confirmed", "reserved", "arrived", "waiting"].includes(status)) {
+            if (ticketNum > 0 && currentTicket > 0 && isTicketOvertaken(ticketNum, currentTicket)) {
+                showReservation(data);
+                updateReservationStatus("skipped");
+            } else {
+                showReservation(data, data.is_duplicate === true);
+            }
+        } else if (["called", "skipped", "completed"].includes(status)) {
+            showReservation(data);
+        } else {
+            resetUserReservationUI();
+        }
+    });
+}
+
 async function createReservation() {
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
         showError("La borne d'accueil est déconnectée. Impossible de réserver pour le moment.");
@@ -1087,39 +859,50 @@ async function createReservation() {
 
     if (!authReady || !currentUser || reservationInProgress) return;
 
+    // إذا كان للزبون تذكرة نشطة بالفعل في الشاشة، نظهرها فوراً
+    if (activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status)) {
+        showReservation(activeUserTicketData, true);
+        return;
+    }
+
     clearError();
     reservationInProgress = true;
     updateReserveButton();
 
     try {
-        // فحص مسبق صارم: هل يوجد طلب نشط بالفعل؟ إذا نعم، نظهر تذكرته الأولى فوراً ولا نرسل أي طلب للـ DB
-        const existing = await findActiveReservation(currentUser.uid);
-        if (existing) {
-            reservationInProgress = false;
-            saveReservation(existing);
-            showReservation(existing, true); // إظهار التذكرة الأولى مباشرة مع إشعار التنبيه
-            watchReservation(ref(db, "reservation_requests/" + existing.id));
-            updateReserveButton();
-            return; // إيقاف فوري لمنع إرسال طلب جديد
-        }
-
-        // إذا لم يكن لديه تذكرة سابقة، نفتح بطاقة التذكرة بحالة الانتظار
+        // تحويل الواجهة لبطاقة التذكرة مباشرة في وضع الانتظار
         showReservation({ status: "pending", ticket: 0, code: "" });
 
         const requestsRef = ref(db, "reservation_requests");
         const newRequestRef = push(requestsRef);
-        const newReqId = newRequestRef.key;
 
-        localStorage.setItem(getPendingKey(currentUser.uid), newReqId);
+        if (unsubscribeRequestRef) {
+            unsubscribeRequestRef();
+            unsubscribeRequestRef = null;
+        }
 
-        // ربط في المسار المباشر للزبون فوراً لمنع أي تكرار
-        try {
-            await set(ref(db, `user_active_booking/${currentUser.uid}`), {
-                request_id: newReqId,
-                status: "pending",
-                created_at: serverTimestamp()
-            });
-        } catch (e) {}
+        // الاستماع لاستجابة ESP32 المباشرة على هذا الطلب
+        unsubscribeRequestRef = onValue(newRequestRef, (snap) => {
+            const data = snap.val();
+            if (!data) return;
+
+            if (data.status === "confirmed" || data.status === "arrived") {
+                reservationInProgress = false;
+                showReservation(data, data.is_duplicate === true);
+                if (unsubscribeRequestRef) {
+                    unsubscribeRequestRef();
+                    unsubscribeRequestRef = null;
+                }
+            } else if (data.status === "rejected") {
+                reservationInProgress = false;
+                showError("Votre demande n'a pas pu être traitée.");
+                resetUserReservationUI();
+                if (unsubscribeRequestRef) {
+                    unsubscribeRequestRef();
+                    unsubscribeRequestRef = null;
+                }
+            }
+        });
 
         // إرسال الطلب لـ ESP32
         await set(newRequestRef, {
@@ -1129,7 +912,6 @@ async function createReservation() {
             created_at: serverTimestamp()
         });
 
-        watchReservation(newRequestRef);
     } catch (error) {
         console.error(error);
         reservationInProgress = false;
@@ -1141,19 +923,9 @@ async function createReservation() {
 
 newReservationButton.addEventListener("click", async () => {
     if (!currentUser) return;
-    const uid = currentUser.uid;
-
-    if (unsubscribeReservation) {
-        unsubscribeReservation();
-        unsubscribeReservation = null;
-    }
-
     try {
-        await set(ref(db, `user_active_booking/${uid}`), null);
+        await set(ref(db, `user_active_tickets/${currentUser.uid}`), null);
     } catch (e) {}
-
-    localStorage.removeItem(getReservationKey(uid));
-    localStorage.removeItem(getPendingKey(uid));
     resetUserReservationUI();
 });
 
@@ -1175,46 +947,14 @@ async function loginWithGoogle() {
 reserveButton.addEventListener("click", createReservation);
 googleLoginButton.addEventListener("click", loginWithGoogle);
 
-async function restoreUserReservation() {
-    if (!currentUser) return;
-    const uid = currentUser.uid;
-
-    // 1. أولاً: التحقق المباشر من السحابة (تظهر تذكرتك حتى لو فتحت من جهاز جديد أو متصفح نظيف)
-    const cloudRes = await findActiveReservation(uid);
-    if (cloudRes) {
-        saveReservation(cloudRes);
-        showReservation(cloudRes);
-        watchReservation(ref(db, "reservation_requests/" + cloudRes.id));
-        updateReserveButton();
-        return;
+onAuthStateChanged(auth, (user) => {
+    if (unsubscribeDirectTicket) {
+        unsubscribeDirectTicket();
+        unsubscribeDirectTicket = null;
     }
-
-    // 2. التحقق من التخزين المحلي كخيار إضافي
-    const savedReservation = loadReservation();
-    if (savedReservation && savedReservation.id) {
-        if (currentTicket > 0 && isTicketOvertaken(savedReservation.ticket, currentTicket)) {
-            handleOvertakenOrExpiredReservation(savedReservation, "overtaken");
-            return;
-        }
-        showReservation(savedReservation);
-        watchReservation(ref(db, "reservation_requests/" + savedReservation.id));
-        updateReserveButton();
-        return;
-    }
-
-    // 3. التحقق من وجود طلب معلق
-    const pendingId = localStorage.getItem(getPendingKey(uid));
-    if (pendingId) {
-        reservationInProgress = true;
-        watchReservation(ref(db, "reservation_requests/" + pendingId));
-    }
-    updateReserveButton();
-}
-
-onAuthStateChanged(auth, async (user) => {
-    if (unsubscribeReservation) {
-        unsubscribeReservation();
-        unsubscribeReservation = null;
+    if (unsubscribeRequestRef) {
+        unsubscribeRequestRef();
+        unsubscribeRequestRef = null;
     }
 
     currentUser = user;
@@ -1233,11 +973,9 @@ onAuthStateChanged(auth, async (user) => {
             userPhoto.removeAttribute("src");
             userPhoto.style.display = "none";
         }
-        
-        reserveButton.disabled = true;
-        reserveButton.textContent = "VÉRIFICATION DU COMPTE...";
 
-        await restoreUserReservation();
+        // استرجاع ومراقبة تذكرة المستخدم النشطة في السحابة فوراً
+        listenToUserDirectTicket(user.uid);
     } else {
         loginSection.style.display = "block";
         userSection.style.display = "none";
