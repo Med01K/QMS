@@ -408,7 +408,7 @@ footer {
         </div>
     </section>
 
-    <!-- 2. بطاقة حجز تذكرة (تظهر قبل إتمام الحجز أو عند إلغاء تذكرة متجاوزة) -->
+    <!-- 2. بطاقة حجز تذكرة (تظهر قبل إتمام الحجز أو بعد انتهاء/إلغاء التذكرة) -->
     <section class="card reservation-card" id="reservationSection">
         <h2>Réservation en ligne</h2>
         <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
@@ -555,7 +555,7 @@ function formatNumber(number) {
 }
 
 // ----------------------------------------------------------------------
-// المحرك الرياضي الدقيق لكشف تجاوز الدور (يدعم حتى قفزات الـ 200 رقم والالتفاف)
+// المحرك الرياضي لكشف تجاوز الدور (يدعم حتى قفزات العداد والالتفاف بعد 999)
 // ----------------------------------------------------------------------
 function isTicketOvertaken(userTicket, currentNum) {
     const u = Number(userTicket);
@@ -573,18 +573,22 @@ function isTicketOvertaken(userTicket, currentNum) {
     return (forwardDiff >= 1 && forwardDiff <= 500);
 }
 
-// إلغاء التذكرة المنتهية وتنظيف المتصفح فوراً
+// ----------------------------------------------------------------------
+// معالجة التذاكر المنتهية أو المتجاوزة مع حماية العميل الذي تم نداءه/خدمته
+// ----------------------------------------------------------------------
 async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
     if (!currentUser || !res) return;
     const uid = currentUser.uid;
     const oldTicketNum = formatNumber(res.ticket);
+    const wasAlreadyServed = (res.status === "called" || res.status === "completed");
 
     if (unsubscribeReservation) {
         unsubscribeReservation();
         unsubscribeReservation = null;
     }
 
-    if (res.id) {
+    // لا نقوم بتحويل التذكرة إلى skipped في قاعدة البيانات إذا كان العميل قد نودي عليه أو انتهت خدمته
+    if (res.id && !wasAlreadyServed) {
         try {
             await set(ref(db, `reservation_requests/${res.id}/status`), "skipped");
         } catch (e) {
@@ -592,17 +596,19 @@ async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
         }
     }
 
+    // تنظيف ذاكرة المتصفح للعميل
     localStorage.removeItem(getReservationKey(uid));
     localStorage.removeItem(getPendingKey(uid));
-
     resetUserReservationUI();
 
-    if (reason === "overtaken") {
-        showError(`Votre ticket (#${oldTicketNum}) est dépassé (Guichet au #${formatNumber(currentTicket)}). Vous pouvez prendre un nouveau ticket maintenant.`);
-    } else {
-        showError(`Votre ancienne réservation (#${oldTicketNum}) a expiré. Vous pouvez réserver un nouveau ticket.`);
+    // إظهار التنبيه الأحمر فقط إذا كان العميل قد تم تخطيه فعلياً دون أن ينادى عليه
+    if (!wasAlreadyServed) {
+        if (reason === "overtaken") {
+            showError(`Votre ticket (#${oldTicketNum}) est dépassé (Guichet au #${formatNumber(currentTicket)}). Vous pouvez prendre un nouveau ticket maintenant.`);
+        } else {
+            showError(`Votre ancienne réservation (#${oldTicketNum}) a expiré. Vous pouvez réserver un nouveau ticket.`);
+        }
     }
-
     updateReserveButton();
 }
 
@@ -650,12 +656,31 @@ function checkMasterStatus() {
     setConnectionStatus(isOnline);
 }
 
+// ----------------------------------------------------------------------
+// مراقبة اتصال العميل بالإنترنت مع مؤقت التخميد (Anti-Flicker Debounce)
+// ----------------------------------------------------------------------
+let clientDisconnectTimer = null;
+
 onValue(ref(db, ".info/connected"), (snapshot) => {
-    isClientInternetConnected = (snapshot.val() === true);
-    if (!isClientInternetConnected) {
-        connectionStatusEl.textContent = "Connexion internet perdue...";
-        statusDotEl.className = "status-dot warning";
+    const isConnected = (snapshot.val() === true);
+    
+    if (!isConnected) {
+        // الانتظار 4 ثوانٍ للتأكد من انقطاع الاتصال وتفادي الوميض في شبكات 4G/5G
+        if (!clientDisconnectTimer) {
+            clientDisconnectTimer = setTimeout(() => {
+                isClientInternetConnected = false;
+                connectionStatusEl.textContent = "Connexion internet perdue...";
+                statusDotEl.className = "status-dot warning";
+                clientDisconnectTimer = null;
+            }, 4000);
+        }
     } else {
+        // عند عودة الاتصال نلغي المؤقت فوراً ونعيد فحص حالة الماستر
+        if (clientDisconnectTimer) {
+            clearTimeout(clientDisconnectTimer);
+            clientDisconnectTimer = null;
+        }
+        isClientInternetConnected = true;
         checkMasterStatus();
     }
 });
@@ -677,7 +702,6 @@ function updateReserveButton() {
     let hasActiveReservation = false;
 
     if (savedReservation && activeStatuses.includes(savedReservation.status)) {
-        // إذا كان رقم الشاشة قد تجاوز تذكرته، فهي ليست نشطة بل منتهية
         if (currentTicket > 0 && isTicketOvertaken(savedReservation.ticket, currentTicket)) {
             hasActiveReservation = false;
         } else {
@@ -767,7 +791,7 @@ onValue(queueRef, (snapshot) => {
     firebaseDataAvailable = true;
     checkMasterStatus();
 
-    // فحص شامل لأي تذكرة محفوظة مع كل نبضة أو قفزة رقم في الشاشة
+    // فحص شامل للتذكرة المحفوظة محلياً مع تحديثات الشاشة
     const currentRes = loadReservation();
     if (currentRes) {
         const isTooOld = currentRes.saved_at && (Date.now() - currentRes.saved_at > 8 * 3600 * 1000);
@@ -776,7 +800,6 @@ onValue(queueRef, (snapshot) => {
         if (isTooOld) {
             handleOvertakenOrExpiredReservation(currentRes, "expired");
         } else if (overtaken) {
-            // سواء كانت مطبوعة (arrived) أو غير مطبوعة: طالما تم تجاوزها يُتاح الحجز فوراً
             handleOvertakenOrExpiredReservation(currentRes, "overtaken");
         } else {
             showReservation(currentRes);
@@ -818,7 +841,7 @@ function showReservation(reservation) {
 
     let status = reservation.status || "pending";
 
-    // فحص دور العميل إذا كان هو المنادى عليه الآن
+    // إذا كان الرقم هو المنادى عليه حالياً
     if (currentTicket > 0 && reservation.ticket === currentTicket) {
         status = "called";
     }
@@ -935,7 +958,6 @@ function watchReservation(requestRef) {
             saved_at: Date.now()
         };
 
-        // التحقق فوراً إذا كان رقم التذكرة المستلمة متجاوزاً من الأصل
         if (isTicketOvertaken(ticketNumber, currentTicket)) {
             handleOvertakenOrExpiredReservation(reservation, "overtaken");
             return;
