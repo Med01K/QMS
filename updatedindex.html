@@ -498,7 +498,7 @@ let serviceAvailable = false;
 let printerOnline = false;
 let printerStatus = 0;
 
-const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000;
+const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
 let lastMasterHeartbeat = 0;
 let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
@@ -542,6 +542,7 @@ function setConnectionStatus(masterOnline) {
     updateReserveButton();
 }
 
+// دالة فحص حالة اتصال النظام (تم تصحيح معادلة التوقيت لمنع التذبذب تماماً)
 function checkMasterStatus() {
     if (!firebaseDataAvailable || !lastMasterHeartbeat) {
         setConnectionStatus(false);
@@ -549,7 +550,10 @@ function checkMasterStatus() {
     }
     const serverNow = Date.now() + serverTimeOffset;
     const heartbeatAge = serverNow - lastMasterHeartbeat;
-    setConnectionStatus(heartbeatAge >= 0 && heartbeatAge < HEARTBEAT_TIMEOUT_MS);
+
+    // تم السماح بهامش زمني دقيقة للأمام (-60,000ms) لمنع أي انقطاع لحظي ناتج عن فروقات التوقيت الميلي-ثانوية
+    const isOnline = (heartbeatAge > -60000) && (heartbeatAge < HEARTBEAT_TIMEOUT_MS);
+    setConnectionStatus(isOnline);
 }
 
 function updateReserveButton() {
