@@ -756,49 +756,22 @@ function showReservation(reservation) {
     ticketSection.style.display = "block";
     myTicketEl.textContent = formatNumber(reservation.ticket);
 
-    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
-    if (expiredStatuses.includes(reservation.status)) {
-        myCodeEl.textContent = "----";
-    } else {
-        myCodeEl.textContent = String(reservation.code).padStart(4, "0");
-    }
-
-    const status = reservation.status || "pending";
-    updateReservationStatus(status);
-
-    if (expiredStatuses.includes(status)) {
-        newReservationButton.style.display = "block";
-        newReservationButton.textContent = (status === "called") 
-            ? "FAIRE UNE NOUVELLE RÉSERVATION" 
-            : "RÉSERVER À NOUVEAU";
-    } else {
-        newReservationButton.style.display = "none";
-    }
-}
-
-function showReservation(reservation) {
-    reservationSection.style.display = "none";
-    ticketSection.style.display = "block";
-    myTicketEl.textContent = formatNumber(reservation.ticket);
-
     let status = reservation.status || "pending";
 
     // --- منطق كشف التجاوز الذكي في المتصفح ---
-    // إذا لم يؤكد العميل حضوره، وكان الرقم الجاري قد تجاوز رقم التذكرة
     if (status === "confirmed" || status === "reserved" || status === "pending") {
         if (currentTicket > 0 && reservation.ticket > 0) {
-            // فحص التجاوز مع مراعاة التفاف الأرقام (1-999)
             let isPassed = false;
             if (currentTicket >= reservation.ticket && (currentTicket - reservation.ticket) < 500) {
-                isPassed = true; // تجاوزه بشكل طبيعي (مثلاً الشاشة 312 وتذكرتي 309)
+                isPassed = true;
             } else if (currentTicket < reservation.ticket && (currentTicket + 999 - reservation.ticket) < 500) {
-                isPassed = true; // تجاوزه بعد التفاف العداد حول 999
+                isPassed = true;
             }
 
             if (isPassed) {
-                status = "skipped"; // تحويل الحالة فوراً لتجاوز
+                status = "skipped";
                 reservation.status = "skipped";
-                saveReservation(reservation); // حفظها محلياً لتحديث حالة الزر
+                saveReservation(reservation);
             }
         }
     }
@@ -821,6 +794,8 @@ function showReservation(reservation) {
         newReservationButton.style.display = "none";
     }
 }
+
+
 
 function watchReservation(requestRef) {
     if (!currentUser) return;
