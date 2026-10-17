@@ -492,13 +492,15 @@ let waitingCount = null;
 let currentUser = null;
 let authReady = false;
 let queueConnected = false;
+let isClientInternetConnected = true;
 
 // Kill Switch States from ESP32 Master
 let serviceAvailable = false;
 let printerOnline = false;
 let printerStatus = 0;
 
-const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+// مهلة نبضة الماستر: 2.5 دقيقة لتفادي أي لاغ عابر في الشبكة
+const HEARTBEAT_TIMEOUT_MS = 150 * 1000; 
 let lastMasterHeartbeat = 0;
 let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
@@ -518,6 +520,12 @@ function formatNumber(number) {
 
 function setConnectionStatus(masterOnline) {
     queueConnected = masterOnline;
+
+    if (!isClientInternetConnected) {
+        connectionStatusEl.textContent = "Reconnexion réseau...";
+        statusDotEl.className = "status-dot warning";
+        return;
+    }
 
     if (!masterOnline) {
         connectionStatusEl.textContent = "Système central déconnecté";
@@ -542,7 +550,7 @@ function setConnectionStatus(masterOnline) {
     updateReserveButton();
 }
 
-// دالة فحص حالة اتصال النظام (تم تصحيح معادلة التوقيت لمنع التذبذب تماماً)
+// فحص نبضة الماستر بهامش أمان ضد تقلبات الساعات
 function checkMasterStatus() {
     if (!firebaseDataAvailable || !lastMasterHeartbeat) {
         setConnectionStatus(false);
@@ -551,10 +559,30 @@ function checkMasterStatus() {
     const serverNow = Date.now() + serverTimeOffset;
     const heartbeatAge = serverNow - lastMasterHeartbeat;
 
-    // تم السماح بهامش زمني دقيقة للأمام (-60,000ms) لمنع أي انقطاع لحظي ناتج عن فروقات التوقيت الميلي-ثانوية
     const isOnline = (heartbeatAge > -60000) && (heartbeatAge < HEARTBEAT_TIMEOUT_MS);
     setConnectionStatus(isOnline);
 }
+
+// 1. مراقبة اتصال هاتف العميل نفسه بالإنترنت وفايربيز لمنع التشويش
+onValue(ref(db, ".info/connected"), (snapshot) => {
+    isClientInternetConnected = (snapshot.val() === true);
+    if (!isClientInternetConnected) {
+        connectionStatusEl.textContent = "Connexion internet perdue...";
+        statusDotEl.className = "status-dot warning";
+    } else {
+        checkMasterStatus();
+    }
+});
+
+// 2. معالجة فتح الشاشة بعد النوم (Wake-up / Unfreeze)
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        // نمنح المتصفح مهلة 2 ثوانٍ لجلب البيانات الطازجة قبل إصدار حكم الانقطاع
+        setTimeout(() => {
+            checkMasterStatus();
+        }, 2000);
+    }
+});
 
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
@@ -563,7 +591,6 @@ function updateReserveButton() {
     const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
     const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status);
 
-    // KILL SWITCH: Both Master AND Printer must be online and healthy
     const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
 
     // Banner visibility
@@ -626,7 +653,6 @@ onValue(queueRef, (snapshot) => {
     currentTicket = Number(data.current_ticket ?? 0);
     currentConsole = Number(data.current_console ?? 0);
 
-    // READ PRINTER & SERVICE HEALTH FROM FIREBASE
     serviceAvailable = (data.service_available === true);
     printerOnline    = (data.printer_online === true);
     printerStatus    = Number(data.printer_status ?? 0);
@@ -807,7 +833,6 @@ async function createReservation() {
     const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
     const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status);
 
-    // STRICT KILL-SWITCH ENFORCEMENT
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
         showError("La borne d'accueil est déconnectée. Impossible de réserver pour le moment.");
         return;
