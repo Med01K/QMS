@@ -54,7 +54,6 @@ header p {
     opacity: 0.85;
 }
 
-/* ترتيب العناصر بالترتيب المطلوب بدقة */
 .container {
     max-width: 520px;
     margin: auto;
@@ -63,23 +62,19 @@ header p {
     flex-direction: column;
 }
 
-/* 1. في الأعلى دائماً: الرقم الجاري ورقم الانتظار */
 #queueSection {
     order: 1;
 }
 
-/* 2. تحته مباشرة: التذكرة وقصاصة الحجز */
 #reservationSection, 
 #ticketSection {
     order: 2;
 }
 
-/* 3. في الأسفل: الحساب وتسجيل الدخول والخروج */
 #authSection {
     order: 3;
 }
 
-/* 4. أسفل شيء: بطاقة المعلومات الإضافية */
 #infoSection {
     order: 4;
 }
@@ -128,7 +123,6 @@ header p {
     line-height: 1;
 }
 
-/* شريط حالة مدمج في أسفل بطاقة الدور */
 .queue-footer {
     margin: 25px -20px -25px -20px;
     padding: 12px 20px;
@@ -408,7 +402,7 @@ footer {
         </div>
     </section>
 
-    <!-- 2. بطاقة حجز تذكرة (تظهر قبل إتمام الحجز أو بعد انتهاء/إلغاء التذكرة) -->
+    <!-- 2. بطاقة حجز تذكرة -->
     <section class="card reservation-card" id="reservationSection">
         <h2>Réservation en ligne</h2>
         <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
@@ -423,7 +417,7 @@ footer {
         <div class="error-message" id="reservationError"></div>
     </section>
 
-    <!-- 2 (بديل). قصاصة التذكرة المحجوزة (تظهر فور الحجز تحت الدور مباشرة) -->
+    <!-- 2 (بديل). قصاصة التذكرة المحجوزة -->
     <section class="card ticket-card" id="ticketSection">
         <h2 id="ticketTitle">RÉSERVATION CONFIRMÉE</h2>
 
@@ -446,7 +440,7 @@ footer {
         </p>
     </section>
 
-    <!-- 3. حساب العميل وتسجيل الدخول والخروج (في الأسفل) -->
+    <!-- 3. حساب العميل -->
     <section class="card auth-card" id="authSection">
         <h2>Compte client</h2>
         <div id="loginSection">
@@ -525,14 +519,13 @@ const newReservationButton = document.getElementById("newReservationButton");
 let reservationInProgress = false;
 let currentTicket = 0;
 let currentConsole = 0;
-let lastIssuedTicket = 0; // متغير عام لحفظ آخر تذكرة مطبوعة
+let lastIssuedTicket = 0;
 let waitingCount = null;
 let currentUser = null;
 let authReady = false;
 let queueConnected = false;
 let isClientInternetConnected = true;
 
-// حالات التشغيل المستلمة من ESP32 Master
 let serviceAvailable = false;
 let printerOnline = false;
 let printerStatus = 0;
@@ -556,37 +549,39 @@ function formatNumber(number) {
 }
 
 // ----------------------------------------------------------------------
-// المحرك الرياضي لكشف تجاوز الدور (يدعم قفزات العداد والالتفاف بعد 999)
+// المحرك الدائري المصحح لكشف التجاوز (Circular Distance Engine)
+// مستحيل أن يعتبر تذكرة متجاوزة إذا كانت أمام الشاشة في المستقبل!
 // ----------------------------------------------------------------------
-function isTicketOvertaken(userTicket, curTicket, lastIssued = lastIssuedTicket) {
-    if (!userTicket || !curTicket) return false;
-    if (userTicket === curTicket) return false; // التذكرة معروضة الآن على الشاشة: هذا دور الزبون وليس تجاوزاً!
+function isTicketOvertaken(userTicket, curTicket) {
+    const u = Number(userTicket);
+    const c = Number(curTicket);
+    if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return false;
+    if (u === c) return false; // التذكرة معروضة الآن على الشاشة
 
-    if (lastIssued < curTicket) {
-        // حالة الالتفاف الدائري عند 999
-        return (userTicket > lastIssued && userTicket < curTicket);
-    } else {
-        // الحالة العادية: تم التجاوز فقط إذا كان رقم الزبون أصغر تماماً من الرقم المعروض على الشاشة
-        return (userTicket < curTicket || userTicket > lastIssued);
-    }
+    // المسافة الدائرية التي قطعتها الشاشة خلف رقم التذكرة
+    const passedDistance = (c >= u) ? (c - u) : (999 - u + c);
+
+    // التذكرة تعتبر متجاوزة فقط إذا كانت الشاشة قد سبقتها فعلياً (1 إلى 450 رقم للوراء)
+    return (passedDistance > 0 && passedDistance <= 450);
 }
 
 // ----------------------------------------------------------------------
-// معالجة التذاكر المنتهية أو المتجاوزة مع حماية العميل الذي تم نداءه/خدمته
+// معالجة التذاكر المنتهية مع حماية التذاكر المستخرجة في الصالة (arrived)
 // ----------------------------------------------------------------------
 async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
     if (!currentUser || !res) return;
     const uid = currentUser.uid;
     const oldTicketNum = formatNumber(res.ticket);
     const wasAlreadyServed = (res.status === "called" || res.status === "completed");
+    const isPhysicalInHall = (res.status === "arrived" || res.status === "waiting");
 
     if (unsubscribeReservation) {
         unsubscribeReservation();
         unsubscribeReservation = null;
     }
 
-    // لا نقوم بتحويل التذكرة إلى skipped في قاعدة البيانات إذا كان العميل قد نودي عليه أو انتهت خدمته
-    if (res.id && !wasAlreadyServed) {
+    // المتصفح لا يلغي التذكرة إطلاقاً إذا كان العميل قد طبعها في الصالة
+    if (res.id && !wasAlreadyServed && !isPhysicalInHall) {
         try {
             await set(ref(db, `reservation_requests/${res.id}/status`), "skipped");
         } catch (e) {
@@ -594,13 +589,11 @@ async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
         }
     }
 
-    // تنظيف ذاكرة المتصفح للعميل
     localStorage.removeItem(getReservationKey(uid));
     localStorage.removeItem(getPendingKey(uid));
     resetUserReservationUI();
 
-    // إظهار التنبيه الأحمر فقط إذا كان العميل قد تم تخطيه فعلياً دون أن ينادى عليه
-    if (!wasAlreadyServed) {
+    if (!wasAlreadyServed && !isPhysicalInHall) {
         if (reason === "overtaken") {
             showError(`Votre ticket (#${oldTicketNum}) est dépassé (Guichet au #${formatNumber(currentTicket)}). Vous pouvez prendre un nouveau ticket maintenant.`);
         } else {
@@ -654,9 +647,6 @@ function checkMasterStatus() {
     setConnectionStatus(isOnline);
 }
 
-// ----------------------------------------------------------------------
-// مراقبة اتصال العميل بالإنترنت مع مؤقت التخميد (Anti-Flicker Debounce)
-// ----------------------------------------------------------------------
 let clientDisconnectTimer = null;
 
 onValue(ref(db, ".info/connected"), (snapshot) => {
@@ -693,12 +683,11 @@ function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const savedReservation = userLoggedIn ? loadReservation() : null;
 
-    // الحالات التي تعتبر تذكرة صالحة وقيد الانتظار الفعلي فقط
     const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
     let hasActiveReservation = false;
 
     if (savedReservation && activeStatuses.includes(savedReservation.status)) {
-        if (currentTicket > 0 && isTicketOvertaken(savedReservation.ticket, currentTicket, lastIssuedTicket)) {
+        if (currentTicket > 0 && isTicketOvertaken(savedReservation.ticket, currentTicket)) {
             hasActiveReservation = false;
         } else {
             hasActiveReservation = true;
@@ -769,8 +758,6 @@ onValue(queueRef, (snapshot) => {
     serviceAvailable = (data.service_available === true);
     printerOnline    = (data.printer_online === true);
     printerStatus    = Number(data.printer_status ?? 0);
-
-    // تحديث المتغير العام لآخر تذكرة صادرة
     lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
 
     if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
@@ -789,11 +776,10 @@ onValue(queueRef, (snapshot) => {
     firebaseDataAvailable = true;
     checkMasterStatus();
 
-    // فحص شامل للتذكرة المحفوظة محلياً مع تحديثات الشاشة
     const currentRes = loadReservation();
     if (currentRes) {
         const isTooOld = currentRes.saved_at && (Date.now() - currentRes.saved_at > 8 * 3600 * 1000);
-        const overtaken = isTicketOvertaken(currentRes.ticket, currentTicket, lastIssuedTicket);
+        const overtaken = isTicketOvertaken(currentRes.ticket, currentTicket);
 
         if (isTooOld) {
             handleOvertakenOrExpiredReservation(currentRes, "expired");
@@ -839,7 +825,6 @@ function showReservation(reservation) {
 
     let status = reservation.status || "pending";
 
-    // إذا كان الرقم هو المنادى عليه حالياً على الشاشة
     if (currentTicket > 0 && reservation.ticket === currentTicket) {
         status = "called";
     }
@@ -956,7 +941,7 @@ function watchReservation(requestRef) {
             saved_at: Date.now()
         };
 
-        if (isTicketOvertaken(ticketNumber, currentTicket, lastIssuedTicket)) {
+        if (isTicketOvertaken(ticketNumber, currentTicket)) {
             handleOvertakenOrExpiredReservation(reservation, "overtaken");
             return;
         }
@@ -986,7 +971,7 @@ function resetUserReservationUI() {
 async function createReservation() {
     const savedReservation = loadReservation();
     const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
-    const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status) && !isTicketOvertaken(savedReservation.ticket, currentTicket, lastIssuedTicket);
+    const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status) && !isTicketOvertaken(savedReservation.ticket, currentTicket);
 
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
         showError("La borne d'accueil est déconnectée. Impossible de réserver pour le moment.");
@@ -1061,7 +1046,7 @@ function restoreUserReservation() {
     const savedReservation = loadReservation();
     if (savedReservation && savedReservation.id) {
         const isTooOld = savedReservation.saved_at && (Date.now() - savedReservation.saved_at > 8 * 3600 * 1000);
-        const overtaken = isTicketOvertaken(savedReservation.ticket, currentTicket, lastIssuedTicket);
+        const overtaken = isTicketOvertaken(savedReservation.ticket, currentTicket);
 
         if (isTooOld) {
             handleOvertakenOrExpiredReservation(savedReservation, "expired");
