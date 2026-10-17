@@ -565,7 +565,8 @@ function getPendingKey(uid)     { return PENDING_PREFIX + uid; }
 
 function formatNumber(number) {
     const n = Number(number);
-    if (!Number.isFinite(n)) return "---";
+    // إذا كان الرقم صفر أو غير معرف، أظهر شرطات بدلاً من 000
+    if (!Number.isFinite(n) || n <= 0) return "---";
     return String(Math.trunc(n)).padStart(3, "0");
 }
 
