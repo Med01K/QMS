@@ -710,9 +710,14 @@ onValue(queueRef, (snapshot) => {
     const lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
     if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
         if (lastIssuedTicket >= currentTicket) {
+            // الحالة الطبيعية: آخر تذكرة صادرة أكبر أو تساوي المعروض حالياً
             waitingCount = lastIssuedTicket - currentTicket;
-        } else {
+        } else if (lastIssuedTicket < 150 && currentTicket > 850) {
+            // حالة الالتفاف الحقيقي فقط (عندما تتخطى التذاكر 999 وتبدأ الطابعة من 001)
             waitingCount = (999 - currentTicket) + lastIssuedTicket;
+        } else {
+            // إذا تم تغيير الرقم يدوياً في الكونسول (SET) وتجاوز رقم الطابعة: الانتظار صفر
+            waitingCount = 0;
         }
     } else {
         waitingCount = null;
