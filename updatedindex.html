@@ -183,13 +183,34 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-secondary { background: #e8f0fb; color: var(--primary); margin-top: 15px; }
 .btn-secondary:hover { background: #d6e4f9; }
 
+/* أزرار إعادة الحجز الجديدة */
+.btn-rebook {
+    background: var(--primary);
+    color: white;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(18, 59, 116, 0.25);
+}
+.btn-rebook:hover {
+    background: var(--primary-dark);
+}
+
 .ticket-card {
     display: none;
     text-align: center;
     border: 2px dashed var(--secondary);
+    transition: border-color 0.3s;
 }
 
-.ticket-card h2 { color: var(--green); font-size: 21px; margin-bottom: 22px; }
+/* الألوان الديناميكية للعنوان حسب الحالة */
+.ticket-card h2 { 
+    font-size: 22px; 
+    margin-bottom: 20px; 
+    transition: color 0.3s;
+}
+.ticket-title-green  { color: var(--green) !important; }
+.ticket-title-blue   { color: var(--secondary) !important; }
+.ticket-title-red    { color: var(--red) !important; }
+.ticket-title-dark   { color: var(--primary) !important; }
 
 .ticket-label {
     color: var(--muted);
@@ -346,7 +367,7 @@ footer {
             ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
         </div>
 
-        <h2 id="ticketTitle">RÉSERVATION CONFIRMÉE</h2>
+        <h2 id="ticketTitle" class="ticket-title-green">RÉSERVATION CONFIRMÉE</h2>
 
         <div class="ticket-label">VOTRE NUMÉRO</div>
         <div class="ticket-number" id="myTicket">---</div>
@@ -356,7 +377,8 @@ footer {
 
         <div class="ticket-status" id="myStatus">En attente de confirmation</div>
 
-        <button class="btn-secondary" id="newReservationButton" style="display:none;">
+        <!-- زر إعادة الحجز الذي يظهر فوراً عند فوات الدور أو انتهاء الخدمة -->
+        <button class="btn-rebook" id="newReservationButton" style="display:none;">
             NOUVELLE RÉSERVATION
         </button>
 
@@ -601,6 +623,7 @@ onValue(queueRef, (snapshot) => {
     firebaseDataAvailable = true;
     checkMasterStatus();
 
+    // فحص فوري لما إذا كان الدور قد فات أو تم النداء
     if (activeUserTicketData && activeUserTicketData.ticket > 0) {
         if (isTicketOvertaken(activeUserTicketData.ticket, currentTicket)) {
             updateReservationStatus("skipped");
@@ -676,73 +699,95 @@ function showReservation(reservation, isDuplicateNotice = false) {
     let status = reservation.status || "pending";
     if (currentTicket > 0 && reservation.ticket === currentTicket) {
         status = "called";
-    }
-
-    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
-    if (expiredStatuses.includes(status)) {
-        myCodeEl.textContent = "----";
-    } else {
-        const codeVal = (reservation.code !== undefined && reservation.code !== null) ? String(reservation.code) : "";
-        myCodeEl.textContent = codeVal ? codeVal.padStart(4, "0") : "----";
+    } else if (currentTicket > 0 && isTicketOvertaken(reservation.ticket, currentTicket)) {
+        status = "skipped";
     }
 
     updateReservationStatus(status);
+}
+
+// الدالة المسؤولة عن تحديث النصوص والألوان وإظهار زر الحجز الجديد فوراً
+function updateReservationStatus(status) {
+    if (activeUserTicketData) {
+        activeUserTicketData.status = status;
+        saveReservation(activeUserTicketData);
+    }
+
+    myStatusEl.className = "ticket-status";
+    ticketTitleEl.className = ""; // تنظيف الكلاسات السابقة
+
+    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
 
     if (expiredStatuses.includes(status)) {
-        newReservationButton.style.display = "block";
+        myCodeEl.textContent = "----";
+        newReservationButton.style.display = "block"; // إظهار زر حجز جديد فوراً!
         newReservationButton.textContent = (status === "called") 
             ? "FAIRE UNE NOUVELLE RÉSERVATION" 
             : "RÉSERVER À NOUVEAU";
     } else {
+        const codeVal = (activeUserTicketData && activeUserTicketData.code !== undefined && activeUserTicketData.code !== null) 
+                        ? String(activeUserTicketData.code) : "";
+        myCodeEl.textContent = codeVal ? codeVal.padStart(4, "0") : "----";
         newReservationButton.style.display = "none";
     }
-    updateReserveButton();
-}
 
-function updateReservationStatus(status) {
-    myStatusEl.className = "ticket-status";
     switch (status) {
         case "pending":
             ticketTitleEl.textContent = "RÉSERVATION EN COURS";
+            ticketTitleEl.classList.add("ticket-title-dark");
             myStatusEl.textContent = "Votre réservation est en cours de traitement...";
             ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.";
             break;
+
         case "confirmed":
         case "reserved":
             ticketTitleEl.textContent = "RÉSERVATION CONFIRMÉE";
+            ticketTitleEl.classList.add("ticket-title-green");
             myStatusEl.textContent = "Présentez votre code à la borne pour imprimer votre ticket.";
             myStatusEl.classList.add("confirmed");
             ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération, la réservation est annulée.";
             break;
+
         case "arrived":
         case "waiting":
             ticketTitleEl.textContent = "ARRIVÉE CONFIRMÉE";
+            ticketTitleEl.classList.add("ticket-title-green");
             myStatusEl.textContent = "Ticket récupéré ! Veuillez attendre votre appel.";
             myStatusEl.classList.add("arrived");
             ticketMessageEl.innerHTML = "Votre ticket physique a été imprimé avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.";
             break;
+
         case "called":
             ticketTitleEl.textContent = "C'EST VOTRE TOUR";
+            ticketTitleEl.classList.add("ticket-title-blue");
             myStatusEl.textContent = `Votre numéro (#${formatNumber(activeUserTicketData?.ticket || currentTicket)}) est appelé au guichet !`;
             myStatusEl.classList.add("called");
             ticketMessageEl.innerHTML = "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.";
             break;
+
         case "skipped":
             ticketTitleEl.textContent = "TOUR DÉPASSÉ";
+            ticketTitleEl.classList.add("ticket-title-red"); // لون أحمر واضح لفوات الدور!
             myStatusEl.textContent = "Votre numéro a été dépassé par le guichet.";
             myStatusEl.classList.add("skipped");
-            ticketMessageEl.innerHTML = "Le numéro a été dépassé. Vous pouvez effectuer une nouvelle réservation dès maintenant.";
+            ticketMessageEl.innerHTML = "Votre tour est passé. Vous pouvez désormais effectuer une nouvelle réservation en cliquant sur le bouton ci-dessus.";
             break;
+
         case "completed":
             ticketTitleEl.textContent = "SERVICE TERMINÉ";
+            ticketTitleEl.classList.add("ticket-title-dark");
             myStatusEl.textContent = "Votre passage est terminé.";
             myStatusEl.classList.add("completed");
             ticketMessageEl.innerHTML = "Merci pour votre visite chez Poste El Amal.";
             break;
+
         default:
             ticketTitleEl.textContent = "STATUT DE RÉSERVATION";
+            ticketTitleEl.classList.add("ticket-title-dark");
             myStatusEl.textContent = "En attente de mise à jour";
     }
+
+    updateReserveButton();
 }
 
 function resetUserReservationUI() {
@@ -758,7 +803,6 @@ function resetUserReservationUI() {
     updateReserveButton();
 }
 
-// دالة تتبع الطلب التي لا يتم استدعاؤها إلا بعد إنشاء العقدة في السيرفر
 function watchReservationKey(key) {
     if (!key) return;
     if (unsubscribeReservation) {
@@ -775,7 +819,6 @@ function watchReservationKey(key) {
         const status = String(data.status || "pending").toLowerCase();
         if (status === "pending") return;
 
-        // تم الرد من الماستر: إلغاء مؤقت الأمان فوراً لمنع اختفاء التذكرة!
         clearPendingTimer();
         reservationInProgress = false;
 
@@ -804,7 +847,6 @@ function watchReservationKey(key) {
     });
 }
 
-// مراقبة تذكرة الزبون المباشرة التي يكتبها ESP32
 function watchUserActiveTicket(uid) {
     if (!uid) return;
     if (unsubscribeUserActiveTicket) {
@@ -824,18 +866,20 @@ function watchUserActiveTicket(uid) {
             clearPendingTimer();
             reservationInProgress = false;
 
-            if (!isTicketOvertaken(tNum, currentTicket)) {
-                const resData = {
-                    id: data.original_key || "",
-                    ticket: tNum,
-                    code: data.code || "",
-                    status: status,
-                    user_id: uid
-                };
-                saveReservation(resData);
-                showReservation(resData, data.is_duplicate === true);
-            } else {
+            const resData = {
+                id: data.original_key || "",
+                ticket: tNum,
+                code: data.code || "",
+                status: status,
+                user_id: uid
+            };
+            saveReservation(resData);
+
+            if (isTicketOvertaken(tNum, currentTicket)) {
+                showReservation(resData, false);
                 updateReservationStatus("skipped");
+            } else {
+                showReservation(resData, data.is_duplicate === true);
             }
         } else if (["called", "skipped", "completed"].includes(status)) {
             updateReservationStatus(status);
@@ -856,7 +900,7 @@ async function createReservation() {
     clearError();
     clearPendingTimer();
 
-    // 1. فحص محلي فوري لمنع إرسال طلب جديد إذا كانت التذكرة موجودة
+    // فحص محلي: إذا كانت لديه تذكرة ولم يفت دورها بعد
     const localSaved = loadReservation();
     if (localSaved && localSaved.user_id === currentUser.uid && localSaved.ticket > 0) {
         if (!isTicketOvertaken(localSaved.ticket, currentTicket) && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
@@ -874,7 +918,6 @@ async function createReservation() {
         const newRequestRef = push(requestsRef);
         const newReqKey = newRequestRef.key;
 
-        // 2. إرسال الطلب أولاً والتأكد من قبوله في قاعدة البيانات
         await set(newRequestRef, {
             status: "pending",
             source: "web",
@@ -882,11 +925,9 @@ async function createReservation() {
             created_at: serverTimestamp()
         });
 
-        // 3. بعد نجاح الكتابة تماماً، نفتح شاشة الانتظار ونبدأ المراقبة
         showReservation({ status: "pending", ticket: 0, code: "" });
         watchReservationKey(newReqKey);
 
-        // مؤقت أمان 15 ثانية (يُلغى فور استلام التذكرة من السيرفر)
         pendingTimeoutTimer = setTimeout(() => {
             if (reservationInProgress) {
                 reservationInProgress = false;
@@ -901,7 +942,7 @@ async function createReservation() {
         resetUserReservationUI();
 
         if (error.code === "PERMISSION_DENIED" || (error.message && error.message.includes("PERMISSION_DENIED"))) {
-            showError("Erreur d'accès Firebase : Veuillez vous assurer que les règles (Rules) ont bien été publiées.");
+            showError("Erreur d'accès Firebase : Veuillez vérifier les règles (Rules).");
         } else {
             showError("Impossible d'envoyer la réservation. Veuillez réessayer.");
         }
@@ -909,6 +950,7 @@ async function createReservation() {
     }
 }
 
+// زر الحجز الجديد ينظف التذكرة القديمة ويعيدك مباشرة لواجهة الحجز
 newReservationButton.addEventListener("click", () => {
     if (!currentUser) return;
     localStorage.removeItem(getReservationKey(currentUser.uid));
@@ -959,15 +1001,14 @@ onAuthStateChanged(auth, (user) => {
             userPhoto.style.display = "none";
         }
 
-        // استعادة التذكرة السابقة من الذاكرة المحلية أولاً لسرعة العرض
         const localSaved = loadReservation();
         if (localSaved && localSaved.user_id === user.uid && localSaved.ticket > 0) {
-            if (!isTicketOvertaken(localSaved.ticket, currentTicket)) {
-                showReservation(localSaved);
+            showReservation(localSaved);
+            if (isTicketOvertaken(localSaved.ticket, currentTicket)) {
+                updateReservationStatus("skipped");
             }
         }
 
-        // بدء مراقبة مسار التذكرة السحابية
         watchUserActiveTicket(user.uid);
     } else {
         loginSection.style.display = "block";
