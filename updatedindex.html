@@ -557,20 +557,17 @@ function formatNumber(number) {
 // ----------------------------------------------------------------------
 // المحرك الرياضي لكشف تجاوز الدور (يدعم حتى قفزات العداد والالتفاف بعد 999)
 // ----------------------------------------------------------------------
-function isTicketOvertaken(userTicket, currentNum) {
-    const u = Number(userTicket);
-    const c = Number(currentNum);
-    if (!Number.isFinite(u) || !Number.isFinite(c) || u <= 0 || c <= 0) return false;
-    if (u === c) return false; // الرقم هو المنادى عليه حالياً
+function isTicketOvertaken(userTicket, curTicket, lastIssued) {
+    if (!userTicket || !curTicket) return false;
+    if (userTicket === curTicket) return false; // التذكرة معروضة الآن على الشاشة: هذا دور الزبون وليس تجاوزاً!
 
-    let forwardDiff = c - u;
-    // معالجة الالتفاف الدائري (مثال: تذكرة المستخدم 990 ورقم الشباك 020)
-    if (forwardDiff < 0) {
-        forwardDiff += 999;
+    if (lastIssued < curTicket) {
+        // حالة الالتفاف الدائري عند 999
+        return (userTicket > lastIssued && userTicket < curTicket);
+    } else {
+        // الحالة العادية: تم التجاوز فقط إذا كان رقم الزبون أصغر تماماً من الرقم المعروض على الشاشة
+        return (userTicket < curTicket || userTicket > lastIssued);
     }
-    
-    // إذا تقدم رقم الشاشة الحالي عن رقم التذكرة بأي رقم بين 1 و 500
-    return (forwardDiff >= 1 && forwardDiff <= 500);
 }
 
 // ----------------------------------------------------------------------
