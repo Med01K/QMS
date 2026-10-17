@@ -404,6 +404,7 @@ footer {
 <main class="container">
 
     <!-- 1. الشاشة المركزية والانتظار (في الأعلى دائماً) -->
+       <!-- 1. CURRENT QUEUE -->
     <section class="card" id="queueSection">
         <div class="section-title">Numéro en cours</div>
         <div class="current-number" id="currentTicket">---</div>
@@ -415,12 +416,10 @@ footer {
             <div class="waiting-number" id="waitingCount">--</div>
         </div>
 
-        <!-- شارة الحالة الأنيقة بدون خطوط مزعجة -->
-        <div class="status-wrapper">
-            <div class="status-badge">
-                <span class="status-dot" id="statusDot"></span>
-                <span id="connectionStatus">Connexion...</span>
-            </div>
+        <!-- الشريط المدمج الجديد -->
+        <div class="queue-footer">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="connectionStatus">Connexion...</span>
         </div>
     </section>
 
