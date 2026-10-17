@@ -795,7 +795,45 @@ function showReservation(reservation) {
     }
 }
 
-
+function updateReservationStatus(status) {
+    myStatusEl.className = "ticket-status";
+    switch (status) {
+        case "pending":
+            ticketTitleEl.textContent = "RÉSERVATION EN COURS";
+            myStatusEl.textContent = "Votre réservation est en cours de traitement...";
+            break;
+        case "confirmed":
+        case "reserved":
+            ticketTitleEl.textContent = "RÉSERVATION CONFIRMÉE";
+            myStatusEl.textContent = "Présentez votre code à la borne pour imprimer votre ticket.";
+            myStatusEl.classList.add("confirmed");
+            break;
+        case "arrived":
+        case "waiting":
+            ticketTitleEl.textContent = "ARRIVÉE CONFIRMÉE";
+            myStatusEl.textContent = "Ticket récupéré ! Veuillez attendre votre appel.";
+            myStatusEl.classList.add("arrived");
+            break;
+        case "called":
+            ticketTitleEl.textContent = "C'EST VOTRE TOUR";
+            myStatusEl.textContent = "Votre numéro a été appelé au guichet !";
+            myStatusEl.classList.add("called");
+            break;
+        case "skipped":
+            ticketTitleEl.textContent = "RÉSERVATION DÉPASSÉE";
+            myStatusEl.textContent = "Votre tour est passé car le ticket n'a pas été retiré à temps.";
+            myStatusEl.classList.add("skipped");
+            break;
+        case "completed":
+            ticketTitleEl.textContent = "SERVICE TERMINÉ";
+            myStatusEl.textContent = "Votre passage est terminé.";
+            myStatusEl.classList.add("completed");
+            break;
+        default:
+            ticketTitleEl.textContent = "STATUT DE RÉSERVATION";
+            myStatusEl.textContent = "En attente de mise à jour";
+    }
+}
 
 function watchReservation(requestRef) {
     if (!currentUser) return;
