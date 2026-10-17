@@ -384,7 +384,6 @@ footer {
 
 <main class="container">
 
-    <!-- 1. الشاشة المركزية والانتظار (في الأعلى دائماً) -->
     <section class="card" id="queueSection">
         <div class="section-title">Numéro en cours</div>
         <div class="current-number" id="currentTicket">---</div>
@@ -402,7 +401,6 @@ footer {
         </div>
     </section>
 
-    <!-- 2. بطاقة حجز تذكرة -->
     <section class="card reservation-card" id="reservationSection">
         <h2>Réservation en ligne</h2>
         <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
@@ -417,7 +415,6 @@ footer {
         <div class="error-message" id="reservationError"></div>
     </section>
 
-    <!-- 2 (بديل). قصاصة التذكرة المحجوزة -->
     <section class="card ticket-card" id="ticketSection">
         <h2 id="ticketTitle">RÉSERVATION CONFIRMÉE</h2>
 
@@ -440,7 +437,6 @@ footer {
         </p>
     </section>
 
-    <!-- 3. حساب العميل -->
     <section class="card auth-card" id="authSection">
         <h2>Compte client</h2>
         <div id="loginSection">
@@ -456,12 +452,11 @@ footer {
         <div class="error-message" id="authError"></div>
     </section>
 
-    <!-- 4. الملاحظات والمعلومات الهامة -->
     <section class="info-card" id="infoSection">
         <strong>Informations importantes</strong><br><br>
-        • La réservation vous attribue une place dans la file d'attente.<br>
+        • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
         • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
-        • La réservation est automatiquement suspendue si la borne est éteinte.
+        • Une nouvelle réservation ne sera possible qu'après l'appel ou le dépassement de votre numéro.
     </section>
 
 </main>
@@ -474,7 +469,7 @@ footer {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, onValue, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue, push, set, serverTimestamp, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
@@ -548,26 +543,16 @@ function formatNumber(number) {
     return String(Math.trunc(n)).padStart(3, "0");
 }
 
-// ----------------------------------------------------------------------
-// المحرك الدائري المصحح لكشف التجاوز (Circular Distance Engine)
-// مستحيل أن يعتبر تذكرة متجاوزة إذا كانت أمام الشاشة في المستقبل!
-// ----------------------------------------------------------------------
 function isTicketOvertaken(userTicket, curTicket) {
     const u = Number(userTicket);
     const c = Number(curTicket);
     if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return false;
-    if (u === c) return false; // التذكرة معروضة الآن على الشاشة
+    if (u === c) return false; 
 
-    // المسافة الدائرية التي قطعتها الشاشة خلف رقم التذكرة
     const passedDistance = (c >= u) ? (c - u) : (999 - u + c);
-
-    // التذكرة تعتبر متجاوزة فقط إذا كانت الشاشة قد سبقتها فعلياً (1 إلى 450 رقم للوراء)
     return (passedDistance > 0 && passedDistance <= 450);
 }
 
-// ----------------------------------------------------------------------
-// معالجة التذاكر المنتهية مع حماية التذاكر المستخرجة في الصالة (arrived)
-// ----------------------------------------------------------------------
 async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
     if (!currentUser || !res) return;
     const uid = currentUser.uid;
@@ -580,7 +565,6 @@ async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
         unsubscribeReservation = null;
     }
 
-    // المتصفح لا يلغي التذكرة إطلاقاً إذا كان العميل قد طبعها في الصالة
     if (res.id && !wasAlreadyServed && !isPhysicalInHall) {
         try {
             await set(ref(db, `reservation_requests/${res.id}/status`), "skipped");
@@ -595,9 +579,9 @@ async function handleOvertakenOrExpiredReservation(res, reason = "overtaken") {
 
     if (!wasAlreadyServed && !isPhysicalInHall) {
         if (reason === "overtaken") {
-            showError(`Votre ticket (#${oldTicketNum}) est dépassé (Guichet au #${formatNumber(currentTicket)}). Vous pouvez prendre un nouveau ticket maintenant.`);
+            showError(`Votre ticket (#${oldTicketNum}) est dépassé (Guichet au #${formatNumber(currentTicket)}). Vous pouvez prendre un nouveau ticket.`);
         } else {
-            showError(`Votre ancienne réservation (#${oldTicketNum}) a expiré. Vous pouvez réserver un nouveau ticket.`);
+            showError(`Votre ancienne réservation (#${oldTicketNum}) a expiré.`);
         }
     }
     updateReserveButton();
@@ -668,14 +652,6 @@ onValue(ref(db, ".info/connected"), (snapshot) => {
         }
         isClientInternetConnected = true;
         checkMasterStatus();
-    }
-});
-
-document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") {
-        setTimeout(() => {
-            checkMasterStatus();
-        }, 2000);
     }
 });
 
@@ -791,7 +767,6 @@ onValue(queueRef, (snapshot) => {
     }
 
 }, (error) => {
-    console.error("Firebase connection error:", error);
     firebaseDataAvailable = false;
     checkMasterStatus();
 });
@@ -882,6 +857,12 @@ function updateReservationStatus(status) {
             myStatusEl.classList.add("skipped");
             ticketMessageEl.innerHTML = "Le numéro a été dépassé. Vous pouvez effectuer une nouvelle réservation dès maintenant.";
             break;
+        case "rejected":
+            ticketTitleEl.textContent = "DEMANDE REJETÉE";
+            myStatusEl.textContent = "Vous avez déjà une réservation active en cours.";
+            myStatusEl.classList.add("rejected");
+            ticketMessageEl.innerHTML = "Impossible de créer deux réservations simultanées. Attendez la fin de votre premier ticket.";
+            break;
         case "completed":
             ticketTitleEl.textContent = "SERVICE TERMINÉ";
             myStatusEl.textContent = "Votre passage est terminé.";
@@ -921,6 +902,13 @@ function watchReservation(requestRef) {
         const status = data.status || "pending";
         if (status === "pending") {
             reservationInProgress = true;
+            updateReserveButton();
+            return;
+        }
+
+        if (status === "rejected") {
+            reservationInProgress = false;
+            showReservation({ status: "rejected", ticket: 0, code: "----" });
             updateReserveButton();
             return;
         }
@@ -968,25 +956,55 @@ function resetUserReservationUI() {
     updateReserveButton();
 }
 
-async function createReservation() {
-    const savedReservation = loadReservation();
-    const activeStatuses = ["pending", "confirmed", "reserved", "arrived", "waiting"];
-    const hasActiveReservation = savedReservation && activeStatuses.includes(savedReservation.status) && !isTicketOvertaken(savedReservation.ticket, currentTicket);
+// فحص قاعدة البيانات السحابية مباشرة قبل إنشاء أي طلب جديد
+async function checkActiveCloudReservation(uid) {
+    try {
+        const q = query(ref(db, "reservation_requests"), orderByChild("user_id"), equalTo(uid));
+        const snapshot = await get(q);
+        if (!snapshot.exists()) return null;
 
+        const data = snapshot.val();
+        for (const key in data) {
+            const item = data[key];
+            const status = item.status;
+            if (["pending", "confirmed", "reserved", "arrived", "waiting"].includes(status)) {
+                // التأكد من أن التذكرة لم يتم تجاوزها
+                if (!isTicketOvertaken(item.ticket, currentTicket)) {
+                    return { id: key, ...item };
+                }
+            }
+        }
+    } catch (e) {
+        console.warn("Cloud reservation check failed:", e);
+    }
+    return null;
+}
+
+async function createReservation() {
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
         showError("La borne d'accueil est déconnectée. Impossible de réserver pour le moment.");
         return;
     }
 
-    if (!authReady || !currentUser || reservationInProgress || hasActiveReservation) {
-        return;
-    }
+    if (!authReady || !currentUser || reservationInProgress) return;
 
     clearError();
     reservationInProgress = true;
     updateReserveButton();
 
     try {
+        // حماية مسبقة من السحابة: فحص هل يملك الزبون طلباً نشطاً بالفعل
+        const existingCloudTicket = await checkActiveCloudReservation(currentUser.uid);
+        if (existingCloudTicket) {
+            reservationInProgress = false;
+            saveReservation(existingCloudTicket);
+            showReservation(existingCloudTicket);
+            watchReservation(ref(db, "reservation_requests/" + existingCloudTicket.id));
+            showError("Vous avez déjà une réservation active en cours !");
+            updateReserveButton();
+            return;
+        }
+
         const requestsRef = ref(db, "reservation_requests");
         const newRequestRef = push(requestsRef);
         localStorage.setItem(getPendingKey(currentUser.uid), newRequestRef.key);
@@ -1039,25 +1057,22 @@ async function loginWithGoogle() {
 reserveButton.addEventListener("click", createReservation);
 googleLoginButton.addEventListener("click", loginWithGoogle);
 
-function restoreUserReservation() {
+async function restoreUserReservation() {
     if (!currentUser) return;
     const uid = currentUser.uid;
 
+    // أولاً: التحقق من الحساب سحابياً مباشرة لمنع التلاعب عبر مسح الكاش
+    const cloudRes = await checkActiveCloudReservation(uid);
+    if (cloudRes) {
+        saveReservation(cloudRes);
+        showReservation(cloudRes);
+        watchReservation(ref(db, "reservation_requests/" + cloudRes.id));
+        updateReserveButton();
+        return;
+    }
+
     const savedReservation = loadReservation();
     if (savedReservation && savedReservation.id) {
-        const isTooOld = savedReservation.saved_at && (Date.now() - savedReservation.saved_at > 8 * 3600 * 1000);
-        const overtaken = isTicketOvertaken(savedReservation.ticket, currentTicket);
-
-        if (isTooOld) {
-            handleOvertakenOrExpiredReservation(savedReservation, "expired");
-            return;
-        }
-
-        if (currentTicket > 0 && overtaken) {
-            handleOvertakenOrExpiredReservation(savedReservation, "overtaken");
-            return;
-        }
-
         showReservation(savedReservation);
         const reservationRef = ref(db, "reservation_requests/" + savedReservation.id);
         watchReservation(reservationRef);
