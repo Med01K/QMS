@@ -62,22 +62,10 @@ header p {
     flex-direction: column;
 }
 
-#queueSection {
-    order: 1;
-}
-
-#reservationSection, 
-#ticketSection {
-    order: 2;
-}
-
-#authSection {
-    order: 3;
-}
-
-#infoSection {
-    order: 4;
-}
+#queueSection { order: 1; }
+#reservationSection, #ticketSection { order: 2; }
+#authSection { order: 3; }
+#infoSection { order: 4; }
 
 .card {
     background: white;
@@ -111,9 +99,7 @@ header p {
     margin: 20px 0;
 }
 
-.waiting-box {
-    text-align: center;
-}
+.waiting-box { text-align: center; }
 
 .waiting-number {
     font-size: 55px;
@@ -147,34 +133,13 @@ header p {
     display: inline-block;
 }
 
-.status-dot.online {
-    background: var(--green);
-}
+.status-dot.online { background: var(--green); }
+.status-dot.offline { background: var(--red); }
+.status-dot.warning { background: var(--orange); }
 
-.status-dot.offline {
-    background: var(--red);
-}
-
-.status-dot.warning {
-    background: var(--orange);
-}
-
-.auth-card {
-    text-align: center;
-}
-
-.auth-card h2 {
-    font-size: 21px;
-    color: var(--primary);
-    margin-bottom: 15px;
-}
-
-.auth-card p {
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.7;
-    margin-bottom: 20px;
-}
+.auth-card { text-align: center; }
+.auth-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 15px; }
+.auth-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
 
 .btn-google {
     background: white;
@@ -182,10 +147,7 @@ header p {
     border: 1px solid #cbd5e1;
     box-shadow: 0 3px 10px rgba(0,0,0,0.06);
 }
-
-.btn-google:hover {
-    background: #f8fafc;
-}
+.btn-google:hover { background: #f8fafc; }
 
 .user-photo {
     width: 75px;
@@ -195,36 +157,12 @@ header p {
     object-fit: cover;
 }
 
-.user-name {
-    font-size: 17px;
-    font-weight: bold;
-    color: var(--primary);
-    margin-bottom: 6px;
-}
+.user-name { font-size: 17px; font-weight: bold; color: var(--primary); margin-bottom: 6px; }
+.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; }
 
-.user-email {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 15px;
-    overflow-wrap: anywhere;
-}
-
-.reservation-card {
-    text-align: center;
-}
-
-.reservation-card h2 {
-    font-size: 21px;
-    color: var(--primary);
-    margin-bottom: 12px;
-}
-
-.reservation-card p {
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.7;
-    margin-bottom: 20px;
-}
+.reservation-card { text-align: center; }
+.reservation-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 12px; }
+.reservation-card p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
 
 button {
     width: 100%;
@@ -237,29 +175,13 @@ button {
     transition: 0.2s;
 }
 
-button:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-}
+button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.btn-primary {
-    background: var(--primary);
-    color: white;
-}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:not(:disabled):hover { background: var(--primary-dark); }
 
-.btn-primary:not(:disabled):hover {
-    background: var(--primary-dark);
-}
-
-.btn-secondary {
-    background: #e8f0fb;
-    color: var(--primary);
-    margin-top: 15px;
-}
-
-.btn-secondary:hover {
-    background: #d6e4f9;
-}
+.btn-secondary { background: #e8f0fb; color: var(--primary); margin-top: 15px; }
+.btn-secondary:hover { background: #d6e4f9; }
 
 .ticket-card {
     display: none;
@@ -267,11 +189,7 @@ button:disabled {
     border: 2px dashed var(--secondary);
 }
 
-.ticket-card h2 {
-    color: var(--green);
-    font-size: 21px;
-    margin-bottom: 22px;
-}
+.ticket-card h2 { color: var(--green); font-size: 21px; margin-bottom: 22px; }
 
 .ticket-label {
     color: var(--muted);
@@ -301,12 +219,7 @@ button:disabled {
     margin: 15px 0;
 }
 
-.ticket-message {
-    font-size: 14px;
-    line-height: 1.8;
-    color: var(--muted);
-    margin-top: 20px;
-}
+.ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; }
 
 .ticket-status {
     margin-top: 15px;
@@ -397,7 +310,6 @@ footer {
 
 <main class="container">
 
-    <!-- 1. الشاشة المركزية والانتظار -->
     <section class="card" id="queueSection">
         <div class="section-title">Numéro en cours</div>
         <div class="current-number" id="currentTicket">---</div>
@@ -415,7 +327,6 @@ footer {
         </div>
     </section>
 
-    <!-- 2. بطاقة حجز تذكرة -->
     <section class="card reservation-card" id="reservationSection">
         <h2>Réservation en ligne</h2>
         <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
@@ -430,7 +341,6 @@ footer {
         <div class="error-message" id="reservationError"></div>
     </section>
 
-    <!-- 2 (بديل). بطاقة التذكرة المحجوزة -->
     <section class="card ticket-card" id="ticketSection">
         <div class="info-banner" id="duplicateNotice">
             ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
@@ -457,7 +367,6 @@ footer {
         </p>
     </section>
 
-    <!-- 3. حساب العميل -->
     <section class="card auth-card" id="authSection">
         <h2>Compte client</h2>
         <div id="loginSection">
@@ -473,7 +382,6 @@ footer {
         <div class="error-message" id="authError"></div>
     </section>
 
-    <!-- 4. الملاحظات والمعلومات الهامة -->
     <section class="info-card" id="infoSection">
         <strong>Informations importantes</strong><br><br>
         • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
@@ -554,6 +462,7 @@ let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
 
 let unsubscribeReservation = null;
+let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
@@ -684,7 +593,6 @@ onValue(queueRef, (snapshot) => {
     firebaseDataAvailable = true;
     checkMasterStatus();
 
-    // فحص تحديث التذكرة في حال تجاوز الرقم
     if (activeUserTicketData && activeUserTicketData.ticket > 0) {
         if (isTicketOvertaken(activeUserTicketData.ticket, currentTicket)) {
             updateReservationStatus("skipped");
@@ -841,8 +749,8 @@ function resetUserReservationUI() {
     updateReserveButton();
 }
 
-// دالة فحص وتتبع تذكرة معينة مباشرة
 function watchReservationKey(key, onSettledCallback) {
+    if (!key) return;
     if (unsubscribeReservation) {
         unsubscribeReservation();
         unsubscribeReservation = null;
@@ -860,13 +768,8 @@ function watchReservationKey(key, onSettledCallback) {
 
         if (status === "rejected") {
             reservationInProgress = false;
-            // محاولة جلب التذكرة السابقة إن وجدت
-            checkAndRestoreUserTicket(currentUser?.uid).then(() => {
-                if (!activeUserTicketData || activeUserTicketData.ticket <= 0) {
-                    showError("Votre demande n'a pas pu être traitée par le système.");
-                    resetUserReservationUI();
-                }
-            });
+            showError("Votre demande n'a pas pu être validée.");
+            resetUserReservationUI();
             return;
         }
 
@@ -896,68 +799,39 @@ function watchReservationKey(key, onSettledCallback) {
     });
 }
 
-// دالة البحث الشامل عن التذكرة الأصلية للزبون داخل reservation_requests
-async function checkAndRestoreUserTicket(uid) {
-    if (!uid) return;
-
-    try {
-        // فحص الذاكرة المحلية أولاً للعرض الفوري السريع
-        const localSaved = loadReservation();
-        if (localSaved && localSaved.user_id === uid && localSaved.ticket > 0) {
-            if (!isTicketOvertaken(localSaved.ticket, currentTicket)) {
-                showReservation(localSaved);
-                if (localSaved.id) watchReservationKey(localSaved.id);
-            }
-        }
-
-        // فحص السحابة لجلب التذكرة الحقيقية الأصلية
-        const snapshot = await get(ref(db, "reservation_requests"));
-        if (!snapshot.exists()) {
-            if (!localSaved) resetUserReservationUI();
-            return;
-        }
-
-        const allRequests = snapshot.val();
-        let activeTicket = null;
-        let oldestTimestamp = Infinity;
-
-        for (const key in allRequests) {
-            const item = allRequests[key];
-            if (!item) continue;
-
-            const itemUid = item.user_id || item.userId || item.uid;
-            if (itemUid !== uid) continue;
-
-            const status = String(item.status || "").toLowerCase();
-            const activeStatuses = ["confirmed", "reserved", "arrived", "waiting"];
-
-            if (activeStatuses.includes(status)) {
-                const ticketNum = Number(item.ticket || 0);
-                if (ticketNum > 0 && currentTicket > 0 && isTicketOvertaken(ticketNum, currentTicket)) {
-                    continue; // التذكرة تم تجاوزها
-                }
-
-                const ts = Number(item.created_at || 0);
-                if (ts < oldestTimestamp || activeTicket === null) {
-                    oldestTimestamp = ts;
-                    activeTicket = { id: key, ...item, ticket: ticketNum };
-                }
-            }
-        }
-
-        if (activeTicket) {
-            // تم العثور على التذكرة الأصلية النشطة
-            saveReservation(activeTicket);
-            showReservation(activeTicket);
-            watchReservationKey(activeTicket.id);
-        } else {
-            if (!localSaved || (localSaved.ticket > 0 && isTicketOvertaken(localSaved.ticket, currentTicket))) {
-                resetUserReservationUI();
-            }
-        }
-    } catch (err) {
-        console.error("Erreur de récupération du ticket:", err);
+// استرجاع ومراقبة تذكرة المستخدم الخاصة بشكل آمن تماماً
+function watchUserActiveTicket(uid) {
+    if (unsubscribeUserActiveTicket) {
+        unsubscribeUserActiveTicket();
+        unsubscribeUserActiveTicket = null;
     }
+
+    const userTicketRef = ref(db, `user_active_tickets/${uid}`);
+    unsubscribeUserActiveTicket = onValue(userTicketRef, (snapshot) => {
+        if (!snapshot.exists()) return;
+
+        const data = snapshot.val();
+        const status = String(data.status || "").toLowerCase();
+        const tNum = Number(data.ticket || 0);
+
+        if (["confirmed", "reserved", "arrived", "waiting"].includes(status) && tNum > 0) {
+            if (!isTicketOvertaken(tNum, currentTicket)) {
+                const resData = {
+                    id: data.original_key || "",
+                    ticket: tNum,
+                    code: data.code || "",
+                    status: status,
+                    user_id: uid
+                };
+                saveReservation(resData);
+                showReservation(resData, data.is_duplicate === true);
+            } else {
+                updateReservationStatus("skipped");
+            }
+        } else if (["called", "skipped", "completed"].includes(status)) {
+            updateReservationStatus(status);
+        }
+    });
 }
 
 async function createReservation() {
@@ -972,57 +846,31 @@ async function createReservation() {
     reservationInProgress = true;
     updateReserveButton();
 
-    try {
-        // 1. فحص سحابي صارم: هل للزبون حجز قديم نشط في السحابة؟
-        const snapshot = await get(ref(db, "reservation_requests"));
-        if (snapshot.exists()) {
-            const allRequests = snapshot.val();
-            let existing = null;
-            let oldestTs = Infinity;
-
-            for (const key in allRequests) {
-                const item = allRequests[key];
-                if (!item) continue;
-                const itemUid = item.user_id || item.userId || item.uid;
-                if (itemUid !== currentUser.uid) continue;
-
-                const status = String(item.status || "").toLowerCase();
-                if (["confirmed", "reserved", "arrived", "waiting"].includes(status)) {
-                    const ticketNum = Number(item.ticket || 0);
-                    if (ticketNum > 0 && currentTicket > 0 && isTicketOvertaken(ticketNum, currentTicket)) {
-                        continue;
-                    }
-                    const ts = Number(item.created_at || 0);
-                    if (ts < oldestTs || existing === null) {
-                        oldestTs = ts;
-                        existing = { id: key, ...item, ticket: ticketNum };
-                    }
-                }
-            }
-
-            // إذا وُجد حجز سابق، نلغي إرسال طلب جديد ونعرض تذكرته فوراً!
-            if (existing) {
-                reservationInProgress = false;
-                saveReservation(existing);
-                showReservation(existing, true); // إظهار التذكرة مع التنبيه الأزرق
-                watchReservationKey(existing.id);
-                updateReserveButton();
-                return; // إيقاف فوري لمنع إرسال طلب جديد
-            }
+    // 1. فحص محلي فوري
+    const localSaved = loadReservation();
+    if (localSaved && localSaved.user_id === currentUser.uid && localSaved.ticket > 0) {
+        if (!isTicketOvertaken(localSaved.ticket, currentTicket) && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
+            reservationInProgress = false;
+            showReservation(localSaved, true);
+            updateReserveButton();
+            return;
         }
+    }
 
-        // 2. إذا لم يكن لديه حجز سابق، نظهر شاشة الانتظار
+    // 2. إظهار شاشة الحجز المعلق وإرسال الطلب
+    try {
         showReservation({ status: "pending", ticket: 0, code: "" });
 
         const requestsRef = ref(db, "reservation_requests");
         const newRequestRef = push(requestsRef);
         const newReqKey = newRequestRef.key;
 
-        // مؤقت حماية: إذا لم يستجب الـ ESP32 خلال 15 ثانية لا نترك الشاشة معلقة
+        let requestSettled = false;
+
         const pendingTimeout = setTimeout(() => {
-            if (reservationInProgress) {
+            if (!requestSettled && reservationInProgress) {
                 reservationInProgress = false;
-                showError("Le guichet central n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.");
+                showError("Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion.");
                 resetUserReservationUI();
                 if (unsubscribeReservation) {
                     unsubscribeReservation();
@@ -1031,12 +879,12 @@ async function createReservation() {
             }
         }, 15000);
 
-        // مراقبة الرد
         watchReservationKey(newReqKey, () => {
+            requestSettled = true;
             clearTimeout(pendingTimeout);
         });
 
-        // إرسال الطلب لـ ESP32
+        // إرسال البيانات المتطابقة حرفياً مع شروط الحماية (Validation Rules)
         await set(newRequestRef, {
             status: "pending",
             source: "web",
@@ -1045,10 +893,15 @@ async function createReservation() {
         });
 
     } catch (error) {
-        console.error(error);
+        console.error("Erreur Firebase:", error);
         reservationInProgress = false;
         resetUserReservationUI();
-        showError("Impossible d'envoyer la réservation. Veuillez réessayer.");
+
+        if (error.code === "PERMISSION_DENIED" || (error.message && error.message.includes("PERMISSION_DENIED"))) {
+            showError("Erreur d'accès : Veuillez vérifier les règles de sécurité Firebase.");
+        } else {
+            showError("Impossible d'envoyer la réservation. Veuillez réessayer.");
+        }
         updateReserveButton();
     }
 }
@@ -1077,10 +930,14 @@ async function loginWithGoogle() {
 reserveButton.addEventListener("click", createReservation);
 googleLoginButton.addEventListener("click", loginWithGoogle);
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
     if (unsubscribeReservation) {
         unsubscribeReservation();
         unsubscribeReservation = null;
+    }
+    if (unsubscribeUserActiveTicket) {
+        unsubscribeUserActiveTicket();
+        unsubscribeUserActiveTicket = null;
     }
 
     currentUser = user;
@@ -1100,8 +957,8 @@ onAuthStateChanged(auth, async (user) => {
             userPhoto.style.display = "none";
         }
 
-        // استرجاع تذكرة المستخدم النشطة فوراً بمجرد تسجيل الدخول
-        await checkAndRestoreUserTicket(user.uid);
+        // استرجاع تذكرة الزبون الآمنة ومراقبتها
+        watchUserActiveTicket(user.uid);
     } else {
         loginSection.style.display = "block";
         userSection.style.display = "none";
