@@ -721,6 +721,12 @@ onValue(queueRef, (snapshot) => {
     lastMasterHeartbeat = Number(data.meta?.esp32_last_seen_ms ?? 0);
     firebaseDataAvailable = true;
     checkMasterStatus();
+
+    // --- أضف السطرين هنا ---
+    const currentRes = loadReservation();
+    if (currentRes) showReservation(currentRes);
+    // -----------------------
+
 }, (error) => {
     console.error("Firebase connection error:", error);
     firebaseDataAvailable = false;
@@ -770,43 +776,49 @@ function showReservation(reservation) {
     }
 }
 
-function updateReservationStatus(status) {
-    myStatusEl.className = "ticket-status";
-    switch (status) {
-        case "pending":
-            ticketTitleEl.textContent = "RÉSERVATION EN COURS";
-            myStatusEl.textContent = "Votre réservation est en cours de traitement...";
-            break;
-        case "confirmed":
-        case "reserved":
-            ticketTitleEl.textContent = "RÉSERVATION CONFIRMÉE";
-            myStatusEl.textContent = "Présentez votre code à la borne pour imprimer votre ticket.";
-            myStatusEl.classList.add("confirmed");
-            break;
-        case "arrived":
-        case "waiting":
-            ticketTitleEl.textContent = "ARRIVÉE CONFIRMÉE";
-            myStatusEl.textContent = "Ticket récupéré ! Veuillez attendre votre appel.";
-            myStatusEl.classList.add("arrived");
-            break;
-        case "called":
-            ticketTitleEl.textContent = "C'EST VOTRE TOUR";
-            myStatusEl.textContent = "Votre numéro a été appelé au guichet !";
-            myStatusEl.classList.add("called");
-            break;
-        case "skipped":
-            ticketTitleEl.textContent = "RÉSERVATION DÉPASSÉE";
-            myStatusEl.textContent = "Votre tour est passé car le ticket n'a pas été retiré à temps.";
-            myStatusEl.classList.add("skipped");
-            break;
-        case "completed":
-            ticketTitleEl.textContent = "SERVICE TERMINÉ";
-            myStatusEl.textContent = "Votre passage est terminé.";
-            myStatusEl.classList.add("completed");
-            break;
-        default:
-            ticketTitleEl.textContent = "STATUT DE RÉSERVATION";
-            myStatusEl.textContent = "En attente de mise à jour";
+function showReservation(reservation) {
+    reservationSection.style.display = "none";
+    ticketSection.style.display = "block";
+    myTicketEl.textContent = formatNumber(reservation.ticket);
+
+    let status = reservation.status || "pending";
+
+    // --- منطق كشف التجاوز الذكي في المتصفح ---
+    // إذا لم يؤكد العميل حضوره، وكان الرقم الجاري قد تجاوز رقم التذكرة
+    if (status === "confirmed" || status === "reserved" || status === "pending") {
+        if (currentTicket > 0 && reservation.ticket > 0) {
+            // فحص التجاوز مع مراعاة التفاف الأرقام (1-999)
+            let isPassed = false;
+            if (currentTicket >= reservation.ticket && (currentTicket - reservation.ticket) < 500) {
+                isPassed = true; // تجاوزه بشكل طبيعي (مثلاً الشاشة 312 وتذكرتي 309)
+            } else if (currentTicket < reservation.ticket && (currentTicket + 999 - reservation.ticket) < 500) {
+                isPassed = true; // تجاوزه بعد التفاف العداد حول 999
+            }
+
+            if (isPassed) {
+                status = "skipped"; // تحويل الحالة فوراً لتجاوز
+                reservation.status = "skipped";
+                saveReservation(reservation); // حفظها محلياً لتحديث حالة الزر
+            }
+        }
+    }
+
+    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
+    if (expiredStatuses.includes(status)) {
+        myCodeEl.textContent = "----";
+    } else {
+        myCodeEl.textContent = String(reservation.code).padStart(4, "0");
+    }
+
+    updateReservationStatus(status);
+
+    if (expiredStatuses.includes(status)) {
+        newReservationButton.style.display = "block";
+        newReservationButton.textContent = (status === "called") 
+            ? "FAIRE UNE NOUVELLE RÉSERVATION" 
+            : "RÉSERVER À NOUVEAU";
+    } else {
+        newReservationButton.style.display = "none";
     }
 }
 
