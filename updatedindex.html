@@ -399,7 +399,7 @@ footer {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, onValue, push, set, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
@@ -461,6 +461,7 @@ let lastMasterHeartbeat = 0;
 let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
 
+let pendingTimeoutTimer = null;
 let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
@@ -503,6 +504,13 @@ function loadReservation() {
         return (res.user_id === currentUser.uid) ? res : null;
     } catch (e) {
         return null;
+    }
+}
+
+function clearPendingTimer() {
+    if (pendingTimeoutTimer) {
+        clearTimeout(pendingTimeoutTimer);
+        pendingTimeoutTimer = null;
     }
 }
 
@@ -600,7 +608,7 @@ onValue(queueRef, (snapshot) => {
             updateReservationStatus("called");
         }
     }
-}, (error) => {
+}, () => {
     firebaseDataAvailable = false;
     checkMasterStatus();
 });
@@ -738,6 +746,7 @@ function updateReservationStatus(status) {
 }
 
 function resetUserReservationUI() {
+    clearPendingTimer();
     activeUserTicketData = null;
     reservationSection.style.display = "block";
     ticketSection.style.display = "none";
@@ -749,7 +758,8 @@ function resetUserReservationUI() {
     updateReserveButton();
 }
 
-function watchReservationKey(key, onSettledCallback) {
+// دالة تتبع الطلب التي لا يتم استدعاؤها إلا بعد إنشاء العقدة في السيرفر
+function watchReservationKey(key) {
     if (!key) return;
     if (unsubscribeReservation) {
         unsubscribeReservation();
@@ -758,17 +768,19 @@ function watchReservationKey(key, onSettledCallback) {
 
     const reqRef = ref(db, `reservation_requests/${key}`);
     unsubscribeReservation = onValue(reqRef, (snapshot) => {
+        if (!snapshot.exists()) return;
         const data = snapshot.val();
         if (!data) return;
 
         const status = String(data.status || "pending").toLowerCase();
         if (status === "pending") return;
 
-        if (onSettledCallback) onSettledCallback();
+        // تم الرد من الماستر: إلغاء مؤقت الأمان فوراً لمنع اختفاء التذكرة!
+        clearPendingTimer();
+        reservationInProgress = false;
 
         if (status === "rejected") {
-            reservationInProgress = false;
-            showError("Votre demande n'a pas pu être validée.");
+            showError("Votre demande n'a pas pu être validée par le système.");
             resetUserReservationUI();
             return;
         }
@@ -777,7 +789,6 @@ function watchReservationKey(key, onSettledCallback) {
         const codeStr = String(data.code || "");
 
         if (ticketNum >= 1 && ticketNum <= 999) {
-            reservationInProgress = false;
             const resData = {
                 id: key,
                 ticket: ticketNum,
@@ -787,20 +798,15 @@ function watchReservationKey(key, onSettledCallback) {
                 saved_at: Date.now()
             };
 
-            if (isTicketOvertaken(ticketNum, currentTicket)) {
-                showReservation(resData);
-                updateReservationStatus("skipped");
-                return;
-            }
-
             saveReservation(resData);
             showReservation(resData, data.is_duplicate === true);
         }
     });
 }
 
-// استرجاع ومراقبة تذكرة المستخدم الخاصة بشكل آمن تماماً
+// مراقبة تذكرة الزبون المباشرة التي يكتبها ESP32
 function watchUserActiveTicket(uid) {
+    if (!uid) return;
     if (unsubscribeUserActiveTicket) {
         unsubscribeUserActiveTicket();
         unsubscribeUserActiveTicket = null;
@@ -815,6 +821,9 @@ function watchUserActiveTicket(uid) {
         const tNum = Number(data.ticket || 0);
 
         if (["confirmed", "reserved", "arrived", "waiting"].includes(status) && tNum > 0) {
+            clearPendingTimer();
+            reservationInProgress = false;
+
             if (!isTicketOvertaken(tNum, currentTicket)) {
                 const resData = {
                     id: data.original_key || "",
@@ -831,6 +840,8 @@ function watchUserActiveTicket(uid) {
         } else if (["called", "skipped", "completed"].includes(status)) {
             updateReservationStatus(status);
         }
+    }, (err) => {
+        console.warn("Notice: user_active_tickets listener error:", err.message);
     });
 }
 
@@ -843,48 +854,27 @@ async function createReservation() {
     if (!authReady || !currentUser || reservationInProgress) return;
 
     clearError();
-    reservationInProgress = true;
-    updateReserveButton();
+    clearPendingTimer();
 
-    // 1. فحص محلي فوري
+    // 1. فحص محلي فوري لمنع إرسال طلب جديد إذا كانت التذكرة موجودة
     const localSaved = loadReservation();
     if (localSaved && localSaved.user_id === currentUser.uid && localSaved.ticket > 0) {
         if (!isTicketOvertaken(localSaved.ticket, currentTicket) && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
-            reservationInProgress = false;
             showReservation(localSaved, true);
             updateReserveButton();
             return;
         }
     }
 
-    // 2. إظهار شاشة الحجز المعلق وإرسال الطلب
-    try {
-        showReservation({ status: "pending", ticket: 0, code: "" });
+    reservationInProgress = true;
+    updateReserveButton();
 
+    try {
         const requestsRef = ref(db, "reservation_requests");
         const newRequestRef = push(requestsRef);
         const newReqKey = newRequestRef.key;
 
-        let requestSettled = false;
-
-        const pendingTimeout = setTimeout(() => {
-            if (!requestSettled && reservationInProgress) {
-                reservationInProgress = false;
-                showError("Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion.");
-                resetUserReservationUI();
-                if (unsubscribeReservation) {
-                    unsubscribeReservation();
-                    unsubscribeReservation = null;
-                }
-            }
-        }, 15000);
-
-        watchReservationKey(newReqKey, () => {
-            requestSettled = true;
-            clearTimeout(pendingTimeout);
-        });
-
-        // إرسال البيانات المتطابقة حرفياً مع شروط الحماية (Validation Rules)
+        // 2. إرسال الطلب أولاً والتأكد من قبوله في قاعدة البيانات
         await set(newRequestRef, {
             status: "pending",
             source: "web",
@@ -892,13 +882,26 @@ async function createReservation() {
             created_at: serverTimestamp()
         });
 
+        // 3. بعد نجاح الكتابة تماماً، نفتح شاشة الانتظار ونبدأ المراقبة
+        showReservation({ status: "pending", ticket: 0, code: "" });
+        watchReservationKey(newReqKey);
+
+        // مؤقت أمان 15 ثانية (يُلغى فور استلام التذكرة من السيرفر)
+        pendingTimeoutTimer = setTimeout(() => {
+            if (reservationInProgress) {
+                reservationInProgress = false;
+                showError("Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.");
+                resetUserReservationUI();
+            }
+        }, 15000);
+
     } catch (error) {
-        console.error("Erreur Firebase:", error);
+        console.error("Erreur d'envoi:", error);
         reservationInProgress = false;
         resetUserReservationUI();
 
         if (error.code === "PERMISSION_DENIED" || (error.message && error.message.includes("PERMISSION_DENIED"))) {
-            showError("Erreur d'accès : Veuillez vérifier les règles de sécurité Firebase.");
+            showError("Erreur d'accès Firebase : Veuillez vous assurer que les règles (Rules) ont bien été publiées.");
         } else {
             showError("Impossible d'envoyer la réservation. Veuillez réessayer.");
         }
@@ -942,7 +945,6 @@ onAuthStateChanged(auth, (user) => {
 
     currentUser = user;
     authReady = true;
-    resetUserReservationUI();
 
     if (user) {
         loginSection.style.display = "none";
@@ -957,11 +959,20 @@ onAuthStateChanged(auth, (user) => {
             userPhoto.style.display = "none";
         }
 
-        // استرجاع تذكرة الزبون الآمنة ومراقبتها
+        // استعادة التذكرة السابقة من الذاكرة المحلية أولاً لسرعة العرض
+        const localSaved = loadReservation();
+        if (localSaved && localSaved.user_id === user.uid && localSaved.ticket > 0) {
+            if (!isTicketOvertaken(localSaved.ticket, currentTicket)) {
+                showReservation(localSaved);
+            }
+        }
+
+        // بدء مراقبة مسار التذكرة السحابية
         watchUserActiveTicket(user.uid);
     } else {
         loginSection.style.display = "block";
         userSection.style.display = "none";
+        resetUserReservationUI();
     }
     updateReserveButton();
 });
