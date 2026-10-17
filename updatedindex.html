@@ -336,6 +336,19 @@ button:disabled {
     line-height: 1.6;
 }
 
+.info-banner {
+    display: none;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #065f46;
+    padding: 13px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
 .warning-banner {
     display: none;
     background: #fef2f2;
@@ -384,6 +397,7 @@ footer {
 
 <main class="container">
 
+    <!-- 1. الشاشة المركزية والانتظار -->
     <section class="card" id="queueSection">
         <div class="section-title">Numéro en cours</div>
         <div class="current-number" id="currentTicket">---</div>
@@ -401,6 +415,7 @@ footer {
         </div>
     </section>
 
+    <!-- 2. بطاقة حجز تذكرة -->
     <section class="card reservation-card" id="reservationSection">
         <h2>Réservation en ligne</h2>
         <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
@@ -415,7 +430,12 @@ footer {
         <div class="error-message" id="reservationError"></div>
     </section>
 
+    <!-- 2 (بديل). قصاصة التذكرة المحجوزة -->
     <section class="card ticket-card" id="ticketSection">
+        <div class="info-banner" id="duplicateNotice">
+            ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
+        </div>
+
         <h2 id="ticketTitle">RÉSERVATION CONFIRMÉE</h2>
 
         <div class="ticket-label">VOTRE NUMÉRO</div>
@@ -437,6 +457,7 @@ footer {
         </p>
     </section>
 
+    <!-- 3. حساب العميل -->
     <section class="card auth-card" id="authSection">
         <h2>Compte client</h2>
         <div id="loginSection">
@@ -452,6 +473,7 @@ footer {
         <div class="error-message" id="authError"></div>
     </section>
 
+    <!-- 4. الملاحظات والمعلومات الهامة -->
     <section class="info-card" id="infoSection">
         <strong>Informations importantes</strong><br><br>
         • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
@@ -501,6 +523,7 @@ const connectionStatusEl   = document.getElementById("connectionStatus");
 const statusDotEl          = document.getElementById("statusDot");
 const reserveButton        = document.getElementById("reserveButton");
 const reservationError     = document.getElementById("reservationError");
+const duplicateNoticeEl    = document.getElementById("duplicateNotice");
 const printerOfflineBanner = document.getElementById("printerOfflineBanner");
 const reservationSection   = document.getElementById("reservationSection");
 const ticketSection        = document.getElementById("ticketSection");
@@ -793,10 +816,16 @@ function loadReservation() {
     }
 }
 
-function showReservation(reservation) {
+function showReservation(reservation, isDuplicateNotice = false) {
     reservationSection.style.display = "none";
     ticketSection.style.display = "block";
     myTicketEl.textContent = formatNumber(reservation.ticket);
+
+    if (isDuplicateNotice) {
+        duplicateNoticeEl.style.display = "block";
+    } else {
+        duplicateNoticeEl.style.display = "none";
+    }
 
     let status = reservation.status || "pending";
 
@@ -857,12 +886,6 @@ function updateReservationStatus(status) {
             myStatusEl.classList.add("skipped");
             ticketMessageEl.innerHTML = "Le numéro a été dépassé. Vous pouvez effectuer une nouvelle réservation dès maintenant.";
             break;
-        case "rejected":
-            ticketTitleEl.textContent = "DEMANDE REJETÉE";
-            myStatusEl.textContent = "Vous avez déjà une réservation active en cours.";
-            myStatusEl.classList.add("rejected");
-            ticketMessageEl.innerHTML = "Impossible de créer deux réservations simultanées. Attendez la fin de votre premier ticket.";
-            break;
         case "completed":
             ticketTitleEl.textContent = "SERVICE TERMINÉ";
             myStatusEl.textContent = "Votre passage est terminé.";
@@ -875,6 +898,38 @@ function updateReservationStatus(status) {
     }
 }
 
+// دالة البحث واسترجاع أول طلب نشط للزبون من السحابة
+async function checkActiveCloudReservation(uid) {
+    try {
+        const q = query(ref(db, "reservation_requests"), orderByChild("user_id"), equalTo(uid));
+        const snapshot = await get(q);
+        if (!snapshot.exists()) return null;
+
+        const data = snapshot.val();
+        let oldestActiveTicket = null;
+        let oldestTimestamp = Infinity;
+
+        // فحص كل تذاكر الزبون واسترجاع أول تذكرة تم إنشاؤها ولا تزال نشطة
+        for (const key in data) {
+            const item = data[key];
+            const status = item.status;
+            if (["pending", "confirmed", "reserved", "arrived", "waiting"].includes(status)) {
+                if (!isTicketOvertaken(item.ticket, currentTicket)) {
+                    const createdTime = item.created_at || 0;
+                    if (createdTime < oldestTimestamp) {
+                        oldestTimestamp = createdTime;
+                        oldestActiveTicket = { id: key, ...item };
+                    }
+                }
+            }
+        }
+        return oldestActiveTicket;
+    } catch (e) {
+        console.warn("Cloud reservation check failed:", e);
+    }
+    return null;
+}
+
 function watchReservation(requestRef) {
     if (!currentUser) return;
     const ownerUid = currentUser.uid;
@@ -884,7 +939,7 @@ function watchReservation(requestRef) {
         unsubscribeReservation = null;
     }
 
-    unsubscribeReservation = onValue(requestRef, (snapshot) => {
+    unsubscribeReservation = onValue(requestRef, async (snapshot) => {
         if (!currentUser || currentUser.uid !== ownerUid) return;
         const data = snapshot.val();
 
@@ -906,9 +961,20 @@ function watchReservation(requestRef) {
             return;
         }
 
+        // ==============================================================
+        // عند حدوث تكرار وتلقي رفض من ESP32: نقوم فوراً بعرض الطلب الأول
+        // ==============================================================
         if (status === "rejected") {
             reservationInProgress = false;
-            showReservation({ status: "rejected", ticket: 0, code: "----" });
+            const originalTicket = await checkActiveCloudReservation(ownerUid);
+            if (originalTicket) {
+                saveReservation(originalTicket);
+                showReservation(originalTicket, true); // إظهار التذكرة الأولى مع إشعار توضيحي
+                watchReservation(ref(db, "reservation_requests/" + originalTicket.id));
+            } else {
+                showError("Votre demande a été refusée. Veuillez réessayer.");
+                resetUserReservationUI();
+            }
             updateReserveButton();
             return;
         }
@@ -949,35 +1015,12 @@ function watchReservation(requestRef) {
 function resetUserReservationUI() {
     reservationSection.style.display = "block";
     ticketSection.style.display = "none";
+    duplicateNoticeEl.style.display = "none";
     myTicketEl.textContent = "---";
     myCodeEl.textContent = "----";
     reservationInProgress = false;
     clearError();
     updateReserveButton();
-}
-
-// فحص قاعدة البيانات السحابية مباشرة قبل إنشاء أي طلب جديد
-async function checkActiveCloudReservation(uid) {
-    try {
-        const q = query(ref(db, "reservation_requests"), orderByChild("user_id"), equalTo(uid));
-        const snapshot = await get(q);
-        if (!snapshot.exists()) return null;
-
-        const data = snapshot.val();
-        for (const key in data) {
-            const item = data[key];
-            const status = item.status;
-            if (["pending", "confirmed", "reserved", "arrived", "waiting"].includes(status)) {
-                // التأكد من أن التذكرة لم يتم تجاوزها
-                if (!isTicketOvertaken(item.ticket, currentTicket)) {
-                    return { id: key, ...item };
-                }
-            }
-        }
-    } catch (e) {
-        console.warn("Cloud reservation check failed:", e);
-    }
-    return null;
 }
 
 async function createReservation() {
@@ -993,14 +1036,13 @@ async function createReservation() {
     updateReserveButton();
 
     try {
-        // حماية مسبقة من السحابة: فحص هل يملك الزبون طلباً نشطاً بالفعل
+        // فحص مسبق: هل للزبون طلب نشط بالفعل؟ إذا وُجد نعرض طلبه الأول فوراً
         const existingCloudTicket = await checkActiveCloudReservation(currentUser.uid);
         if (existingCloudTicket) {
             reservationInProgress = false;
             saveReservation(existingCloudTicket);
-            showReservation(existingCloudTicket);
+            showReservation(existingCloudTicket, true); // يظهر التذكرة الأولى مع لافتة الإشعار
             watchReservation(ref(db, "reservation_requests/" + existingCloudTicket.id));
-            showError("Vous avez déjà une réservation active en cours !");
             updateReserveButton();
             return;
         }
@@ -1061,7 +1103,7 @@ async function restoreUserReservation() {
     if (!currentUser) return;
     const uid = currentUser.uid;
 
-    // أولاً: التحقق من الحساب سحابياً مباشرة لمنع التلاعب عبر مسح الكاش
+    // استرجاع الطلب الأول مباشرة من السحابة في حال إعادة تحميل الصفحة
     const cloudRes = await checkActiveCloudReservation(uid);
     if (cloudRes) {
         saveReservation(cloudRes);
