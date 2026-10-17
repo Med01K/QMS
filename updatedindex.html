@@ -54,13 +54,34 @@ header p {
     opacity: 0.85;
 }
 
-/* Flex Container للتحكم في ترتيب الأقسام ديناميكياً */
+/* ترتيب العناصر بالترتيب المطلوب بدقة */
 .container {
     max-width: 520px;
     margin: auto;
     padding: 20px 15px 40px;
     display: flex;
     flex-direction: column;
+}
+
+/* 1. في الأعلى دائماً: الرقم الجاري ورقم الانتظار */
+#queueSection {
+    order: 1;
+}
+
+/* 2. تحته مباشرة: التذكرة وقصاصة الحجز */
+#reservationSection, 
+#ticketSection {
+    order: 2;
+}
+
+/* 3. في الأسفل: الحساب وتسجيل الدخول والخروج */
+#authSection {
+    order: 3;
+}
+
+/* 4. أسفل شيء: بطاقة المعلومات الإضافية */
+#infoSection {
+    order: 4;
 }
 
 .card {
@@ -70,20 +91,6 @@ header p {
     margin-bottom: 20px;
     box-shadow: 0 5px 20px rgba(0,0,0,0.06);
 }
-
-/* الترتيب الافتراضي (قبل الحجز) */
-#queueSection       { order: 1; }
-#authSection        { order: 2; }
-#reservationSection { order: 3; }
-#ticketSection      { order: 4; }
-#infoSection        { order: 5; }
-
-/* الترتيب عند وجود تذكرة نشطة */
-body.has-ticket #ticketSection      { order: 1; }
-body.has-ticket #queueSection       { order: 2; }
-body.has-ticket #authSection        { order: 3; }
-body.has-ticket #reservationSection { order: 4; }
-body.has-ticket #infoSection        { order: 5; }
 
 .section-title {
     font-size: 15px;
@@ -117,37 +124,52 @@ body.has-ticket #infoSection        { order: 5; }
     font-size: 55px;
     font-weight: bold;
     color: var(--orange);
-    margin: 10px 0 5px;
-    line-height: 1.1;
+    margin-top: 10px;
+    line-height: 1;
 }
 
-.status {
+/* تصميم الشارة العصرية الأنيقة لحالة النظام */
+.status-wrapper {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--muted);
+    margin-top: 25px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
 }
 
 .status-dot {
-    width: 10px;
-    height: 10px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: var(--orange);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
 }
 
 .status-dot.online {
     background: var(--green);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.25);
 }
 
 .status-dot.offline {
     background: var(--red);
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
 }
 
 .status-dot.warning {
     background: var(--orange);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
 }
 
 .auth-card {
@@ -375,7 +397,7 @@ footer {
 
 <main class="container">
 
-    <!-- 1. CURRENT QUEUE (الشاشة المركزية والانتظار) -->
+    <!-- 1. الشاشة المركزية والانتظار (في الأعلى دائماً) -->
     <section class="card" id="queueSection">
         <div class="section-title">Numéro en cours</div>
         <div class="current-number" id="currentTicket">---</div>
@@ -386,33 +408,17 @@ footer {
             <div class="section-title">Personnes en attente</div>
             <div class="waiting-number" id="waitingCount">--</div>
         </div>
-        
-        <!-- الفاصل الجديد لضبط المسافة وعزل حالة الاتصال -->
-        <div class="divider"></div>
 
-        <div class="status">
-            <span class="status-dot" id="statusDot"></span>
-            <span id="connectionStatus">Connexion...</span>
+        <!-- شارة الحالة الأنيقة بدون خطوط مزعجة -->
+        <div class="status-wrapper">
+            <div class="status-badge">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="connectionStatus">Connexion...</span>
+            </div>
         </div>
     </section>
 
-    <!-- 2. GOOGLE AUTHENTICATION (حساب العميل) -->
-    <section class="card auth-card" id="authSection">
-        <h2>Compte client</h2>
-        <div id="loginSection">
-            <p>Connectez-vous avec votre compte Google pour réserver un ticket.</p>
-            <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
-        </div>
-        <div id="userSection" style="display:none;">
-            <img id="userPhoto" class="user-photo" alt="Photo du profil">
-            <div class="user-name" id="userName"></div>
-            <div class="user-email" id="userEmail"></div>
-            <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
-        </div>
-        <div class="error-message" id="authError"></div>
-    </section>
-
-    <!-- 3. RESERVATION (طلب الحجز) -->
+    <!-- 2. بطاقة حجز تذكرة (تظهر قبل إتمام الحجز) -->
     <section class="card reservation-card" id="reservationSection">
         <h2>Réservation en ligne</h2>
         <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
@@ -427,7 +433,7 @@ footer {
         <div class="error-message" id="reservationError"></div>
     </section>
 
-    <!-- 4. USER TICKET (قصاصة التذكرة المحجوزة) -->
+    <!-- 2 (بديل). قصاصة التذكرة المحجوزة (تظهر فور الحجز تحت الدور مباشرة) -->
     <section class="card ticket-card" id="ticketSection">
         <h2 id="ticketTitle">RÉSERVATION CONFIRMÉE</h2>
 
@@ -450,7 +456,23 @@ footer {
         </p>
     </section>
 
-    <!-- 5. INFORMATION -->
+    <!-- 3. حساب العميل وتسجيل الدخول والخروج (في الأسفل) -->
+    <section class="card auth-card" id="authSection">
+        <h2>Compte client</h2>
+        <div id="loginSection">
+            <p>Connectez-vous avec votre compte Google pour réserver un ticket.</p>
+            <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
+        </div>
+        <div id="userSection" style="display:none;">
+            <img id="userPhoto" class="user-photo" alt="Photo du profil">
+            <div class="user-name" id="userName"></div>
+            <div class="user-email" id="userEmail"></div>
+            <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
+        </div>
+        <div class="error-message" id="authError"></div>
+    </section>
+
+    <!-- 4. الملاحظات والمعلومات الهامة -->
     <section class="info-card" id="infoSection">
         <strong>Informations importantes</strong><br><br>
         • La réservation vous attribue une place dans la file d'attente.<br>
@@ -719,7 +741,6 @@ function loadReservation() {
 }
 
 function showReservation(reservation) {
-    document.body.classList.add("has-ticket"); // تطبيق الترتيب الجديد
     reservationSection.style.display = "none";
     ticketSection.style.display = "block";
     myTicketEl.textContent = formatNumber(reservation.ticket);
@@ -843,7 +864,6 @@ function watchReservation(requestRef) {
 }
 
 function resetUserReservationUI() {
-    document.body.classList.remove("has-ticket"); // العودة للترتيب الأصلي
     reservationSection.style.display = "block";
     ticketSection.style.display = "none";
     myTicketEl.textContent = "---";
