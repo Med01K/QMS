@@ -262,25 +262,24 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .ticket-status.rejected  { background: #fee2e2; color: #991b1b; }
 
 /* ========================================================
-   تنسيقات نظام التنبيه الذكي وهامش الانتظار
+   تنسيقات نظام التنبيه الذكي والمفتاح التبادلي
 ======================================================== */
-.alert-card-box {
-    margin-top: 25px;
-    background: #f0f7ff;
-    border: 1px solid #bfdbfe;
+.alert-box {
+    margin-top: 22px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
     padding: 16px 18px;
     text-align: left;
 }
 
-.alert-card-header {
+.alert-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
 }
 
-.alert-card-title {
+.alert-title {
     font-size: 15px;
     font-weight: bold;
     color: var(--primary);
@@ -289,12 +288,13 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     gap: 8px;
 }
 
-/* مفتاح التبديل Toggle Switch */
+/* زر التبديل العصري (Toggle Switch) */
 .switch {
     position: relative;
     display: inline-block;
-    width: 48px;
-    height: 26px;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
 }
 
 .switch input {
@@ -308,21 +308,21 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: #cbd5e1;
-    transition: .3s;
-    border-radius: 26px;
+    transition: 0.3s;
+    border-radius: 28px;
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 20px;
-    width: 20px;
+    height: 22px;
+    width: 22px;
     left: 3px;
     bottom: 3px;
     background-color: white;
-    transition: .3s;
+    transition: 0.3s;
     border-radius: 50%;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 input:checked + .slider {
@@ -333,15 +333,10 @@ input:checked + .slider:before {
     transform: translateX(22px);
 }
 
-.alert-card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    border-top: 1px solid #dbeafe;
+.alert-options {
+    margin-top: 14px;
     padding-top: 12px;
-}
-
-.alert-row {
+    border-top: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -362,25 +357,72 @@ input:checked + .slider:before {
     cursor: pointer;
 }
 
-.btn-test-sound {
-    padding: 8px 12px;
-    font-size: 12px;
-    border-radius: 8px;
-    background: #e2e8f0;
-    color: #334155;
-    font-weight: 600;
-    margin-top: 4px;
-}
-.btn-test-sound:hover {
-    background: #cbd5e1;
+/* ========================================================
+   إشعار النافذة المنبثق التفاعلي (In-Window Modal Alert)
+======================================================== */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.75);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.25s ease-out;
 }
 
-.alert-status-hint {
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.4;
+.modal-card {
+    background: white;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 20px;
+    padding: 25px 22px;
     text-align: center;
-    margin-top: 5px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-icon {
+    font-size: 55px;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+.modal-card h3 {
+    font-size: 21px;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.modal-card p {
+    font-size: 15px;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 22px;
+}
+
+.modal-btn {
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: bold;
+}
+.modal-btn:hover {
+    background: var(--primary-dark);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .error-message {
@@ -501,32 +543,24 @@ footer {
 
         <div class="ticket-status" id="myStatus">En attente de confirmation</div>
 
-        <!-- ========================================================
-             مربع إعدادات التنبيه وهامش الانتظار
-        ======================================================== -->
-        <div class="alert-card-box" id="alertCardBox">
-            <div class="alert-card-header">
-                <span class="alert-card-title">🔔 Rappel & Notifications</span>
-                <label class="switch" title="Activer / Désactiver les notifications">
+        <!-- صندوق التنبيهات مع المفتاح التبادلي وخيارات الهامش 2، 5، 10، 15، 30 -->
+        <div class="alert-box" id="alertBox">
+            <div class="alert-header">
+                <span class="alert-title">🔔 Activer les alertes</span>
+                <label class="switch" title="Activer ou désactiver les alertes">
                     <input type="checkbox" id="alertToggle">
                     <span class="slider"></span>
                 </label>
             </div>
-            
-            <div class="alert-card-body" id="alertSettingsBody">
-                <div class="alert-row">
-                    <span>M'avertir à l'avance :</span>
-                    <select id="alertMarginSelect" class="alert-select">
-                        <option value="1">1 pers. avant</option>
-                        <option value="2" selected>2 pers. avant</option>
-                        <option value="3">3 pers. avant</option>
-                        <option value="5">5 pers. avant</option>
-                    </select>
-                </div>
-                <button type="button" class="btn-test-sound" id="testSoundBtn">🔊 Tester la sonnerie</button>
-                <div class="alert-status-hint" id="alertStatusHint">
-                    Actif : Une alerte sonore et une notification retentiront selon le choix sélectionné.
-                </div>
+            <div class="alert-options" id="alertOptionsArea">
+                <span>M'avertir à l'avance :</span>
+                <select id="alertMarginSelect" class="alert-select">
+                    <option value="2">2 pers. avant</option>
+                    <option value="5" selected>5 pers. avant</option>
+                    <option value="10">10 pers. avant</option>
+                    <option value="15">15 pers. avant</option>
+                    <option value="30">30 pers. avant</option>
+                </select>
             </div>
         </div>
 
@@ -566,6 +600,16 @@ footer {
     </section>
 
 </main>
+
+<!-- إشعار النافذة التفاعلي المنبثق -->
+<div class="modal-overlay" id="inAppModalOverlay">
+    <div class="modal-card">
+        <div class="modal-icon" id="inAppModalIcon">🔔</div>
+        <h3 id="inAppModalTitle">Rappel de votre tour</h3>
+        <p id="inAppModalMsg">Votre numéro approche de son passage au guichet.</p>
+        <button type="button" class="modal-btn" id="inAppModalCloseBtn">J'AI COMPRIS</button>
+    </div>
+</div>
 
 <footer>
     © 2026 POSTE EL AMAL<br>
@@ -619,13 +663,16 @@ const ticketTitleEl        = document.getElementById("ticketTitle");
 const ticketMessageEl      = document.getElementById("ticketMessage");
 const newReservationButton = document.getElementById("newReservationButton");
 
-// عناصر التحكم في التنبيهات والهامش
+// عناصر التنبيهات والنافذة المنبثقة
 const alertToggle          = document.getElementById("alertToggle");
 const alertMarginSelect    = document.getElementById("alertMarginSelect");
-const testSoundBtn         = document.getElementById("testSoundBtn");
-const alertCardBox         = document.getElementById("alertCardBox");
-const alertSettingsBody    = document.getElementById("alertSettingsBody");
-const alertStatusHint      = document.getElementById("alertStatusHint");
+const alertBox             = document.getElementById("alertBox");
+const alertOptionsArea     = document.getElementById("alertOptionsArea");
+const inAppModalOverlay    = document.getElementById("inAppModalOverlay");
+const inAppModalIcon       = document.getElementById("inAppModalIcon");
+const inAppModalTitle      = document.getElementById("inAppModalTitle");
+const inAppModalMsg        = document.getElementById("inAppModalMsg");
+const inAppModalCloseBtn   = document.getElementById("inAppModalCloseBtn");
 
 let reservationInProgress = false;
 let currentTicket = 0;
@@ -651,10 +698,10 @@ let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
 
-// تتبع حالات التنبيه لمنع التكرار المزعج
 let alertedApproachingForTicket = null;
 let alertedExactTurnForTicket = null;
 let wakeLock = null;
+let swRegistration = null;
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
 function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
@@ -666,8 +713,22 @@ function formatNumber(number) {
 }
 
 /* ========================================================
-   نظام التنبيه الصوتي (Web Audio API Synthesizer)
-   يعمل ذاتياً بدون ملفات mp3 وبدون أخطاء شبكة
+   تسجيل الـ Service Worker
+======================================================== */
+async function registerServiceWorker() {
+    if ("serviceWorker" in navigator) {
+        try {
+            swRegistration = await navigator.serviceWorker.register("./sw.js");
+            console.log("Service Worker enregistré avec succès:", swRegistration.scope);
+        } catch (error) {
+            console.warn("Échec de l'enregistrement du Service Worker:", error);
+        }
+    }
+}
+window.addEventListener("load", registerServiceWorker);
+
+/* ========================================================
+   نغمة التنبيه الإلكترونية عبر المتصفح (Web Audio API)
 ======================================================== */
 function playTone(freq, type, startTime, duration, gainLevel) {
     try {
@@ -683,30 +744,36 @@ function playTone(freq, type, startTime, duration, gainLevel) {
         osc.start(startTime);
         osc.stop(startTime + duration);
     } catch (e) {
-        console.warn("AudioContext tone error:", e);
+        console.warn("Audio Context warning:", e);
     }
 }
 
-function playNotificationChime() {
+function playNotificationChime(isTurn = false) {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === "suspended") {
-            audioCtx.resume();
-        }
+        if (audioCtx.state === "suspended") audioCtx.resume();
         const now = audioCtx.currentTime;
-        // نغمة رنين ثلاثية لطيفة وواضحة (D5 -> A5 -> D6)
-        playTone(587.33, "sine", now, 0.25, 0.4);
-        playTone(880.00, "sine", now + 0.18, 0.25, 0.4);
-        playTone(1174.66, "triangle", now + 0.36, 0.45, 0.4);
+
+        if (isTurn) {
+            // نغمة رنين عند وصول الدور بالكامل
+            playTone(523.25, "sine", now, 0.20, 0.4);       // C5
+            playTone(659.25, "sine", now + 0.15, 0.20, 0.4); // E5
+            playTone(783.99, "sine", now + 0.30, 0.20, 0.4); // G5
+            playTone(1046.50, "triangle", now + 0.45, 0.6, 0.5); // C6
+        } else {
+            // نغمة اقتراب الدور
+            playTone(587.33, "sine", now, 0.22, 0.35); // D5
+            playTone(880.00, "triangle", now + 0.18, 0.45, 0.4); // A5
+        }
     } catch (e) {
-        console.warn("Audio chime failed:", e);
+        console.warn("Chime failed:", e);
     }
 }
 
 /* ========================================================
-   طلب إذن منع الشاشة من النوم (Screen Wake Lock)
+   Screen Wake Lock
 ======================================================== */
-async function enableWakeLock() {
+async function requestScreenWakeLock() {
     try {
         if ("wakeLock" in navigator && !wakeLock) {
             wakeLock = await navigator.wakeLock.request("screen");
@@ -717,95 +784,113 @@ async function enableWakeLock() {
     }
 }
 
-function releaseWakeLock() {
+function releaseScreenWakeLock() {
     if (wakeLock) {
         wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
     }
 }
 
 /* ========================================================
-   إرسال الإشعار والتنبيه الصوتي والاهتزاز
+   إظهار إشعار النافذة وإشعار النظام (Service Worker)
 ======================================================== */
-async function triggerUserAlert(title, message) {
-    playNotificationChime();
+function showInAppWindowAlert(title, message, isTurn = false) {
+    inAppModalIcon.textContent = isTurn ? "📢" : "⏳";
+    inAppModalTitle.textContent = title;
+    inAppModalMsg.textContent = message;
+    inAppModalOverlay.style.display = "flex";
+}
 
-    // اهتزاز الهاتف
+inAppModalCloseBtn.addEventListener("click", () => {
+    inAppModalOverlay.style.display = "none";
+});
+
+async function triggerTurnAlert(title, message, isTurn = false) {
+    playNotificationChime(isTurn);
+
     if ("vibrate" in navigator) {
-        try { navigator.vibrate([300, 150, 300, 150, 450]); } catch (e) {}
+        try {
+            navigator.vibrate(isTurn ? [400, 150, 400, 150, 600] : [300, 150, 300]);
+        } catch (e) {}
     }
 
-    // إشعار النظام (Service Worker / Notification API)
+    // 1. إظهار الإشعار داخل النافذة
+    showInAppWindowAlert(title, message, isTurn);
+
+    // 2. إرسال الإشعار عبر Service Worker لشاشة القفل والخلفية
     if ("Notification" in window && Notification.permission === "granted") {
         try {
-            if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
-                const reg = await navigator.serviceWorker.ready;
-                reg.showNotification(title, {
-                    body: message,
-                    icon: new URL("logo.png", location.href).href,
-                    badge: new URL("logo.png", location.href).href,
-                    tag: "qms-turn-alert",
-                    requireInteraction: true,
-                    vibrate: [300, 150, 300]
-                });
+            const iconUrl = new URL("logo.png", location.href).href;
+            const notificationOptions = {
+                body: message,
+                icon: iconUrl,
+                badge: iconUrl,
+                tag: isTurn ? "poste-el-amal-turn" : "poste-el-amal-approaching",
+                renotify: true,
+                requireInteraction: true,
+                vibrate: isTurn ? [400, 150, 400, 150, 600] : [300, 150, 300],
+                data: { url: location.href }
+            };
+
+            if (swRegistration && swRegistration.showNotification) {
+                await swRegistration.showNotification(title, notificationOptions);
+            } else if ("serviceWorker" in navigator) {
+                const readyReg = await navigator.serviceWorker.ready;
+                await readyReg.showNotification(title, notificationOptions);
             } else {
-                new Notification(title, { body: message });
+                new Notification(title, notificationOptions);
             }
         } catch (e) {
-            console.warn("Notification send error:", e);
+            console.warn("Erreur envoi notification SW:", e);
         }
     }
 }
 
 /* ========================================================
-   حساب المسافة بين تذكرة الزبون والرقم الحالي (حساب الهامش)
+   محرك حساب مسافة الدور وتفعيل التنبيهات
 ======================================================== */
 function calculateDistanceToTurn(userTicket, curTicket) {
     const u = Number(userTicket);
     const c = Number(curTicket);
     if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return null;
-    if (u === c) return 0; // الدور الحالي للزبون تماماً
+    if (u === c) return 0;
 
-    if (u > c) {
-        return u - c;
-    } else {
-        // حالة الالتفاف الدائري (مثلاً الزبون رقمه 005 والرقم الحالي 998)
-        return (999 - c) + u;
-    }
+    return (u > c) ? (u - c) : ((999 - c) + u);
 }
 
 function checkAlertsEngine() {
     if (!alertToggle.checked || !activeUserTicketData || activeUserTicketData.ticket <= 0) return;
     const status = activeUserTicketData.status;
 
-    // التنبيه متاح فقط للتذاكر النشطة
     if (!["confirmed", "reserved", "arrived", "waiting"].includes(status)) return;
 
     const remaining = calculateDistanceToTurn(activeUserTicketData.ticket, currentTicket);
     if (remaining === null) return;
 
-    const margin = parseInt(alertMarginSelect.value, 10) || 2;
+    const margin = parseInt(alertMarginSelect.value, 10) || 5;
 
-    // 1. التنبيه عند بلوغ الهامش المحدد (مثلاً: بقي شخصان أو شخص واحد)
+    // 1. تنبيه اقتراب الدور بحسب الهامش المختار (2, 5, 10, 15, 30)
     if (remaining > 0 && remaining <= margin && alertedApproachingForTicket !== activeUserTicketData.ticket) {
         alertedApproachingForTicket = activeUserTicketData.ticket;
-        triggerUserAlert(
+        triggerTurnAlert(
             "⚠️ Préparez-vous !",
-            `Il ne reste que ${remaining} personne(s) avant votre tour (Ticket #${formatNumber(activeUserTicketData.ticket)}). Veuillez vous rapprocher.`
+            `Il ne reste que ${remaining} personne(s) avant votre tour (Ticket #${formatNumber(activeUserTicketData.ticket)}). Veuillez vous approcher du guichet.`,
+            false
         );
     }
 
-    // 2. التنبيه الحاسم عند وصول دور الزبون بالضبط (Exact Turn)
+    // 2. تنبيه وصول الدور بالضبط
     if (remaining === 0 && alertedExactTurnForTicket !== activeUserTicketData.ticket) {
         alertedExactTurnForTicket = activeUserTicketData.ticket;
-        triggerUserAlert(
+        triggerTurnAlert(
             "🔔 C'EST VOTRE TOUR !",
-            `Votre numéro #${formatNumber(activeUserTicketData.ticket)} est actuellement appelé au guichet !`
+            `Votre numéro #${formatNumber(activeUserTicketData.ticket)} est appelé au guichet !`,
+            true
         );
     }
 }
 
 /* ========================================================
-   إدارة وتخزين إعدادات التنبيه
+   إدارة إعدادات المفتاح التبادلي وحفظها
 ======================================================== */
 function initAlertPreferences() {
     const savedState = localStorage.getItem("qms_alert_enabled");
@@ -817,52 +902,40 @@ function initAlertPreferences() {
 
     if (savedState === "true") {
         alertToggle.checked = true;
-        alertSettingsBody.style.opacity = "1";
-        alertSettingsBody.style.pointerEvents = "auto";
-        enableWakeLock();
+        alertOptionsArea.style.opacity = "1";
+        alertOptionsArea.style.pointerEvents = "auto";
+        requestScreenWakeLock();
     } else {
         alertToggle.checked = false;
-        alertSettingsBody.style.opacity = "0.45";
-        alertSettingsBody.style.pointerEvents = "none";
+        alertOptionsArea.style.opacity = "0.4";
+        alertOptionsArea.style.pointerEvents = "none";
     }
 }
 
 alertToggle.addEventListener("change", async () => {
     if (alertToggle.checked) {
         if ("Notification" in window && Notification.permission !== "granted") {
-            const permission = await Notification.requestPermission();
-            if (permission !== "granted") {
-                alertStatusHint.textContent = "⚠️ Les notifications du navigateur sont bloquées. Seul le son fonctionnera.";
-                alertStatusHint.style.color = "var(--red)";
-            }
+            try {
+                await Notification.requestPermission();
+            } catch (e) {}
         }
         localStorage.setItem("qms_alert_enabled", "true");
-        alertSettingsBody.style.opacity = "1";
-        alertSettingsBody.style.pointerEvents = "auto";
-        alertStatusHint.textContent = "Actif : Une alerte sonore et une notification retentiront selon le choix sélectionné.";
-        alertStatusHint.style.color = "var(--muted)";
-        enableWakeLock();
-        playNotificationChime(); // إشعار تأكيدي فوري
+        alertOptionsArea.style.opacity = "1";
+        alertOptionsArea.style.pointerEvents = "auto";
+        requestScreenWakeLock();
+        playNotificationChime(false);
     } else {
         localStorage.setItem("qms_alert_enabled", "false");
-        alertSettingsBody.style.opacity = "0.45";
-        alertSettingsBody.style.pointerEvents = "none";
-        alertStatusHint.textContent = "Rappels désactivés.";
-        releaseWakeLock();
+        alertOptionsArea.style.opacity = "0.4";
+        alertOptionsArea.style.pointerEvents = "none";
+        releaseScreenWakeLock();
     }
 });
 
 alertMarginSelect.addEventListener("change", () => {
     localStorage.setItem("qms_alert_margin", alertMarginSelect.value);
-    alertedApproachingForTicket = null; // إعادة الفحص بالهامش الجديد
+    alertedApproachingForTicket = null;
     checkAlertsEngine();
-});
-
-testSoundBtn.addEventListener("click", () => {
-    playNotificationChime();
-    if ("vibrate" in navigator) {
-        navigator.vibrate([200, 100, 200]);
-    }
 });
 
 function isTicketOvertaken(userTicket, curTicket) {
@@ -991,7 +1064,6 @@ onValue(queueRef, (snapshot) => {
     firebaseDataAvailable = true;
     checkMasterStatus();
 
-    // فحص وتفعيل التنبيهات مع كل تحديث للرقم المنادى عليه
     checkAlertsEngine();
 
     if (activeUserTicketData && activeUserTicketData.ticket > 0) {
@@ -1100,15 +1172,15 @@ function updateReservationStatus(status) {
         newReservationButton.textContent = (status === "called") 
             ? "FAIRE UNE NOUVELLE RÉSERVATION" 
             : "RÉSERVER UN NOUVEAU TICKET";
-        alertCardBox.style.display = "none"; // إخفاء إعدادات التنبيه للتذاكر المنتهية
-        releaseWakeLock();
+        alertBox.style.display = "none";
+        releaseScreenWakeLock();
     } else {
         const codeVal = (activeUserTicketData && activeUserTicketData.code !== undefined && activeUserTicketData.code !== null) 
                         ? String(activeUserTicketData.code) : "";
         myCodeEl.textContent = codeVal ? codeVal.padStart(4, "0") : "----";
         newReservationButton.style.display = "none";
-        alertCardBox.style.display = "block"; // إظهار إعدادات التنبيه للتذكرة الفعالة
-        if (alertToggle.checked) enableWakeLock();
+        alertBox.style.display = "block";
+        if (alertToggle.checked) requestScreenWakeLock();
     }
 
     switch (status) {
@@ -1175,7 +1247,8 @@ function resetUserReservationUI() {
     activeUserTicketData = null;
     alertedApproachingForTicket = null;
     alertedExactTurnForTicket = null;
-    releaseWakeLock();
+    releaseScreenWakeLock();
+    inAppModalOverlay.style.display = "none";
     reservationSection.style.display = "block";
     ticketSection.style.display = "none";
     duplicateNoticeEl.style.display = "none";
@@ -1423,7 +1496,6 @@ logoutButton.addEventListener("click", async () => {
     }
 });
 
-// تهيئة التفضيلات والتحديث الدوري
 initAlertPreferences();
 updateReserveButton();
 setInterval(checkMasterStatus, 5000);
