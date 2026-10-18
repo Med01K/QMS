@@ -1115,7 +1115,8 @@ onValue(queueRef, (snapshot) => {
 
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
-    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status);
+    const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
+    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) &&  !isCurrentTicketOvertaken;
     const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
 
     if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
