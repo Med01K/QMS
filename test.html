@@ -546,7 +546,7 @@ footer {
         <!-- صندوق التنبيهات مع المفتاح التبادلي وخيارات الهامش (القيمة الافتراضية 10) -->
         <div class="alert-box" id="alertBox">
             <div class="alert-header">
-                <span class="alert-title">🔔 Activer les alertes</span>
+                <span class="alert-title">🔔 Activer les alertes (Push)</span>
                 <label class="switch" title="Activer ou désactiver les alertes">
                     <input type="checkbox" id="alertToggle">
                     <span class="slider"></span>
@@ -620,6 +620,7 @@ footer {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getDatabase, ref, onValue, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
@@ -636,6 +637,11 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
+
+// مفتاح VAPID العام المستخرج من Firebase Console
+const VAPID_KEY = "BHVKczf-qi6Dcun5s4GdvMoBnRDUe5vOTsKg5seNNgvgMBodd_fwlMaVNOROwIWJEZYOzRqXIhLC16Ore-3CDSs";
+
+let messaging = null;
 
 const googleLoginButton    = document.getElementById("googleLoginButton");
 const logoutButton         = document.getElementById("logoutButton");
@@ -663,7 +669,6 @@ const ticketTitleEl        = document.getElementById("ticketTitle");
 const ticketMessageEl      = document.getElementById("ticketMessage");
 const newReservationButton = document.getElementById("newReservationButton");
 
-// عناصر التنبيهات والنافذة المنبثقة
 const alertToggle          = document.getElementById("alertToggle");
 const alertMarginSelect    = document.getElementById("alertMarginSelect");
 const alertBox             = document.getElementById("alertBox");
@@ -698,10 +703,9 @@ let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
 
-// متغيرات تتبع التنبيهات الدورية
 let lastTrackedTicketNum = null;
-let lastAlertedRemaining = null; // يحفظ عدد الأشخاص عند آخر تنبيه تم إرساله
-let alertedExactTurnForTicket = null; // يمنع تكرار تنبيه وصول الدور
+let lastAlertedRemaining = null;
+let alertedExactTurnForTicket = null;
 let wakeLock = null;
 let swRegistration = null;
 
@@ -715,19 +719,63 @@ function formatNumber(number) {
 }
 
 /* ========================================================
-   تسجيل الـ Service Worker
+   تهيئة الـ Firebase Messaging واستخراج الـ Token
 ======================================================== */
-async function registerServiceWorker() {
+async function initFirebaseMessaging() {
+    const supported = await isSupported();
+    if (!supported) {
+        console.warn("FCM n'est pas pris en charge par ce navigateur.");
+        return;
+    }
+
+    messaging = getMessaging(app);
+
     if ("serviceWorker" in navigator) {
         try {
-            swRegistration = await navigator.serviceWorker.register("./sw.js");
-            console.log("Service Worker enregistré avec succès:", swRegistration.scope);
-        } catch (error) {
-            console.warn("Échec de l'enregistrement du Service Worker:", error);
+            swRegistration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+            console.log("Firebase Messaging SW enregistré:", swRegistration.scope);
+        } catch (e) {
+            console.warn("Erreur d'enregistrement SW FCM:", e);
         }
     }
+
+    // استقبال إشعار FCM عندما يكون التطبيق مفتوحاً في الواجهة
+    onMessage(messaging, (payload) => {
+        const title = payload.notification?.title || "POSTE EL AMAL";
+        const body = payload.notification?.body || "Votre tour approche !";
+        const isTurn = payload.data?.isTurn === "true";
+        triggerTurnAlert(title, body, isTurn);
+    });
 }
-window.addEventListener("load", registerServiceWorker);
+window.addEventListener("load", initFirebaseMessaging);
+
+async function syncFCMTokenWithDatabase() {
+    if (!messaging || !currentUser) return;
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") return;
+
+        const tokenOptions = { serviceWorkerRegistration: swRegistration };
+        if (VAPID_KEY && VAPID_KEY !== "YOUR_VAPID_PUBLIC_KEY_HERE") {
+            tokenOptions.vapidKey = VAPID_KEY;
+        }
+
+        const token = await getToken(messaging, tokenOptions);
+        if (token) {
+            // حفظ الـ Token وربطه برقم تذكرة الزبون وهامشه
+            await set(ref(db, `users_fcm/${currentUser.uid}`), {
+                token: token,
+                ticket: activeUserTicketData?.ticket || 0,
+                margin: Number(alertMarginSelect.value) || 10,
+                user_email: currentUser.email || "",
+                updated_at: serverTimestamp()
+            });
+            console.log("FCM Token enregistré avec succès dans Firebase.");
+        }
+    } catch (err) {
+        console.warn("Erreur obtention FCM Token:", err);
+    }
+}
 
 /* ========================================================
    نغمة التنبيه الإلكترونية عبر المتصفح (Web Audio API)
@@ -757,13 +805,11 @@ function playNotificationChime(isTurn = false) {
         const now = audioCtx.currentTime;
 
         if (isTurn) {
-            // نغمة رنين عند وصول الدور بالكامل
             playTone(523.25, "sine", now, 0.20, 0.4);       // C5
             playTone(659.25, "sine", now + 0.15, 0.20, 0.4); // E5
             playTone(783.99, "sine", now + 0.30, 0.20, 0.4); // G5
             playTone(1046.50, "triangle", now + 0.45, 0.6, 0.5); // C6
         } else {
-            // نغمة اقتراب الدور
             playTone(587.33, "sine", now, 0.22, 0.35); // D5
             playTone(880.00, "triangle", now + 0.18, 0.45, 0.4); // A5
         }
@@ -793,7 +839,7 @@ function releaseScreenWakeLock() {
 }
 
 /* ========================================================
-   إظهار إشعار النافذة وإشعار النظام (Service Worker)
+   إظهار إشعار النافذة وإشعار النظام
 ======================================================== */
 function showInAppWindowAlert(title, message, isTurn = false) {
     inAppModalIcon.textContent = isTurn ? "📢" : "⏳";
@@ -815,10 +861,8 @@ async function triggerTurnAlert(title, message, isTurn = false) {
         } catch (e) {}
     }
 
-    // 1. إظهار الإشعار داخل النافذة
     showInAppWindowAlert(title, message, isTurn);
 
-    // 2. إرسال الإشعار عبر Service Worker لشاشة القفل والخلفية
     if ("Notification" in window && Notification.permission === "granted") {
         try {
             const iconUrl = new URL("logo.png", location.href).href;
@@ -835,14 +879,11 @@ async function triggerTurnAlert(title, message, isTurn = false) {
 
             if (swRegistration && swRegistration.showNotification) {
                 await swRegistration.showNotification(title, notificationOptions);
-            } else if ("serviceWorker" in navigator) {
-                const readyReg = await navigator.serviceWorker.ready;
-                await readyReg.showNotification(title, notificationOptions);
             } else {
                 new Notification(title, notificationOptions);
             }
         } catch (e) {
-            console.warn("Erreur envoi notification SW:", e);
+            console.warn("Erreur envoi notification:", e);
         }
     }
 }
@@ -867,7 +908,6 @@ function checkAlertsEngine() {
 
     const ticketNum = activeUserTicketData.ticket;
 
-    // إعادة التهيئة إذا تغيرت التذكرة
     if (lastTrackedTicketNum !== ticketNum) {
         lastTrackedTicketNum = ticketNum;
         lastAlertedRemaining = null;
@@ -877,10 +917,8 @@ function checkAlertsEngine() {
     const remaining = calculateDistanceToTurn(ticketNum, currentTicket);
     if (remaining === null) return;
 
-    // القيمة الافتراضية 10
     const margin = parseInt(alertMarginSelect.value, 10) || 10;
 
-    // معالجة حالة تراجع الطابور
     if (lastAlertedRemaining !== null && remaining > lastAlertedRemaining) {
         lastAlertedRemaining = remaining;
     }
@@ -918,7 +956,6 @@ function initAlertPreferences() {
     const savedState = localStorage.getItem("qms_alert_enabled");
     const savedMargin = localStorage.getItem("qms_alert_margin");
 
-    // القيمة الافتراضية 10
     if (savedMargin) {
         alertMarginSelect.value = savedMargin;
     } else {
@@ -949,6 +986,9 @@ alertToggle.addEventListener("change", async () => {
         alertOptionsArea.style.pointerEvents = "auto";
         requestScreenWakeLock();
         playNotificationChime(false);
+
+        // توليد وتسجيل الـ FCM Token في Firebase عند التشغيل
+        await syncFCMTokenWithDatabase();
     } else {
         localStorage.setItem("qms_alert_enabled", "false");
         alertOptionsArea.style.opacity = "0.4";
@@ -957,10 +997,15 @@ alertToggle.addEventListener("change", async () => {
     }
 });
 
-alertMarginSelect.addEventListener("change", () => {
+alertMarginSelect.addEventListener("change", async () => {
     localStorage.setItem("qms_alert_margin", alertMarginSelect.value);
-    lastAlertedRemaining = null; // إعادة الفحص بالهامش الجديد
+    lastAlertedRemaining = null;
     checkAlertsEngine();
+
+    // تحديث الهامش في قاعدة بيانات FCM
+    if (currentUser && alertToggle.checked) {
+        await syncFCMTokenWithDatabase();
+    }
 });
 
 function isTicketOvertaken(userTicket, curTicket) {
@@ -1325,6 +1370,7 @@ function watchReservationKey(key) {
 
             saveReservation(resData);
             showReservation(resData, data.is_duplicate === true);
+            if (alertToggle.checked) syncFCMTokenWithDatabase();
         }
     });
 }
@@ -1363,6 +1409,7 @@ function watchUserActiveTicket(uid) {
             } else {
                 showReservation(resData, data.is_duplicate === true);
             }
+            if (alertToggle.checked) syncFCMTokenWithDatabase();
         } else if (["called", "skipped", "completed"].includes(status)) {
             updateReservationStatus(status);
         }
@@ -1506,6 +1553,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
         watchUserActiveTicket(user.uid);
+        if (alertToggle.checked) syncFCMTokenWithDatabase();
     } else {
         loginSection.style.display = "block";
         userSection.style.display = "none";
