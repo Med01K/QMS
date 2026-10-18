@@ -1,1085 +1,1433 @@
 <!DOCTYPE html>
-<html lang="fr" dir="ltr">
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Poste Cité El Amel - Système de gestion de file d'attente</title>
-<link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96">
-<link rel="icon" type="image/svg+xml" href="./favicon.svg">
-<link rel="shortcut icon" href="./favicon.ico">
-<link rel="apple-touch-icon" href="./apple-touch-icon.png" sizes="180x180">
-<link rel="manifest" href="./site.webmanifest">
-<meta name="theme-color" content="#ffffff">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&family=Tajawal:wght@500;700;800&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#123b74">
+
+<title>POSTE EL AMAL | Réservation de ticket</title>
+
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#f3f4f6;--card:#fff;--text:#111827;--muted:#6b7280;
-  --border:#e5e7eb;--primary:#2563eb;--success:#16a34a;
-  --warn-bg:#fffbeb;--warn-bd:#fde68a;--warn-tx:#92400e;
-  --danger-bg:#fef2f2;--danger-bd:#fecaca;--danger-tx:#991b1b;
-  --online-bg:#ecfdf5;--online-tx:#065f46;--online-dot:#16a34a;
-  --offline-bg:#fef2f2;--offline-tx:#991b1b;--offline-dot:#dc2626;
-  --title2:#161B5D;--closed-bg:#fffbeb;--closed-tx:#92400e;--closed-dot:#f59e0b
+:root {
+    --primary: #123b74;
+    --primary-dark: #09264d;
+    --secondary: #1976d2;
+    --green: #16a34a;
+    --orange: #f59e0b;
+    --red: #dc2626;
+    --background: #f2f5fa;
+    --white: #ffffff;
+    --text: #1e293b;
+    --muted: #64748b;
+    --border: #e2e8f0;
 }
-body{
-  font-family:Inter,'Segoe UI',Tahoma,Arial,sans-serif;
-  text-align:center;background:radial-gradient(1200px 600px at 50% -10%,#e8f0ff,var(--bg));
-  display:flex;justify-content:center;align-items:center;
-  min-height:100vh;padding:16px;color:var(--text)
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
-.card{
-  background:var(--card);padding:28px 22px;border-radius:22px;
-  box-shadow:0 18px 50px rgba(17,24,39,.10);
-  max-width:560px;width:100%;border:1px solid rgba(229,231,235,.7)
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--text);
+    min-height: 100vh;
 }
-.brand-logo{
-  max-width:90px;height:auto;margin:0 auto 24px;
-  display:block;object-fit:contain;cursor:pointer
+
+header {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    color: white;
+    text-align: center;
+    padding: 30px 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
 }
-.bi{display:flex;flex-direction:column;gap:4px}
-.bi .fr,.bi .ar{display:block;line-height:1.2;unicode-bidi:isolate}
-.bi .fr{direction:ltr;text-align:left;font-family:Inter,sans-serif}
-.bi .ar{direction:rtl;text-align:right;font-family:Tajawal,Tahoma,Arial,sans-serif}
-.bi.center .fr,.bi.center .ar{text-align:center}
-.bi.small .fr,.bi.small .ar{font-size:12.5px;font-weight:700;color:var(--muted)}
-.page-title{margin-bottom:12px}
-.page-title .ar{font-size:26px;font-weight:800;color:var(--title2)}
-.page-title .fr{font-size:14.5px;font-weight:700;color:var(--muted)}
-.number-box{
-  background:linear-gradient(180deg,#f8fafc,#fff);
-  border-radius:18px;padding:14px 12px;margin:14px 0 10px;
-  border:1px solid var(--border)
+
+header h1 {
+    font-size: 27px;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
 }
-.number{
-  font-size:clamp(56px,14vw,96px);color:var(--primary);
-  font-weight:800;line-height:1;letter-spacing:1px;
-  transition:color .25s ease,transform .18s ease
+
+header p {
+    font-size: 14px;
+    opacity: 0.85;
 }
-.number.updated{transform:scale(1.06);color:var(--success)}
-.number.closed{color:var(--muted)}
-.user-section{
-  background:#f9fafb;padding:16px;border-radius:16px;
-  margin:16px 0;border:1px solid var(--border);text-align:initial
+
+.container {
+    max-width: 520px;
+    margin: auto;
+    padding: 20px 15px 40px;
+    display: flex;
+    flex-direction: column;
 }
-.user-section h3{margin-bottom:10px}
-.user-section h3 .ar{font-size:15px;font-weight:800;text-align:center}
-.user-section h3 .fr{font-size:12.5px;font-weight:700;color:var(--muted);text-align:center}
-.input-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
-.input-group label .ar{font-size:13px;font-weight:800}
-.input-group label .fr{font-size:12.5px;font-weight:700;color:var(--muted)}
-.input-group input{
-  padding:11px 12px;border-radius:10px;border:1px solid var(--border);
-  font-size:14px;outline:none;background:#fff;
-  transition:border-color .2s ease,box-shadow .2s ease
+
+#queueSection { order: 1; }
+#reservationSection, #ticketSection { order: 2; }
+#authSection { order: 3; }
+#infoSection { order: 4; }
+
+.card {
+    background: white;
+    border-radius: 18px;
+    padding: 25px 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
 }
-.input-group input:focus{
-  border-color:rgba(37,99,235,.55);
-  box-shadow:0 0 0 4px rgba(37,99,235,.12)
+
+.section-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--muted);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
-.input-group input:disabled{
-  background:#f3f4f6;color:var(--muted);
-  cursor:not-allowed;box-shadow:none
+
+.current-number {
+    text-align: center;
+    font-size: 90px;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 15px 0 5px;
+    line-height: 1.1;
 }
-.btn{
-  width:100%;max-width:280px;margin:8px auto 0;display:block;
-  border:1px solid rgba(0,0,0,.06);border-radius:12px;
-  background:var(--primary);color:#fff;padding:12px 14px;
-  cursor:pointer;transition:filter .15s ease,background-color .2s ease
+
+.divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
 }
-.btn:hover{filter:brightness(.97)}
-.btn .bi .ar{color:#fff;font-weight:900;font-size:16px}
-.btn .bi .fr{color:rgba(255,255,255,.92);font-weight:800;font-size:12.5px}
-.btn.active{
-  background:#16a34a;border-color:#15803d;
-  box-shadow:0 0 0 4px rgba(22,163,74,.15),0 8px 22px rgba(22,163,74,.20)
+
+.waiting-box { text-align: center; }
+
+.waiting-number {
+    font-size: 55px;
+    font-weight: bold;
+    color: var(--orange);
+    margin-top: 10px;
+    line-height: 1.1;
 }
-.btn.active:hover{background:#15803d}
-.btn:disabled{opacity:.65;cursor:not-allowed}
-.alert-banner{
-  display:none;background:var(--warn-bg);color:var(--warn-tx);
-  border:1px solid var(--warn-bd);padding:12px;
-  border-radius:12px;margin-top:10px;text-align:center
+
+.queue-footer {
+    margin: 25px -20px -25px -20px;
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
 }
-.alert-banner.active{display:block}
-.alert-banner.urgent{
-  background:var(--danger-bg);color:var(--danger-tx);
-  border-color:var(--danger-bd)
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--orange);
+    display: inline-block;
 }
-.alert-banner.arrived{
-  background:#ecfdf5;color:#065f46;border-color:#86efac
+
+.status-dot.online { background: var(--green); }
+.status-dot.offline { background: var(--red); }
+.status-dot.warning { background: var(--orange); }
+
+.auth-card { text-align: center; }
+.auth-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 15px; }
+.auth-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
+
+.btn-google {
+    background: white;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
 }
-.alert-banner .bi.small .fr,.alert-banner .bi.small .ar{
-  color:inherit;font-weight:800
+.btn-google:hover { background: #f8fafc; }
+
+.user-photo {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    margin-bottom: 12px;
+    object-fit: cover;
 }
-.status-container{
-  display:flex;align-items:center;justify-content:center;gap:10px;
-  padding:10px 14px;border-radius:16px;width:100%;
-  background:var(--offline-bg);color:var(--offline-tx);
-  border:1px solid rgba(0,0,0,.05)
+
+.user-name { font-size: 17px; font-weight: bold; color: var(--primary); margin-bottom: 6px; }
+.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; }
+
+.reservation-card { text-align: center; }
+.reservation-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 12px; }
+.reservation-card p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
+
+button {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 17px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
 }
-.status-dot{
-  width:10px;height:10px;border-radius:50%;
-  background:var(--offline-dot);display:inline-block;flex:0 0 auto
+
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:not(:disabled):hover { background: var(--primary-dark); }
+
+.btn-secondary { background: #e8f0fb; color: var(--primary); margin-top: 15px; }
+.btn-secondary:hover { background: #d6e4f9; }
+
+.btn-rebook {
+    background: var(--primary);
+    color: white;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(18, 59, 116, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
-.status-container.online{background:var(--online-bg);color:var(--online-tx)}
-.status-container.online .status-dot{background:var(--online-dot)}
-.status-container.closed{background:var(--closed-bg);color:var(--closed-tx)}
-.status-container.closed .status-dot{background:var(--closed-dot)}
-.notification-overlay{
-  position:fixed;inset:0;background:rgba(15,23,42,.55);
-  backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);
-  display:flex;align-items:center;justify-content:center;
-  padding:18px;z-index:99999;opacity:0;visibility:hidden;
-  pointer-events:none;transition:opacity .25s ease,visibility .25s ease
+.btn-rebook:not(:disabled):hover {
+    background: var(--primary-dark);
 }
-.notification-overlay.show{opacity:1;visibility:visible;pointer-events:auto}
-.notification-popup{
-  position:relative;width:100%;max-width:390px;
-  max-height:90dvh;overflow-y:auto;background:#fff;
-  border-radius:22px;padding:25px 20px 20px;
-  box-shadow:0 25px 70px rgba(0,0,0,.22);
-  transform:translateY(18px) scale(.96);
-  transition:transform .25s ease;text-align:center
+
+.ticket-card {
+    display: none;
+    text-align: center;
+    border: 2px dashed var(--secondary);
+    transition: border-color 0.3s;
 }
-.notification-overlay.show .notification-popup{transform:translateY(0) scale(1)}
-.popup-close{
-  position:absolute;top:12px;right:12px;width:32px;height:32px;
-  border:none;border-radius:50%;background:#f1f5f9;color:#64748b;
-  font-size:23px;cursor:pointer;display:flex;
-  align-items:center;justify-content:center
+
+.ticket-card h2 { 
+    font-size: 22px; 
+    margin-bottom: 20px; 
+    transition: color 0.3s;
 }
-.popup-close:hover{background:#e2e8f0;color:#111827}
-.popup-icon{
-  width:68px;height:68px;margin:0 auto 15px;border-radius:50%;
-  background:#eff6ff;display:flex;align-items:center;
-  justify-content:center;font-size:34px
+.ticket-title-green  { color: var(--green) !important; }
+.ticket-title-blue   { color: var(--secondary) !important; }
+.ticket-title-red    { color: var(--red) !important; }
+.ticket-title-dark   { color: var(--primary) !important; }
+
+.ticket-label {
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    margin-top: 15px;
 }
-.popup-title{margin-bottom:12px}
-.popup-title .ar{color:#1e40af;font-size:21px;font-weight:800}
-.popup-title .fr{color:#64748b;font-size:13px;font-weight:700}
-.popup-description{margin-bottom:16px}
-.popup-description .ar{
-  font-size:14px;line-height:1.7;color:#334155;font-weight:700
+
+.ticket-number {
+    font-size: 75px;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 10px 0 20px;
 }
-.popup-description .fr{
-  font-size:12px;line-height:1.6;color:#64748b;font-weight:600
+
+.reservation-code {
+    display: inline-block;
+    background: #edf5ff;
+    border: 2px solid #c8defa;
+    padding: 15px 30px;
+    border-radius: 12px;
+    color: var(--primary);
+    font-size: 42px;
+    font-weight: bold;
+    letter-spacing: 7px;
+    margin: 15px 0;
 }
-.popup-permission{
-  padding:11px;border-radius:12px;background:#fffbeb;
-  border:1px solid #fde68a;margin-bottom:12px
+
+.ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; }
+
+.ticket-status {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-weight: bold;
+    font-size: 14px;
 }
-.popup-permission[hidden]{display:none}
-.popup-permission .ar,.popup-permission .fr{
-  color:#92400e;font-size:12px;font-weight:700;line-height:1.5
+
+.ticket-status.confirmed { background: #fff7ed; color: #9a3412; }
+.ticket-status.arrived   { background: #dcfce7; color: #166534; }
+.ticket-status.called    { background: #dbeafe; color: #1d4ed8; }
+.ticket-status.skipped   { background: #fee2e2; color: #991b1b; }
+.ticket-status.completed { background: #e2e8f0; color: #334155; }
+.ticket-status.rejected  { background: #fee2e2; color: #991b1b; }
+
+/* ========================================================
+   تنسيقات نظام التنبيه الذكي وهامش الانتظار
+======================================================== */
+.alert-card-box {
+    margin-top: 25px;
+    background: #f0f7ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 16px 18px;
+    text-align: left;
 }
-.popup-permission.denied{background:#fef2f2;border-color:#fecaca}
-.popup-permission.denied .ar,.popup-permission.denied .fr{color:#991b1b}
-.popup-enable{
-  width:100%;border:none;border-radius:12px;
-  background:#2563eb;color:white;padding:13px;
-  cursor:pointer;margin-bottom:10px
+
+.alert-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
 }
-.popup-enable .ar{font-size:15px;font-weight:800;color:#fff}
-.popup-enable .fr{font-size:12px;font-weight:700;color:#fff}
-.popup-enable:hover{background:#1d4ed8}
-.popup-enable:disabled{opacity:.6;cursor:not-allowed}
-.popup-enable[hidden]{display:none}
-.popup-later{
-  background:none;border:none;color:#64748b;
-  font-size:13px;cursor:pointer;padding:9px
+
+.alert-card-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-body.popup-open{overflow:hidden}
-.test-panel{
-  margin-top:14px;padding:14px;border-radius:16px;
-  border:1px dashed rgba(37,99,235,.35);
-  background:linear-gradient(180deg,#f8fafc,#fff);text-align:initial
+
+/* مفتاح التبديل Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 26px;
 }
-.test-panel[hidden]{display:none}
-.test-panel h3{margin-bottom:10px}
-.test-row{
-  display:flex;gap:8px;flex-wrap:wrap;
-  justify-content:center;align-items:center;margin-top:10px
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
-.test-row input[type="number"]{
-  width:160px;max-width:100%;padding:10px;
-  border-radius:10px;border:1px solid var(--border)
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e1;
+    transition: .3s;
+    border-radius: 26px;
 }
-.btn.test-btn{max-width:170px;margin:0;padding:10px 12px;background:#111827}
-.btn.test-btn.secondary{background:#374151}
-.test-note{
-  margin-top:10px;color:var(--muted);
-  font-size:12.5px;font-weight:700;text-align:center
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-.browser-reminder{
-  display:block;background:#eff6ff;border:1px solid #bfdbfe;
-  border-radius:12px;padding:13px 12px;margin-top:12px;
-  text-align:center;color:#1e40af;opacity:0;max-height:0;
-  padding-top:0;padding-bottom:0;margin-top:0;border-width:0;
-  overflow:hidden;visibility:hidden;
-  transition:opacity 1s ease,max-height 1s ease,padding 1s ease,
-    margin 1s ease,border-width 1s ease,visibility 1s ease
+
+input:checked + .slider {
+    background-color: var(--secondary);
 }
-.browser-reminder.show{
-  opacity:1;max-height:200px;padding:13px 12px;
-  margin-top:12px;border-width:1px;visibility:visible
+
+input:checked + .slider:before {
+    transform: translateX(22px);
 }
-.browser-reminder .ar{
-  font-family:Tajawal,Tahoma,Arial,sans-serif;font-size:14px;
-  font-weight:800;line-height:1.7;color:#1e40af
+
+.alert-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-top: 1px solid #dbeafe;
+    padding-top: 12px;
 }
-.browser-reminder .fr{
-  font-family:Inter,sans-serif;font-size:12px;
-  font-weight:700;line-height:1.6;color:#475569
+
+.alert-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
 }
-@media(prefers-reduced-motion:reduce){
-  *,*::before,*::after{
-    animation-duration:.01ms!important;
-    transition-duration:.01ms!important
-  }
+
+.alert-select {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+}
+
+.btn-test-sound {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    background: #e2e8f0;
+    color: #334155;
+    font-weight: 600;
+    margin-top: 4px;
+}
+.btn-test-sound:hover {
+    background: #cbd5e1;
+}
+
+.alert-status-hint {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+    text-align: center;
+    margin-top: 5px;
+}
+
+.error-message {
+    display: none;
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 13px;
+    border-radius: 10px;
+    margin-top: 15px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.info-banner {
+    display: none;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.warning-banner {
+    display: none;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 14px;
+    border-radius: 12px;
+    margin-top: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.info-card {
+    background: #eaf2ff;
+    border-left: 4px solid var(--secondary);
+    padding: 18px;
+    border-radius: 12px;
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.8;
+}
+
+footer {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 10px 15px 30px;
+}
+
+@media(max-width: 400px) {
+    .current-number { font-size: 75px; }
+    .ticket-number { font-size: 65px; }
+    .reservation-code { font-size: 34px; letter-spacing: 5px; padding: 15px 20px; }
+    header h1 { font-size: 23px; }
 }
 </style>
 </head>
+
 <body>
 
-<div class="card">
-  <a href="./index.html" aria-label="العودة إلى الصفحة الرئيسية">
-    <img src="logo.png" alt="Logo" class="brand-logo">
-  </a>
+<header>
+    <h1>POSTE EL AMAL</h1>
+    <p>Système de gestion des files d'attente</p>
+</header>
 
-  <div class="bi center" style="margin:-10px 0 16px;gap:2px">
-    <span class="ar" lang="ar" style="font-size:15px;font-weight:800;color:var(--title2)">مكتب بريد حي الأمل 6033 قابس</span>
-    <span class="fr" lang="fr" style="font-size:11px;font-weight:600;color:var(--muted)">Poste Cité El Amel 6033 Gabès</span>
-    <div style="margin-bottom:10px"></div>
-  </div>
+<main class="container">
 
-  <h1 class="page-title">
-    <span class="bi center">
-      <span class="ar" lang="ar" style="font-size:50px">الرقم الحالي</span>
-      <span class="fr" lang="fr" style="font-size:20px">Numéro actuel</span>
-    </span>
-  </h1>
+    <section class="card" id="queueSection">
+        <div class="section-title">Numéro en cours</div>
+        <div class="current-number" id="currentTicket">---</div>
+        
+        <div class="divider"></div>
+        
+        <div class="waiting-box">
+            <div class="section-title">Personnes en attente</div>
+            <div class="waiting-number" id="waitingCount">--</div>
+        </div>
 
-  <div class="number-box">
-    <div class="number" id="queueNum" aria-live="polite" aria-atomic="true">--</div>
-  </div>
+        <div class="queue-footer">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="connectionStatus">Connexion...</span>
+        </div>
+    </section>
 
-  <div class="user-section">
-    <h3>
-      <span class="bi center">
-        <span class="ar" lang="ar">متابعة دورك</span>
-        <span class="fr" lang="fr">Suivez votre tour</span>
-      </span>
-    </h3>
+    <section class="card reservation-card" id="reservationSection">
+        <h2>Réservation en ligne</h2>
+        <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
+        
+        <button class="btn-primary" id="reserveButton" disabled>RÉSERVER UN TICKET</button>
+        
+        <div class="warning-banner" id="printerOfflineBanner">
+            ⚠️ <strong>Service temporairement suspendu :</strong><br>
+            La borne d'impression est actuellement hors ligne. Veuillez patienter ou prendre votre ticket directement sur place.
+        </div>
 
-    <div class="input-group">
-      <label for="myTicketInput">
-        <span class="bi">
-          <span class="ar" lang="ar">رقمك</span>
-          <span class="fr" lang="fr">Votre numéro</span>
-        </span>
-      </label>
-      <input type="number" inputmode="numeric" step="1" id="myTicketInput" min="1" max="999">
-    </div>
+        <div class="error-message" id="reservationError"></div>
+    </section>
 
-    <div class="input-group">
-      <label for="thresholdInput">
-        <span class="bi">
-          <span class="ar" lang="ar">هامش التنبيه (عدد الأشخاص قبلك)</span>
-          <span class="fr" lang="fr">Marge d'alerte (personnes avant vous)</span>
-        </span>
-      </label>
-      <input type="number" inputmode="numeric" step="1" id="thresholdInput" value="10" min="0">
-    </div>
+    <section class="card ticket-card" id="ticketSection">
+        <div class="info-banner" id="duplicateNotice">
+            ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
+        </div>
 
-    <div id="browserReminder" class="browser-reminder" role="status">
-      <span class="bi center">
-        <span class="ar" lang="ar">يُرجى إبقاء المتصفح مفتوحًا لضمان تلقي الإشعارات.</span>
-        <span class="fr" lang="fr">Veuillez garder le navigateur ouvert pour recevoir les notifications.</span>
-      </span>
-    </div>
+        <h2 id="ticketTitle" class="ticket-title-green">RÉSERVATION CONFIRMÉE</h2>
 
-    <button id="verifyBtn" class="btn" type="button" aria-pressed="false">
-      <span class="bi center">
-        <span class="ar" id="verifyBtnAr" lang="ar">متابعة</span>
-        <span class="fr" id="verifyBtnFr" lang="fr">Suivi</span>
-      </span>
-    </button>
+        <div class="ticket-label">VOTRE NUMÉRO</div>
+        <div class="ticket-number" id="myTicket">---</div>
 
-    <div id="alertBanner" class="alert-banner" role="status" aria-live="polite"></div>
-  </div>
+        <div class="ticket-label">CODE DE RETRAIT</div>
+        <div class="reservation-code" id="myCode">----</div>
 
-  <div class="status-container" id="statusContainer">
-    <span class="status-dot" aria-hidden="true"></span>
-    <div id="statusText" style="width:100%"></div>
-  </div>
+        <div class="ticket-status" id="myStatus">En attente de confirmation</div>
 
-  <div id="testPanel" class="test-panel" hidden>
-    <h3>
-      <span class="bi center">
-        <span class="ar" lang="ar">وضع الاختبار (بدون ESP32)</span>
-        <span class="fr" lang="fr">Mode test (sans ESP32)</span>
-      </span>
-    </h3>
-    <div class="test-row">
-      <input id="testTicketInput" type="number" min="1" max="999" step="1" placeholder="Ticket courant">
-      <button id="testApplyBtn" class="btn test-btn secondary" type="button">
-        <span class="bi center">
-          <span class="ar" lang="ar">تطبيق</span>
-          <span class="fr" lang="fr">Appliquer</span>
-        </span>
-      </button>
-    </div>
-    <div class="test-row">
-      <button id="testDecBtn" class="btn test-btn secondary" type="button">
-        <span class="bi center"><span class="ar">- 1</span><span class="fr">- 1</span></span>
-      </button>
-      <button id="testIncBtn" class="btn test-btn" type="button">
-        <span class="bi center"><span class="ar">+ 1</span><span class="fr">+ 1</span></span>
-      </button>
-    </div>
-    <div class="test-row">
-      <label style="display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap">
-        <input id="testAutoToggle" type="checkbox">
-        <span class="bi center small">
-          <span class="ar" lang="ar">زيادة تلقائية</span>
-          <span class="fr" lang="fr">Auto-incrément</span>
-        </span>
-      </label>
-      <input id="testAutoPeriod" type="number" min="1" step="1" value="5" style="width:90px">
-      <span class="bi center small">
-        <span class="ar" lang="ar">ثوانٍ</span>
-        <span class="fr" lang="fr">secondes</span>
-      </span>
-    </div>
-    <div class="test-note">
-      <span class="bi center small">
-        <span class="ar" lang="ar">هذا الوضع يعمل فقط عند إضافة test=1 للرابط.</span>
-        <span class="fr" lang="fr">Ce mode fonctionne uniquement avec test=1 dans l’URL.</span>
-      </span>
-    </div>
-  </div>
-</div>
+        <!-- ========================================================
+             مربع إعدادات التنبيه وهامش الانتظار
+        ======================================================== -->
+        <div class="alert-card-box" id="alertCardBox">
+            <div class="alert-card-header">
+                <span class="alert-card-title">🔔 Rappel & Notifications</span>
+                <label class="switch" title="Activer / Désactiver les notifications">
+                    <input type="checkbox" id="alertToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="alert-card-body" id="alertSettingsBody">
+                <div class="alert-row">
+                    <span>M'avertir à l'avance :</span>
+                    <select id="alertMarginSelect" class="alert-select">
+                        <option value="1">1 pers. avant</option>
+                        <option value="2" selected>2 pers. avant</option>
+                        <option value="3">3 pers. avant</option>
+                        <option value="5">5 pers. avant</option>
+                    </select>
+                </div>
+                <button type="button" class="btn-test-sound" id="testSoundBtn">🔊 Tester la sonnerie</button>
+                <div class="alert-status-hint" id="alertStatusHint">
+                    Actif : Une alerte sonore et une notification retentiront selon le choix sélectionné.
+                </div>
+            </div>
+        </div>
 
-<div id="notificationOverlay" class="notification-overlay" role="dialog"
-     aria-modal="true" aria-labelledby="notificationPopupTitle" aria-hidden="true">
-  <div class="notification-popup">
-    <button id="closeNotificationPopup" class="popup-close" type="button" aria-label="Fermer / إغلاق">&times;</button>
-    <div class="popup-icon">🔔</div>
-    <h2 id="notificationPopupTitle" class="popup-title">
-      <span class="bi center">
-        <span class="ar" lang="ar">تفعيل الإشعارات</span>
-        <span class="fr" lang="fr">Activer les notifications</span>
-      </span>
-    </h2>
-    <div class="popup-description">
-      <span class="bi center">
-        <span class="ar" lang="ar">يُرجى السماح بالإشعارات حتى نتمكن من تنبيهك عند اقتراب دورك.</span>
-        <span class="fr" lang="fr">Veuillez autoriser les notifications afin d'être averti lorsque votre tour approche.</span>
-      </span>
-    </div>
-    <div id="popupPermission" class="popup-permission" hidden></div>
-    <button id="popupEnableBtn" class="popup-enable" type="button">
-      <span class="bi center">
-        <span class="ar" lang="ar">🔔 تفعيل الإشعارات</span>
-        <span class="fr" lang="fr">Activer les notifications</span>
-      </span>
-    </button>
-    <button id="popupLaterBtn" class="popup-later" type="button">لاحقًا / Plus tard</button>
-  </div>
-</div>
+        <!-- زر الحجز المباشر بنقرة واحدة عند انتهاء أو فوات الدور -->
+        <button class="btn-rebook" id="newReservationButton" style="display:none;">
+            RÉSERVER UN NOUVEAU TICKET
+        </button>
+        <div class="error-message" id="ticketError"></div>
 
-<script>
-"use strict";
+        <p class="ticket-message" id="ticketMessage">
+            Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>
+            La borne imprimera votre ticket avec le numéro réservé.<br><br>
+            <strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération de votre ticket, votre réservation sera annulée.
+        </p>
+    </section>
 
-const QS=new URLSearchParams(location.search);
-const TEST_MODE=QS.get("test")==="1";
-const DB_BASE="https://qms-online-2658d-default-rtdb.firebaseio.com";
-const SW_URL="./sw.js";
+    <section class="card auth-card" id="authSection">
+        <h2>Compte client</h2>
+        <div id="loginSection">
+            <p>Connectez-vous avec votre compte Google pour réserver un ticket.</p>
+            <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
+        </div>
+        <div id="userSection" style="display:none;">
+            <img id="userPhoto" class="user-photo" alt="Photo du profil">
+            <div class="user-name" id="userName"></div>
+            <div class="user-email" id="userEmail"></div>
+            <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
+        </div>
+        <div class="error-message" id="authError"></div>
+    </section>
 
-function makeUrl(path,params={}){
-  const url=new URL(DB_BASE.replace(/\/$/,"")+"/"+path.replace(/^\//,"")+".json");
-  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,String(v)));
-  return url.toString();
-}
+    <section class="info-card" id="infoSection">
+        <strong>Informations importantes</strong><br><br>
+        • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
+        • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
+        • Une nouvelle réservation ne sera possible qu'après l'appel ou le dépassement de votre numéro.
+    </section>
 
-const STREAM_URL=makeUrl("queue",{print:"silent"});
-const QUEUE_URL=makeUrl("queue");
-const TICKET_URL=makeUrl("queue/current_ticket");
-const META_URL=makeUrl("queue/meta");
+</main>
 
-const HEARTBEAT_CLOSE_MS=3*60*1000;
-const REQUEST_CLOSE_MS=30*60*1000;
-const CHECK_MS=10000;
-const POLL_VISIBLE_MS=8000;
-const POLL_HIDDEN_MS=15000;
-const RECONNECT_MS=4000;
-const OFFLINE_GRACE_MS=2500;
+<footer>
+    © 2026 POSTE EL AMAL<br>
+    Système de gestion des files d'attente
+</footer>
 
-const $=id=>document.getElementById(id);
-const queueNumEl=$("queueNum"),statusContainer=$("statusContainer"),statusText=$("statusText");
-const myTicketInput=$("myTicketInput"),thresholdInput=$("thresholdInput"),alertBanner=$("alertBanner");
-const verifyBtn=$("verifyBtn"),verifyBtnAr=$("verifyBtnAr"),verifyBtnFr=$("verifyBtnFr");
-const notificationOverlay=$("notificationOverlay"),popupEnableBtn=$("popupEnableBtn");
-const popupLaterBtn=$("popupLaterBtn"),closeNotificationPopupBtn=$("closeNotificationPopup");
-const popupPermission=$("popupPermission"),browserReminder=$("browserReminder");
-const testPanel=$("testPanel"),testTicketInput=$("testTicketInput"),testApplyBtn=$("testApplyBtn");
-const testDecBtn=$("testDecBtn"),testIncBtn=$("testIncBtn");
-const testAutoToggle=$("testAutoToggle"),testAutoPeriod=$("testAutoPeriod");
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, onValue, push, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-const LS_KEY="queue_tracker_settings_v1";
-const REMINDER_KEY="browser_reminder_seen_v1";
-const DEFAULT_THRESHOLD=String(thresholdInput.defaultValue||"10");
-let savedThreshold=DEFAULT_THRESHOLD;
-
-const state={
-  current_ticket:null,lastAlertedDiff:null,trackingEnabled:false,userEditing:false,
-  isOnline:false,systemClosed:false,serverOffset:0,serverTimeAvailable:false,
-  esp32_last_seen_ms:null,last_request_ms:null,metaLoaded:false,
-  arrived:false,trackingTicket:null,trackingThreshold:null
+const firebaseConfig = {
+  apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
+  authDomain: "qms-online-2658d.firebaseapp.com",
+  databaseURL: "https://qms-online-2658d-default-rtdb.firebaseio.com",
+  projectId: "qms-online-2658d",
+  storageBucket: "qms-online-2658d.firebasestorage.app",
+  messagingSenderId: "1018632771701",
+  appId: "1:1018632771701:web:2a87f89d70987bdbbdc03c",
+  measurementId: "G-7GQYF8V9V8"
 };
 
-let es=null,reconnectTimer=null,offlineUiTimer=null,pollTimer=null;
-let popupDismissed=false,popupPreviousFocus=null,audioCtx=null;
-let streamGeneration=0,streamVersion=0,trackingGeneration=0;
-let pollInFlight=false,initialFetchInFlight=false,animationTimer=null;
-let lastTimeSyncAttempt=0;
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
-const validInt=(v,min,max=Number.MAX_SAFE_INTEGER)=>{
-  if(v===null||v===undefined||String(v).trim()==="")return false;
-  const n=Number(v);
-  return Number.isSafeInteger(n)&&n>=min&&n<=max;
-};
+const googleLoginButton    = document.getElementById("googleLoginButton");
+const logoutButton         = document.getElementById("logoutButton");
+const loginSection         = document.getElementById("loginSection");
+const userSection          = document.getElementById("userSection");
+const userPhoto            = document.getElementById("userPhoto");
+const userName             = document.getElementById("userName");
+const userEmail            = document.getElementById("userEmail");
+const authError            = document.getElementById("authError");
+const currentTicketEl      = document.getElementById("currentTicket");
+const waitingCountEl       = document.getElementById("waitingCount");
+const connectionStatusEl   = document.getElementById("connectionStatus");
+const statusDotEl          = document.getElementById("statusDot");
+const reserveButton        = document.getElementById("reserveButton");
+const reservationError     = document.getElementById("reservationError");
+const ticketError          = document.getElementById("ticketError");
+const duplicateNoticeEl    = document.getElementById("duplicateNotice");
+const printerOfflineBanner = document.getElementById("printerOfflineBanner");
+const reservationSection   = document.getElementById("reservationSection");
+const ticketSection        = document.getElementById("ticketSection");
+const myTicketEl           = document.getElementById("myTicket");
+const myCodeEl             = document.getElementById("myCode");
+const myStatusEl           = document.getElementById("myStatus");
+const ticketTitleEl        = document.getElementById("ticketTitle");
+const ticketMessageEl      = document.getElementById("ticketMessage");
+const newReservationButton = document.getElementById("newReservationButton");
 
-function escapeHtml(v){
-  return String(v).replaceAll("&","&amp;").replaceAll("<","&lt;")
-    .replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-}
-function biHTML(fr,ar){
-  return `<span class="bi center small"><span class="ar" lang="ar">${escapeHtml(ar)}</span><span class="fr" lang="fr">${escapeHtml(fr)}</span></span>`;
-}
-function setStatus(fr,ar){statusText.innerHTML=biHTML(fr,ar)}
-function setBanner(fr,ar,{urgent=false,arrived=false}={}){
-  alertBanner.innerHTML=biHTML(fr,ar);
-  alertBanner.classList.toggle("active",true);
-  alertBanner.classList.toggle("urgent",urgent);
-  alertBanner.classList.toggle("arrived",arrived);
-}
-function clearBanner(){
-  alertBanner.classList.remove("active","urgent","arrived");
-  alertBanner.innerHTML="";
-}
-function serverNow(){return Date.now()+state.serverOffset}
+// عناصر التحكم في التنبيهات والهامش
+const alertToggle          = document.getElementById("alertToggle");
+const alertMarginSelect    = document.getElementById("alertMarginSelect");
+const testSoundBtn         = document.getElementById("testSoundBtn");
+const alertCardBox         = document.getElementById("alertCardBox");
+const alertSettingsBody    = document.getElementById("alertSettingsBody");
+const alertStatusHint      = document.getElementById("alertStatusHint");
 
-function syncTimeFromResponse(response,start,end){
-  const date=response.headers.get("Date");
-  if(!date)return false;
-  const ms=Date.parse(date);
-  if(!Number.isFinite(ms))return false;
-  state.serverOffset=ms-(start+end)/2;
-  state.serverTimeAvailable=true;
-  return true;
-}
+let reservationInProgress = false;
+let currentTicket = 0;
+let currentConsole = 0;
+let lastIssuedTicket = 0;
+let waitingCount = null;
+let currentUser = null;
+let authReady = false;
+let queueConnected = false;
+let isClientInternetConnected = true;
 
-async function fetchServerOffset(){
-  if(TEST_MODE)return;
-  lastTimeSyncAttempt=Date.now();
-  try{
-    const start=Date.now();
-    const r=await fetch(META_URL,{cache:"no-store"});
-    const end=Date.now();
-    syncTimeFromResponse(r,start,end);
-  }catch{}
-}
+let serviceAvailable = false;
+let printerOnline = false;
+let printerStatus = 0;
 
-async function registerServiceWorker(){
-  try{
-    if(!("serviceWorker" in navigator))return false;
-    await navigator.serviceWorker.register(SW_URL,{scope:"./"});
-    return true;
-  }catch{return false}
+const HEARTBEAT_TIMEOUT_MS = 200 * 1000; 
+let lastMasterHeartbeat = 0;
+let firebaseDataAvailable = false;
+let serverTimeOffset = 0;
+
+let pendingTimeoutTimer = null;
+let unsubscribeReservation = null;
+let unsubscribeUserActiveTicket = null;
+let activeUserTicketData = null;
+
+// تتبع حالات التنبيه لمنع التكرار المزعج
+let alertedApproachingForTicket = null;
+let alertedExactTurnForTicket = null;
+let wakeLock = null;
+
+const STORAGE_PREFIX = "poste_elamal_reservation_";
+function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
+
+function formatNumber(number) {
+    const n = Number(number);
+    if (!Number.isFinite(n) || n <= 0) return "---";
+    return String(Math.trunc(n)).padStart(3, "0");
 }
 
-function loadSettings(){
-  try{
-    const s=JSON.parse(localStorage.getItem(LS_KEY));
-    if(!s||typeof s!=="object")return;
-    if(validInt(s.myTicket,1,999))myTicketInput.value=String(s.myTicket);
-    if(validInt(s.threshold,0)){
-      savedThreshold=String(s.threshold);
-      thresholdInput.value=savedThreshold;
+/* ========================================================
+   نظام التنبيه الصوتي (Web Audio API Synthesizer)
+   يعمل ذاتياً بدون ملفات mp3 وبدون أخطاء شبكة
+======================================================== */
+function playTone(freq, type, startTime, duration, gainLevel) {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(gainLevel, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    } catch (e) {
+        console.warn("AudioContext tone error:", e);
     }
-  }catch{}
-}
-function saveSettings(){
-  try{
-    localStorage.setItem(LS_KEY,JSON.stringify({
-      myTicket:myTicketInput.value,threshold:savedThreshold
-    }));
-  }catch{}
 }
 
-function notificationsGranted(){
-  return "Notification" in window&&window.isSecureContext&&Notification.permission==="granted";
-}
-function hideNotificationPopup(){
-  const open=notificationOverlay.classList.contains("show");
-  notificationOverlay.classList.remove("show");
-  notificationOverlay.setAttribute("aria-hidden","true");
-  document.body.classList.remove("popup-open");
-  if(open){
-    const target=popupPreviousFocus;
-    if(target?.isConnected&&!target.disabled)target.focus();
-    else if(!verifyBtn.disabled)verifyBtn.focus();
-  }
-  popupPreviousFocus=null;
-}
-function dismissNotificationPopup(){
-  popupDismissed=true;
-  hideNotificationPopup();
-}
-function setPopupPermission(fr,ar,denied=false){
-  popupPermission.hidden=false;
-  popupPermission.innerHTML=biHTML(fr,ar);
-  popupPermission.classList.toggle("denied",denied);
-}
-function updatePopupPermission(){
-  popupPermission.hidden=true;
-  popupPermission.innerHTML="";
-  popupEnableBtn.hidden=false;
-  if(!("Notification" in window)||!window.isSecureContext){
-    setPopupPermission("Notifications indisponibles dans ce navigateur.",
-      "الإشعارات غير متاحة في هذا المتصفح أو في طريقة فتح الصفحة.",true);
-    popupEnableBtn.hidden=true;
-  }else if(Notification.permission==="denied"){
-    setPopupPermission("Notifications bloquées. Modifiez les paramètres du navigateur.",
-      "الإشعارات محظورة. يمكن تفعيلها من إعدادات المتصفح.",true);
-    popupEnableBtn.hidden=true;
-  }
-}
-function showNotificationPopup(){
-  if(!state.trackingEnabled||notificationsGranted()||popupDismissed)return;
-  updatePopupPermission();
-  popupPreviousFocus=document.activeElement;
-  notificationOverlay.classList.add("show");
-  notificationOverlay.setAttribute("aria-hidden","false");
-  document.body.classList.add("popup-open");
-  closeNotificationPopupBtn.focus();
-}
-popupLaterBtn.addEventListener("click",dismissNotificationPopup);
-closeNotificationPopupBtn.addEventListener("click",dismissNotificationPopup);
-notificationOverlay.addEventListener("click",e=>{
-  if(e.target===notificationOverlay)dismissNotificationPopup();
-});
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape"&&notificationOverlay.classList.contains("show"))dismissNotificationPopup();
-});
-notificationOverlay.addEventListener("keydown",e=>{
-  if(e.key!=="Tab"||!notificationOverlay.classList.contains("show"))return;
-  const buttons=[...notificationOverlay.querySelectorAll('button:not([disabled]):not([hidden])')]
-    .filter(el=>el.getClientRects().length);
-  if(!buttons.length)return;
-  const first=buttons[0],last=buttons[buttons.length-1];
-  if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
-  else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
-});
-popupEnableBtn.addEventListener("click",async()=>{
-  popupEnableBtn.disabled=true;
-  try{
-    if("Notification" in window&&window.isSecureContext&&Notification.permission==="default")
-      await Notification.requestPermission();
-    if(notificationsGranted()){
-      popupDismissed=true;
-      hideNotificationPopup();
-      registerServiceWorker();
-    }else updatePopupPermission();
-  }catch{updatePopupPermission()}
-  finally{popupEnableBtn.disabled=false}
-});
-
-function setVerifyBtnActive(active){
-  verifyBtn.classList.toggle("active",active);
-  verifyBtn.setAttribute("aria-pressed",active?"true":"false");
-  verifyBtnAr.textContent=active?"جاري المتابعة - اضغط للإيقاف":"متابعة";
-  verifyBtnFr.textContent=active?"Suivi activé - Appuyez pour arrêter":"Suivi";
-  verifyBtn.title=active?"اضغط لإيقاف المتابعة / Appuyez pour arrêter":"بدء المتابعة / Démarrer le suivi";
-}
-function setInputsFrozen(frozen){
-  if(frozen){myTicketInput.blur();thresholdInput.blur()}
-  myTicketInput.disabled=frozen;
-  thresholdInput.disabled=frozen;
-}
-function updateStatusUI(){
-  statusContainer.classList.remove("online","closed");
-  if(TEST_MODE){
-    statusContainer.classList.add("online");
-    setStatus("Mode test activé (test=1)","تم تفعيل وضع الاختبار (test=1)");
-  }else if(!state.isOnline){
-    setStatus("Hors ligne - Reconnexion...","غير متصل - جارٍ إعادة الاتصال...");
-  }else if(state.systemClosed){
-    statusContainer.classList.add("closed");
-    setStatus("Système fermé","النظام مغلق");
-  }else{
-    statusContainer.classList.add("online");
-    setStatus("Système connecté","النظام متصل");
-  }
-}
-function setOnline(online){
-  state.isOnline=online;
-  updateStatusUI();
-}
-function renderTicketNumber(){
-  queueNumEl.classList.toggle("closed",state.systemClosed);
-  queueNumEl.textContent=state.systemClosed?"--":
-    validInt(state.current_ticket,0,999)?String(state.current_ticket):"--";
-}
-function updateThresholdConstraints(){
-  if(!state.trackingEnabled){thresholdInput.value=savedThreshold;return}
-  const diff=state.trackingTicket-Number(state.current_ticket);
-  thresholdInput.value=String(
-    state.current_ticket===null?state.trackingThreshold:
-    Math.max(0,Math.min(state.trackingThreshold,diff))
-  );
-}
-function stopPolling(){
-  if(pollTimer){clearInterval(pollTimer);pollTimer=null}
-}
-function stopTrackingHard({preserveBanner=false}={}){
-  trackingGeneration++;
-  state.trackingEnabled=false;
-  state.lastAlertedDiff=null;
-  state.trackingTicket=null;
-  state.trackingThreshold=null;
-  stopPolling();
-  hideBrowserReminder();
-  hideNotificationPopup();
-  popupDismissed=false;
-  setVerifyBtnActive(false);
-  thresholdInput.value=savedThreshold;
-  if(!preserveBanner)clearBanner();
-}
-function setSystemClosed(closed){
-  if(state.systemClosed===closed)return;
-  state.systemClosed=closed;
-  if(closed)stopTrackingHard();
-  verifyBtn.disabled=closed;
-  setInputsFrozen(closed);
-  renderTicketNumber();
-  updateStatusUI();
-}
-function evaluateClosedState(){
-  if(TEST_MODE){setSystemClosed(false);return}
-  if(!state.metaLoaded)return;
-  const now=serverNow();
-  const hb=Number(state.esp32_last_seen_ms);
-  const req=Number(state.last_request_ms);
-  const hbStale=state.esp32_last_seen_ms==null||!Number.isFinite(hb)||now-hb>=HEARTBEAT_CLOSE_MS;
-  const reqStale=state.last_request_ms==null||!Number.isFinite(req)||now-req>=REQUEST_CLOSE_MS;
-  setSystemClosed(hbStale||reqStale);
-}
-
-async function sendNotification(fr,ar,{urgent=false,tag="queue-alert"}={}){
-  if(!notificationsGranted())return false;
-  const title=urgent?"تنبيه مهم / Alerte importante":"تنبيه الدور / Alerte de file";
-  const options={
-    body:`${ar}\n${fr}`,tag,icon:"logo.png",
-    vibrate:urgent?[200,100,200,100,200]:[150],data:{url:"./"}
-  };
-  try{
-    if("serviceWorker" in navigator){
-      const reg=await navigator.serviceWorker.getRegistration()||
-        await navigator.serviceWorker.register(SW_URL,{scope:"./"});
-      if(reg?.showNotification){
-        await reg.showNotification(title,{...options,renotify:true});
-        return true;
-      }
+function playNotificationChime() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") {
+            audioCtx.resume();
+        }
+        const now = audioCtx.currentTime;
+        // نغمة رنين ثلاثية لطيفة وواضحة (D5 -> A5 -> D6)
+        playTone(587.33, "sine", now, 0.25, 0.4);
+        playTone(880.00, "sine", now + 0.18, 0.25, 0.4);
+        playTone(1174.66, "triangle", now + 0.36, 0.45, 0.4);
+    } catch (e) {
+        console.warn("Audio chime failed:", e);
     }
-    new Notification(title,options);
-    return true;
-  }catch{return false}
 }
 
-function ensureAudio(){
-  try{
-    if(!audioCtx){
-      const AudioClass=window.AudioContext||window.webkitAudioContext;
-      if(!AudioClass)return Promise.resolve();
-      audioCtx=new AudioClass();
+/* ========================================================
+   طلب إذن منع الشاشة من النوم (Screen Wake Lock)
+======================================================== */
+async function enableWakeLock() {
+    try {
+        if ("wakeLock" in navigator && !wakeLock) {
+            wakeLock = await navigator.wakeLock.request("screen");
+            wakeLock.addEventListener("release", () => { wakeLock = null; });
+        }
+    } catch (err) {
+        console.warn("WakeLock error:", err);
     }
-    return audioCtx.state==="suspended"?audioCtx.resume():Promise.resolve();
-  }catch{return Promise.resolve()}
 }
-function playTone(frequency,time,duration,volume=.25){
-  const oscillator=audioCtx.createOscillator();
-  const gain=audioCtx.createGain();
-  oscillator.type="triangle";
-  oscillator.frequency.setValueAtTime(frequency,time);
-  gain.gain.setValueAtTime(volume,time);
-  gain.gain.exponentialRampToValueAtTime(.00001,time+duration);
-  oscillator.connect(gain);
-  gain.connect(audioCtx.destination);
-  oscillator.start(time);
-  oscillator.stop(time+duration);
-}
-function playAlertBeep(arrival=false){
-  ensureAudio().then(()=>{
-    if(!audioCtx||audioCtx.state!=="running")return;
-    const now=audioCtx.currentTime;
-    if(arrival){
-      playTone(880,now,.25,.3);
-      playTone(1174.66,now+.32,.25,.3);
-      playTone(1567.98,now+.64,.5,.3);
-      playTone(1567.98,now+1.3,.5,.3);
-    }else{
-      playTone(987.77,now,.25);
-      playTone(1318.51,now+.3,.4);
+
+function releaseWakeLock() {
+    if (wakeLock) {
+        wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
     }
-  }).catch(()=>{});
-}
-["pointerdown","touchstart","mousedown","keydown"].forEach(name=>{
-  window.addEventListener(name,()=>ensureAudio(),{once:true,passive:true});
-});
-
-function handleTicketArrival(){
-  if(!state.trackingEnabled||state.arrived)return;
-  state.arrived=true;
-  const fr="🔔 C'est votre tour ! Veuillez vous présenter au guichet.";
-  const ar="🔔 لقد وصل دورك! يُرجى التوجّه إلى الشباك.";
-  stopTrackingHard({preserveBanner:true});
-  setBanner(fr,ar,{arrived:true});
-  playAlertBeep(true);
-  sendNotification(fr,ar,{urgent:true,tag:"queue-arrived"});
-  saveSettings();
-}
-function checkUserAlert(currentTicket){
-  if(state.systemClosed||!state.trackingEnabled||currentTicket===null)return;
-  const my=state.trackingTicket,threshold=state.trackingThreshold;
-  const current=Number(currentTicket);
-  if(!validInt(my,1,999)||!validInt(threshold,0)||!validInt(current,0,999))return;
-  const diff=my-current;
-  updateThresholdConstraints();
-  if(diff<=0){handleTicketArrival();return}
-  if(diff>threshold||threshold===0){
-    clearBanner();
-    state.lastAlertedDiff=diff;
-    return;
-  }
-  const urgent=diff===1;
-  const fr=urgent
-    ?"Il ne reste qu'une seule personne avant vous. Veuillez vous préparer à vous présenter au guichet."
-    :`Attention ! Il reste ${diff} personnes avant votre tour.`;
-  const ar=urgent
-    ?"تبقّى شخص واحد فقط قبلك، يُرجى الاستعداد للتوجّه إلى الشباك."
-    :`تنبيه! تبقّى ${diff} أشخاص قبلك.`;
-  setBanner(fr,ar,{urgent});
-  if(state.lastAlertedDiff!==diff){
-    state.lastAlertedDiff=diff;
-    playAlertBeep();
-    sendNotification(fr,ar,{urgent});
-  }
 }
 
-async function pollCurrentTicketOnce(){
-  if(!state.trackingEnabled||state.systemClosed||pollInFlight)return;
-  if(TEST_MODE){setTicket(testSim.ticket);return}
-  pollInFlight=true;
-  const generation=trackingGeneration,version=streamVersion;
-  try{
-    const r=await fetch(TICKET_URL,{cache:"no-store"});
-    if(!r.ok)throw Error("Polling failed");
-    const ticket=await r.json();
-    if(generation===trackingGeneration&&version===streamVersion&&
-       state.trackingEnabled&&!state.systemClosed)setTicket(ticket);
-  }catch{}
-  finally{pollInFlight=false}
-}
-function startPolling(){
-  stopPolling();
-  if(!state.trackingEnabled||state.systemClosed)return;
-  pollTimer=setInterval(pollCurrentTicketOnce,
-    document.visibilityState==="visible"?POLL_VISIBLE_MS:POLL_HIDDEN_MS);
-  pollCurrentTicketOnce();
-}
+/* ========================================================
+   إرسال الإشعار والتنبيه الصوتي والاهتزاز
+======================================================== */
+async function triggerUserAlert(title, message) {
+    playNotificationChime();
 
-function startTrackingOnly(){
-  if(state.systemClosed)return;
-  if(state.trackingEnabled){stopTrackingHard();saveSettings();return}
-  if(!validInt(myTicketInput.value,1,999)){
-    setBanner("Veuillez saisir un numéro de ticket valide (1 à 999).",
-      "يرجى إدخال رقم تذكرة صحيح من 1 إلى 999.",{urgent:true});
-    return;
-  }
-  if(!validInt(thresholdInput.value,0)){
-    setBanner("Veuillez saisir une marge d'alerte valide (>= 0).",
-      "يرجى إدخال هامش تنبيه صحيح (0 أو أكثر).",{urgent:true});
-    return;
-  }
-  savedThreshold=String(Number(thresholdInput.value));
-  saveSettings();
-  trackingGeneration++;
-  state.trackingEnabled=true;
-  state.arrived=false;
-  state.lastAlertedDiff=null;
-  state.trackingTicket=Number(myTicketInput.value);
-  state.trackingThreshold=Number(savedThreshold);
-  popupDismissed=false;
-  clearBanner();
-  showBrowserReminder();
-  setVerifyBtnActive(true);
-  updateThresholdConstraints();
-  registerServiceWorker();
-  ensureAudio();
-  startPolling();
-  checkUserAlert(state.current_ticket);
-  if(state.trackingEnabled&&!notificationsGranted())showNotificationPopup();
-}
-verifyBtn.addEventListener("click",startTrackingOnly);
-myTicketInput.addEventListener("input",()=>{
-  stopTrackingHard();state.arrived=false;saveSettings();
-});
-thresholdInput.addEventListener("input",()=>{
-  const valid=validInt(thresholdInput.value,0);
-  if(valid)savedThreshold=String(Number(thresholdInput.value));
-  if(state.trackingEnabled)stopTrackingHard();
-  if(valid)saveSettings();
-});
-myTicketInput.addEventListener("focus",()=>state.userEditing=true);
-myTicketInput.addEventListener("blur",()=>{
-  state.userEditing=false;saveSettings();
-});
-thresholdInput.addEventListener("focus",()=>state.userEditing=true);
-thresholdInput.addEventListener("blur",()=>{
-  state.userEditing=false;
-  if(validInt(thresholdInput.value,0))
-    savedThreshold=String(Number(thresholdInput.value));
-  else thresholdInput.value=savedThreshold;
-  saveSettings();
-});
-
-function setTicket(value){
-  if(!validInt(value,0,999))return;
-  const number=Number(value),old=state.current_ticket;
-  state.current_ticket=number;
-  renderTicketNumber();
-  if(state.trackingEnabled&&!state.userEditing&&!state.systemClosed)checkUserAlert(number);
-  if(old!==null&&old!==number&&!state.systemClosed){
-    if(animationTimer)clearTimeout(animationTimer);
-    queueNumEl.classList.remove("updated");
-    void queueNumEl.offsetWidth;
-    queueNumEl.classList.add("updated");
-    animationTimer=setTimeout(()=>queueNumEl.classList.remove("updated"),260);
-  }
-}
-
-function applyMeta(meta){
-  state.esp32_last_seen_ms=meta&&typeof meta==="object"?meta.esp32_last_seen_ms??null:null;
-  state.last_request_ms=meta&&typeof meta==="object"?meta.last_request_ms??null:null;
-  state.metaLoaded=true;
-  evaluateClosedState();
-}
-function applyFirebaseValue(path,value){
-  if(path==="/current_ticket")setTicket(value);
-  else if(path==="/meta")applyMeta(value);
-  else if(path==="/meta/esp32_last_seen_ms"){
-    state.esp32_last_seen_ms=value;
-    state.metaLoaded=true;
-    evaluateClosedState();
-  }else if(path==="/meta/last_request_ms"){
-    state.last_request_ms=value;
-    state.metaLoaded=true;
-    evaluateClosedState();
-  }
-}
-function applyStreamPayload(payload,type){
-  if(!payload||typeof payload!=="object")return;
-  streamVersion++;
-  const path=typeof payload.path==="string"?payload.path:"/";
-  const data=payload.data;
-  if(path==="/"&&type==="put"){
-    if(data&&typeof data==="object"){
-      if("current_ticket" in data)setTicket(data.current_ticket);
-      applyMeta("meta" in data?data.meta:null);
-    }else applyMeta(null);
-    return;
-  }
-  if(type==="patch"&&data&&typeof data==="object"&&!Array.isArray(data)){
-    for(const [key,value] of Object.entries(data)){
-      const fullPath=(path==="/"?"":path.replace(/\/$/,""))+"/"+key.replace(/^\/+/,"");
-      applyFirebaseValue(fullPath,value);
+    // اهتزاز الهاتف
+    if ("vibrate" in navigator) {
+        try { navigator.vibrate([300, 150, 300, 150, 450]); } catch (e) {}
     }
-  }else applyFirebaseValue(path,data);
+
+    // إشعار النظام (Service Worker / Notification API)
+    if ("Notification" in window && Notification.permission === "granted") {
+        try {
+            if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+                const reg = await navigator.serviceWorker.ready;
+                reg.showNotification(title, {
+                    body: message,
+                    icon: new URL("logo.png", location.href).href,
+                    badge: new URL("logo.png", location.href).href,
+                    tag: "qms-turn-alert",
+                    requireInteraction: true,
+                    vibrate: [300, 150, 300]
+                });
+            } else {
+                new Notification(title, { body: message });
+            }
+        } catch (e) {
+            console.warn("Notification send error:", e);
+        }
+    }
 }
 
-function closeStream(){
-  streamGeneration++;
-  if(es){es.close();es=null}
+/* ========================================================
+   حساب المسافة بين تذكرة الزبون والرقم الحالي (حساب الهامش)
+======================================================== */
+function calculateDistanceToTurn(userTicket, curTicket) {
+    const u = Number(userTicket);
+    const c = Number(curTicket);
+    if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return null;
+    if (u === c) return 0; // الدور الحالي للزبون تماماً
+
+    if (u > c) {
+        return u - c;
+    } else {
+        // حالة الالتفاف الدائري (مثلاً الزبون رقمه 005 والرقم الحالي 998)
+        return (999 - c) + u;
+    }
 }
-function cancelOfflineUI(){
-  if(offlineUiTimer){clearTimeout(offlineUiTimer);offlineUiTimer=null}
+
+function checkAlertsEngine() {
+    if (!alertToggle.checked || !activeUserTicketData || activeUserTicketData.ticket <= 0) return;
+    const status = activeUserTicketData.status;
+
+    // التنبيه متاح فقط للتذاكر النشطة
+    if (!["confirmed", "reserved", "arrived", "waiting"].includes(status)) return;
+
+    const remaining = calculateDistanceToTurn(activeUserTicketData.ticket, currentTicket);
+    if (remaining === null) return;
+
+    const margin = parseInt(alertMarginSelect.value, 10) || 2;
+
+    // 1. التنبيه عند بلوغ الهامش المحدد (مثلاً: بقي شخصان أو شخص واحد)
+    if (remaining > 0 && remaining <= margin && alertedApproachingForTicket !== activeUserTicketData.ticket) {
+        alertedApproachingForTicket = activeUserTicketData.ticket;
+        triggerUserAlert(
+            "⚠️ Préparez-vous !",
+            `Il ne reste que ${remaining} personne(s) avant votre tour (Ticket #${formatNumber(activeUserTicketData.ticket)}). Veuillez vous rapprocher.`
+        );
+    }
+
+    // 2. التنبيه الحاسم عند وصول دور الزبون بالضبط (Exact Turn)
+    if (remaining === 0 && alertedExactTurnForTicket !== activeUserTicketData.ticket) {
+        alertedExactTurnForTicket = activeUserTicketData.ticket;
+        triggerUserAlert(
+            "🔔 C'EST VOTRE TOUR !",
+            `Votre numéro #${formatNumber(activeUserTicketData.ticket)} est actuellement appelé au guichet !`
+        );
+    }
 }
-function requestOfflineUI(){
-  if(offlineUiTimer)return;
-  offlineUiTimer=setTimeout(()=>{
-    offlineUiTimer=null;
-    if(!es||es.readyState!==EventSource.OPEN)setOnline(false);
-  },OFFLINE_GRACE_MS);
+
+/* ========================================================
+   إدارة وتخزين إعدادات التنبيه
+======================================================== */
+function initAlertPreferences() {
+    const savedState = localStorage.getItem("qms_alert_enabled");
+    const savedMargin = localStorage.getItem("qms_alert_margin");
+
+    if (savedMargin) {
+        alertMarginSelect.value = savedMargin;
+    }
+
+    if (savedState === "true") {
+        alertToggle.checked = true;
+        alertSettingsBody.style.opacity = "1";
+        alertSettingsBody.style.pointerEvents = "auto";
+        enableWakeLock();
+    } else {
+        alertToggle.checked = false;
+        alertSettingsBody.style.opacity = "0.45";
+        alertSettingsBody.style.pointerEvents = "none";
+    }
 }
-function connectStream(){
-  if(TEST_MODE)return;
-  if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null}
-  closeStream();
-  const generation=streamGeneration;
-  try{
-    es=new EventSource(STREAM_URL);
-    es.onopen=()=>{
-      if(generation!==streamGeneration)return;
-      cancelOfflineUI();
-      setOnline(true);
+
+alertToggle.addEventListener("change", async () => {
+    if (alertToggle.checked) {
+        if ("Notification" in window && Notification.permission !== "granted") {
+            const permission = await Notification.requestPermission();
+            if (permission !== "granted") {
+                alertStatusHint.textContent = "⚠️ Les notifications du navigateur sont bloquées. Seul le son fonctionnera.";
+                alertStatusHint.style.color = "var(--red)";
+            }
+        }
+        localStorage.setItem("qms_alert_enabled", "true");
+        alertSettingsBody.style.opacity = "1";
+        alertSettingsBody.style.pointerEvents = "auto";
+        alertStatusHint.textContent = "Actif : Une alerte sonore et une notification retentiront selon le choix sélectionné.";
+        alertStatusHint.style.color = "var(--muted)";
+        enableWakeLock();
+        playNotificationChime(); // إشعار تأكيدي فوري
+    } else {
+        localStorage.setItem("qms_alert_enabled", "false");
+        alertSettingsBody.style.opacity = "0.45";
+        alertSettingsBody.style.pointerEvents = "none";
+        alertStatusHint.textContent = "Rappels désactivés.";
+        releaseWakeLock();
+    }
+});
+
+alertMarginSelect.addEventListener("change", () => {
+    localStorage.setItem("qms_alert_margin", alertMarginSelect.value);
+    alertedApproachingForTicket = null; // إعادة الفحص بالهامش الجديد
+    checkAlertsEngine();
+});
+
+testSoundBtn.addEventListener("click", () => {
+    playNotificationChime();
+    if ("vibrate" in navigator) {
+        navigator.vibrate([200, 100, 200]);
+    }
+});
+
+function isTicketOvertaken(userTicket, curTicket) {
+    const u = Number(userTicket);
+    const c = Number(curTicket);
+    if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return false;
+    if (u === c) return false; 
+
+    const passedDistance = (c >= u) ? (c - u) : (999 - u + c);
+    return (passedDistance > 0 && passedDistance <= 450);
+}
+
+function saveReservation(reservation) {
+    if (!currentUser) return;
+    const data = { 
+        ...reservation, 
+        user_id: currentUser.uid,
+        saved_at: reservation.saved_at || Date.now()
     };
-    for(const type of ["put","patch"]){
-      es.addEventListener(type,event=>{
-        if(generation!==streamGeneration)return;
-        try{applyStreamPayload(JSON.parse(event.data),type)}catch{}
-      });
+    localStorage.setItem(getReservationKey(currentUser.uid), JSON.stringify(data));
+}
+
+function loadReservation() {
+    if (!currentUser) return null;
+    try {
+        const saved = localStorage.getItem(getReservationKey(currentUser.uid));
+        if (!saved) return null;
+        const res = JSON.parse(saved);
+        return (res.user_id === currentUser.uid) ? res : null;
+    } catch (e) {
+        return null;
     }
-    es.onerror=()=>{
-      if(generation!==streamGeneration)return;
-      closeStream();
-      requestOfflineUI();
-      if(!reconnectTimer)reconnectTimer=setTimeout(()=>{
-        reconnectTimer=null;connectStream();
-      },RECONNECT_MS);
-    };
-  }catch{
-    requestOfflineUI();
-    if(!reconnectTimer)reconnectTimer=setTimeout(()=>{
-      reconnectTimer=null;connectStream();
-    },RECONNECT_MS);
-  }
 }
 
-async function initialFetch(){
-  if(TEST_MODE||initialFetchInFlight)return;
-  initialFetchInFlight=true;
-  const version=streamVersion;
-  try{
-    const start=Date.now();
-    const r=await fetch(QUEUE_URL,{cache:"no-store"});
-    const end=Date.now();
-    syncTimeFromResponse(r,start,end);
-    if(!r.ok)throw Error("Firebase fetch failed");
-    const data=await r.json();
-    if(version!==streamVersion)return;
-    if(data&&typeof data==="object"){
-      if("current_ticket" in data)setTicket(data.current_ticket);
-      applyMeta(data.meta??null);
-    }else applyMeta(null);
-  }catch{}
-  finally{initialFetchInFlight=false}
+function clearPendingTimer() {
+    if (pendingTimeoutTimer) {
+        clearTimeout(pendingTimeoutTimer);
+        pendingTimeoutTimer = null;
+    }
 }
 
-document.addEventListener("visibilitychange",async()=>{
-  if(notificationsGranted())hideNotificationPopup();
-  if(!TEST_MODE&&document.visibilityState==="visible"){
-    await initialFetch();
-    if(!es||es.readyState!==EventSource.OPEN)connectStream();
-  }
-  if(state.trackingEnabled&&!state.systemClosed)startPolling();
-  else stopPolling();
+function setConnectionStatus(masterOnline) {
+    queueConnected = masterOnline;
+
+    if (!isClientInternetConnected) {
+        connectionStatusEl.textContent = "Reconnexion réseau...";
+        statusDotEl.className = "status-dot warning";
+        return;
+    }
+
+    if (!masterOnline) {
+        connectionStatusEl.textContent = "Système central déconnecté";
+        statusDotEl.className = "status-dot offline";
+        currentTicketEl.textContent = "---";
+        waitingCountEl.textContent = "--";
+    } else {
+        currentTicketEl.textContent = formatNumber(currentTicket);
+        waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
+
+        if (!printerOnline) {
+            connectionStatusEl.textContent = "Borne d'accueil hors ligne";
+            statusDotEl.className = "status-dot warning";
+        } else if (printerStatus !== 0) {
+            connectionStatusEl.textContent = "Borne : Papier épuisé";
+            statusDotEl.className = "status-dot warning";
+        } else {
+            connectionStatusEl.textContent = "Service disponible";
+            statusDotEl.className = "status-dot online";
+        }
+    }
+    updateReserveButton();
+}
+
+function checkMasterStatus() {
+    if (!firebaseDataAvailable || !lastMasterHeartbeat) {
+        setConnectionStatus(false);
+        return;
+    }
+    const serverNow = Date.now() + serverTimeOffset;
+    const heartbeatAge = serverNow - lastMasterHeartbeat;
+
+    const isOnline = (heartbeatAge > -60000) && (heartbeatAge < HEARTBEAT_TIMEOUT_MS);
+    setConnectionStatus(isOnline);
+}
+
+onValue(ref(db, ".info/connected"), (snapshot) => {
+    isClientInternetConnected = (snapshot.val() === true);
+    checkMasterStatus();
 });
 
-let reminderTimer=null;
-function showBrowserReminder(){
-  try{
-    if(localStorage.getItem(REMINDER_KEY)==="1")return;
-    localStorage.setItem(REMINDER_KEY,"1");
-  }catch{}
-  browserReminder.classList.add("show");
-  clearTimeout(reminderTimer);
-  reminderTimer=setTimeout(hideBrowserReminder,15000);
-}
-function hideBrowserReminder(){
-  clearTimeout(reminderTimer);
-  browserReminder.classList.remove("show");
-}
-
-const testSim={ticket:1,autoTimer:null};
-function testSetTicket(value){
-  const n=Math.max(1,Math.min(999,Math.floor(Number(value)||1)));
-  testSim.ticket=n;
-  testTicketInput.value=n;
-  setTicket(n);
-  try{localStorage.setItem("queue_test_ticket_v1",String(n))}catch{}
-}
-function stopTestAuto(){
-  if(testSim.autoTimer){clearInterval(testSim.autoTimer);testSim.autoTimer=null}
-}
-function startTestAuto(){
-  stopTestAuto();
-  const sec=Math.max(1,Math.floor(Number(testAutoPeriod.value)||5));
-  testSim.autoTimer=setInterval(()=>{
-    testSetTicket(testSim.ticket>=999?1:testSim.ticket+1);
-  },sec*1000);
-}
-function initTestMode(){
-  testPanel.hidden=false;
-  state.metaLoaded=true;
-  state.serverOffset=0;
-  state.systemClosed=false;
-  setOnline(true);
-  let saved=1;
-  try{saved=Number(localStorage.getItem("queue_test_ticket_v1"))||1}catch{}
-  testSetTicket(saved);
-  testApplyBtn.addEventListener("click",()=>testSetTicket(testTicketInput.value));
-  testDecBtn.addEventListener("click",()=>testSetTicket(testSim.ticket-1));
-  testIncBtn.addEventListener("click",()=>testSetTicket(testSim.ticket>=999?1:testSim.ticket+1));
-  testTicketInput.addEventListener("keydown",e=>{
-    if(e.key==="Enter")testSetTicket(testTicketInput.value);
-  });
-  testAutoToggle.addEventListener("change",()=>{
-    if(testAutoToggle.checked)startTestAuto();
-    else stopTestAuto();
-  });
-  testAutoPeriod.addEventListener("input",()=>{
-    if(testAutoToggle.checked)startTestAuto();
-  });
-  updateStatusUI();
-}
-
-window.addEventListener("pagehide",()=>{
-  closeStream();
-  if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null}
-  cancelOfflineUI();
-  stopPolling();
-});
-window.addEventListener("pageshow",event=>{
-  if(event.persisted&&!TEST_MODE){
-    initialFetch();
-    connectStream();
-    if(state.trackingEnabled&&!state.systemClosed)startPolling();
-  }
+onValue(ref(db, ".info/serverTimeOffset"), (snapshot) => {
+    serverTimeOffset = Number(snapshot.val() ?? 0);
+    checkMasterStatus();
 });
 
-(async function start(){
-  loadSettings();
-  thresholdInput.value=savedThreshold;
-  setStatus("Connexion en cours...","جارٍ الاتصال...");
-  registerServiceWorker();
-  if(TEST_MODE){initTestMode();return}
-  setInterval(()=>{
-    evaluateClosedState();
-    if(Date.now()-lastTimeSyncAttempt>=5*60*1000)fetchServerOffset();
-  },CHECK_MS);
-  await fetchServerOffset();
-  await initialFetch();
-  connectStream();
-  renderTicketNumber();
-  updateStatusUI();
-})();
+const queueRef = ref(db, "queue");
+onValue(queueRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+        firebaseDataAvailable = false;
+        checkMasterStatus();
+        return;
+    }
+
+    currentTicket = Number(data.current_ticket ?? 0);
+    currentConsole = Number(data.current_console ?? 0);
+
+    serviceAvailable = (data.service_available === true);
+    printerOnline    = (data.printer_online === true);
+    printerStatus    = Number(data.printer_status ?? 0);
+    lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
+
+    if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
+        if (lastIssuedTicket >= currentTicket) {
+            waitingCount = lastIssuedTicket - currentTicket;
+        } else if (lastIssuedTicket < 150 && currentTicket > 850) {
+            waitingCount = (999 - currentTicket) + lastIssuedTicket;
+        } else {
+            waitingCount = 0;
+        }
+    } else {
+        waitingCount = null;
+    }
+
+    lastMasterHeartbeat = Number(data.meta?.esp32_last_seen_ms ?? 0);
+    firebaseDataAvailable = true;
+    checkMasterStatus();
+
+    // فحص وتفعيل التنبيهات مع كل تحديث للرقم المنادى عليه
+    checkAlertsEngine();
+
+    if (activeUserTicketData && activeUserTicketData.ticket > 0) {
+        if (isTicketOvertaken(activeUserTicketData.ticket, currentTicket)) {
+            updateReservationStatus("skipped");
+        } else if (currentTicket === activeUserTicketData.ticket) {
+            updateReservationStatus("called");
+        }
+    }
+}, () => {
+    firebaseDataAvailable = false;
+    checkMasterStatus();
+});
+
+function updateReserveButton() {
+    const userLoggedIn = authReady && currentUser !== null;
+    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status);
+    const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
+
+    if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
+        printerOfflineBanner.style.display = "block";
+        if (!printerOnline) {
+            printerOfflineBanner.innerHTML = "⚠️ <strong>Borne d'impression hors ligne :</strong><br>Le guichet physique n'est pas connecté. Les réservations en ligne sont suspendues.";
+        } else if (printerStatus !== 0) {
+            printerOfflineBanner.innerHTML = "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.";
+        }
+    } else {
+        printerOfflineBanner.style.display = "none";
+    }
+
+    reserveButton.disabled = !isHardwareReady || reservationInProgress || !userLoggedIn || hasActiveReservation;
+    newReservationButton.disabled = !isHardwareReady || reservationInProgress;
+
+    if (reservationInProgress) {
+        reserveButton.textContent = "RÉSERVATION EN COURS...";
+        newReservationButton.textContent = "RÉSERVATION EN COURS...";
+    } else if (!userLoggedIn) {
+        reserveButton.textContent = "CONNECTEZ-VOUS POUR RÉSERVER";
+    } else if (hasActiveReservation) {
+        reserveButton.textContent = "VOUS AVEZ DÉJÀ UNE RÉSERVATION";
+    } else if (!queueConnected) {
+        reserveButton.textContent = "SYSTÈME HORS LIGNE";
+    } else if (!printerOnline) {
+        reserveButton.textContent = "BORNE HORS LIGNE (RÉSERVATION FERMÉE)";
+    } else if (printerStatus !== 0) {
+        reserveButton.textContent = "PAPIER ÉPUISÉ (RÉSERVATION FERMÉE)";
+    } else if (!serviceAvailable) {
+        reserveButton.textContent = "SERVICE MOMENTANÉMENT SUSPENDU";
+    } else {
+        reserveButton.textContent = "RÉSERVER UN TICKET";
+        newReservationButton.textContent = "RÉSERVER UN NOUVEAU TICKET";
+    }
+}
+
+function showError(message) {
+    reservationError.style.display = "block";
+    reservationError.textContent = message;
+    ticketError.style.display = "block";
+    ticketError.textContent = message;
+}
+
+function clearError() {
+    reservationError.style.display = "none";
+    reservationError.textContent = "";
+    ticketError.style.display = "none";
+    ticketError.textContent = "";
+}
+
+function showReservation(reservation, isDuplicateNotice = false) {
+    activeUserTicketData = reservation;
+    reservationSection.style.display = "none";
+    ticketSection.style.display = "block";
+    myTicketEl.textContent = formatNumber(reservation.ticket);
+
+    if (isDuplicateNotice || reservation.is_duplicate === true) {
+        duplicateNoticeEl.style.display = "block";
+    } else {
+        duplicateNoticeEl.style.display = "none";
+    }
+
+    let status = reservation.status || "pending";
+    if (currentTicket > 0 && reservation.ticket === currentTicket) {
+        status = "called";
+    } else if (currentTicket > 0 && isTicketOvertaken(reservation.ticket, currentTicket)) {
+        status = "skipped";
+    }
+
+    updateReservationStatus(status);
+    checkAlertsEngine();
+}
+
+function updateReservationStatus(status) {
+    if (activeUserTicketData) {
+        activeUserTicketData.status = status;
+        saveReservation(activeUserTicketData);
+    }
+
+    myStatusEl.className = "ticket-status";
+    ticketTitleEl.className = "";
+
+    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
+
+    if (expiredStatuses.includes(status)) {
+        myCodeEl.textContent = "----";
+        newReservationButton.style.display = "flex";
+        newReservationButton.textContent = (status === "called") 
+            ? "FAIRE UNE NOUVELLE RÉSERVATION" 
+            : "RÉSERVER UN NOUVEAU TICKET";
+        alertCardBox.style.display = "none"; // إخفاء إعدادات التنبيه للتذاكر المنتهية
+        releaseWakeLock();
+    } else {
+        const codeVal = (activeUserTicketData && activeUserTicketData.code !== undefined && activeUserTicketData.code !== null) 
+                        ? String(activeUserTicketData.code) : "";
+        myCodeEl.textContent = codeVal ? codeVal.padStart(4, "0") : "----";
+        newReservationButton.style.display = "none";
+        alertCardBox.style.display = "block"; // إظهار إعدادات التنبيه للتذكرة الفعالة
+        if (alertToggle.checked) enableWakeLock();
+    }
+
+    switch (status) {
+        case "pending":
+            ticketTitleEl.textContent = "RÉSERVATION EN COURS";
+            ticketTitleEl.classList.add("ticket-title-dark");
+            myStatusEl.textContent = "Votre réservation est en cours de traitement...";
+            ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.";
+            break;
+
+        case "confirmed":
+        case "reserved":
+            ticketTitleEl.textContent = "RÉSERVATION CONFIRMÉE";
+            ticketTitleEl.classList.add("ticket-title-green");
+            myStatusEl.textContent = "Présentez votre code à la borne pour imprimer votre ticket.";
+            myStatusEl.classList.add("confirmed");
+            ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération, la réservation est annulée.";
+            break;
+
+        case "arrived":
+        case "waiting":
+            ticketTitleEl.textContent = "ARRIVÉE CONFIRMÉE";
+            ticketTitleEl.classList.add("ticket-title-green");
+            myStatusEl.textContent = "Ticket récupéré ! Veuillez attendre votre appel.";
+            myStatusEl.classList.add("arrived");
+            ticketMessageEl.innerHTML = "Votre ticket physique a été imprimé avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.";
+            break;
+
+        case "called":
+            ticketTitleEl.textContent = "C'EST VOTRE TOUR";
+            ticketTitleEl.classList.add("ticket-title-blue");
+            myStatusEl.textContent = `Votre numéro (#${formatNumber(activeUserTicketData?.ticket || currentTicket)}) est appelé au guichet !`;
+            myStatusEl.classList.add("called");
+            ticketMessageEl.innerHTML = "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.";
+            break;
+
+        case "skipped":
+            ticketTitleEl.textContent = "TOUR DÉPASSÉ";
+            ticketTitleEl.classList.add("ticket-title-red");
+            myStatusEl.textContent = "Votre numéro a été dépassé par le guichet.";
+            myStatusEl.classList.add("skipped");
+            ticketMessageEl.innerHTML = "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.";
+            break;
+
+        case "completed":
+            ticketTitleEl.textContent = "SERVICE TERMINÉ";
+            ticketTitleEl.classList.add("ticket-title-dark");
+            myStatusEl.textContent = "Votre passage est terminé.";
+            myStatusEl.classList.add("completed");
+            ticketMessageEl.innerHTML = "Merci pour votre visite chez Poste El Amal.";
+            break;
+
+        default:
+            ticketTitleEl.textContent = "STATUT DE RÉSERVATION";
+            ticketTitleEl.classList.add("ticket-title-dark");
+            myStatusEl.textContent = "En attente de mise à jour";
+    }
+
+    updateReserveButton();
+}
+
+function resetUserReservationUI() {
+    clearPendingTimer();
+    activeUserTicketData = null;
+    alertedApproachingForTicket = null;
+    alertedExactTurnForTicket = null;
+    releaseWakeLock();
+    reservationSection.style.display = "block";
+    ticketSection.style.display = "none";
+    duplicateNoticeEl.style.display = "none";
+    myTicketEl.textContent = "---";
+    myCodeEl.textContent = "----";
+    reservationInProgress = false;
+    clearError();
+    updateReserveButton();
+}
+
+function watchReservationKey(key) {
+    if (!key) return;
+    if (unsubscribeReservation) {
+        unsubscribeReservation();
+        unsubscribeReservation = null;
+    }
+
+    const reqRef = ref(db, `reservation_requests/${key}`);
+    unsubscribeReservation = onValue(reqRef, (snapshot) => {
+        if (!snapshot.exists()) return;
+        const data = snapshot.val();
+        if (!data) return;
+
+        const status = String(data.status || "pending").toLowerCase();
+        if (status === "pending") return;
+
+        clearPendingTimer();
+        reservationInProgress = false;
+
+        if (status === "rejected") {
+            showError("Votre demande n'a pas pu être validée par le système.");
+            resetUserReservationUI();
+            return;
+        }
+
+        const ticketNum = Number(data.ticket || 0);
+        const codeStr = String(data.code || "");
+
+        if (ticketNum >= 1 && ticketNum <= 999) {
+            const resData = {
+                id: key,
+                ticket: ticketNum,
+                code: codeStr,
+                status: status,
+                user_id: currentUser?.uid,
+                saved_at: Date.now()
+            };
+
+            saveReservation(resData);
+            showReservation(resData, data.is_duplicate === true);
+        }
+    });
+}
+
+function watchUserActiveTicket(uid) {
+    if (!uid) return;
+    if (unsubscribeUserActiveTicket) {
+        unsubscribeUserActiveTicket();
+        unsubscribeUserActiveTicket = null;
+    }
+
+    const userTicketRef = ref(db, `user_active_tickets/${uid}`);
+    unsubscribeUserActiveTicket = onValue(userTicketRef, (snapshot) => {
+        if (!snapshot.exists()) return;
+
+        const data = snapshot.val();
+        const status = String(data.status || "").toLowerCase();
+        const tNum = Number(data.ticket || 0);
+
+        if (["confirmed", "reserved", "arrived", "waiting"].includes(status) && tNum > 0) {
+            clearPendingTimer();
+            reservationInProgress = false;
+
+            const resData = {
+                id: data.original_key || "",
+                ticket: tNum,
+                code: data.code || "",
+                status: status,
+                user_id: uid
+            };
+            saveReservation(resData);
+
+            if (isTicketOvertaken(tNum, currentTicket)) {
+                showReservation(resData, false);
+                updateReservationStatus("skipped");
+            } else {
+                showReservation(resData, data.is_duplicate === true);
+            }
+        } else if (["called", "skipped", "completed"].includes(status)) {
+            updateReservationStatus(status);
+        }
+    }, (err) => {
+        console.warn("Notice: user_active_tickets listener error:", err.message);
+    });
+}
+
+async function createReservation() {
+    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+        showError("La borne d'accueil est déconnectée ou indisponible. Impossible de réserver pour le moment.");
+        return;
+    }
+
+    if (!authReady || !currentUser || reservationInProgress) return;
+
+    clearError();
+    clearPendingTimer();
+
+    const localSaved = loadReservation();
+    if (localSaved && localSaved.user_id === currentUser.uid && localSaved.ticket > 0) {
+        const isExpired = ["skipped", "called", "completed", "rejected"].includes(localSaved.status);
+        const isOver = isTicketOvertaken(localSaved.ticket, currentTicket);
+
+        if (!isExpired && !isOver && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
+            showReservation(localSaved, true);
+            updateReserveButton();
+            return;
+        }
+    }
+
+    reservationInProgress = true;
+    updateReserveButton();
+
+    try {
+        const requestsRef = ref(db, "reservation_requests");
+        const newRequestRef = push(requestsRef);
+        const newReqKey = newRequestRef.key;
+
+        await set(newRequestRef, {
+            status: "pending",
+            source: "web",
+            user_id: currentUser.uid,
+            created_at: serverTimestamp()
+        });
+
+        showReservation({ status: "pending", ticket: 0, code: "" });
+        watchReservationKey(newReqKey);
+
+        pendingTimeoutTimer = setTimeout(() => {
+            if (reservationInProgress) {
+                reservationInProgress = false;
+                showError("Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.");
+                resetUserReservationUI();
+            }
+        }, 15000);
+
+    } catch (error) {
+        console.error("Erreur d'envoi:", error);
+        reservationInProgress = false;
+
+        if (error.code === "PERMISSION_DENIED" || (error.message && error.message.includes("PERMISSION_DENIED"))) {
+            showError("Erreur d'accès Firebase : Veuillez vérifier les règles (Rules).");
+        } else {
+            showError("Impossible d'envoyer la réservation. Veuillez réessayer.");
+        }
+        updateReserveButton();
+    }
+}
+
+newReservationButton.addEventListener("click", async () => {
+    if (!currentUser || reservationInProgress) return;
+
+    clearError();
+
+    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+        showError("Impossible de réserver : La borne est actuellement hors ligne ou sans papier.");
+        return;
+    }
+
+    localStorage.removeItem(getReservationKey(currentUser.uid));
+    activeUserTicketData = null;
+    alertedApproachingForTicket = null;
+    alertedExactTurnForTicket = null;
+
+    await createReservation();
+});
+
+reserveButton.addEventListener("click", createReservation);
+
+async function loginWithGoogle() {
+    authError.style.display = "none";
+    googleLoginButton.disabled = true;
+    try {
+        await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+        if (error.code !== "auth/popup-closed-by-user") {
+            authError.textContent = "Impossible de se connecter avec Google.";
+            authError.style.display = "block";
+        }
+    } finally {
+        googleLoginButton.disabled = false;
+    }
+}
+
+googleLoginButton.addEventListener("click", loginWithGoogle);
+
+onAuthStateChanged(auth, (user) => {
+    if (unsubscribeReservation) {
+        unsubscribeReservation();
+        unsubscribeReservation = null;
+    }
+    if (unsubscribeUserActiveTicket) {
+        unsubscribeUserActiveTicket();
+        unsubscribeUserActiveTicket = null;
+    }
+
+    currentUser = user;
+    authReady = true;
+
+    if (user) {
+        loginSection.style.display = "none";
+        userSection.style.display = "block";
+        userName.textContent = user.displayName || "Utilisateur";
+        userEmail.textContent = user.email || "";
+        if (user.photoURL) {
+            userPhoto.src = user.photoURL;
+            userPhoto.style.display = "inline-block";
+        } else {
+            userPhoto.removeAttribute("src");
+            userPhoto.style.display = "none";
+        }
+
+        const localSaved = loadReservation();
+        if (localSaved && localSaved.user_id === user.uid && localSaved.ticket > 0) {
+            showReservation(localSaved);
+            if (isTicketOvertaken(localSaved.ticket, currentTicket)) {
+                updateReservationStatus("skipped");
+            }
+        }
+
+        watchUserActiveTicket(user.uid);
+    } else {
+        loginSection.style.display = "block";
+        userSection.style.display = "none";
+        resetUserReservationUI();
+    }
+    updateReserveButton();
+});
+
+logoutButton.addEventListener("click", async () => {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        authError.textContent = "Impossible de se déconnecter.";
+        authError.style.display = "block";
+    }
+});
+
+// تهيئة التفضيلات والتحديث الدوري
+initAlertPreferences();
+updateReserveButton();
+setInterval(checkMasterStatus, 5000);
 </script>
+
 </body>
 </html>
