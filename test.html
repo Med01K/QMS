@@ -355,7 +355,7 @@ input:checked + .slider:before {
     cursor: pointer;
 }
 
-/* إشعار النافذة المنبثق التفاعلي داخل الصفحة فقط */
+/* نوافذ التنبيه المنبثقة (Modals) */
 .modal-overlay {
     display: none;
     position: fixed;
@@ -597,7 +597,7 @@ footer {
 
 </main>
 
-<!-- إشعار النافذة التفاعلي المنبثق داخل الموقع فقط -->
+<!-- 1. نافذة التنبيه لاقتراب الدور داخل الموقع -->
 <div class="modal-overlay" id="inAppModalOverlay">
     <div class="modal-card">
         <div class="modal-icon" id="inAppModalIcon">🔔</div>
@@ -607,11 +607,21 @@ footer {
     </div>
 </div>
 
-<!--  
-<footer>
-    © 2026 POSTE EL AMAL<br>
-    Système de gestion des files d'attente
-</footer>  -->
+<!-- 2. نافذة تنبيه حجب الإشعارات (تظهر فقط عند حجب الإشعارات) -->
+<div class="modal-overlay" id="permModalOverlay">
+    <div class="modal-card">
+        <div class="modal-icon" style="color: var(--red);">🔕</div>
+        <h3 style="color: var(--red); margin-bottom: 12px;">Notifications bloquées</h3>
+        <p style="text-align: left; font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 22px;">
+            L'activation des notifications est <strong>indispensable</strong> pour être averti à l'avance de votre tour lorsque votre écran est verrouillé ou que vous quittez la page.<br><br>
+            <strong>Comment les autoriser ?</strong><br>
+            1. Cliquez sur l'icône de cadenas ou de réglages (🔒) à gauche de l'adresse du site.<br>
+            2. Activez l'option <strong>Notifications</strong>.<br>
+            3. Rechargez ensuite la page pour appliquer.
+        </p>
+        <button type="button" class="modal-btn" id="permModalCloseBtn">J'AI COMPRIS</button>
+    </div>
+</div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -670,11 +680,16 @@ const alertToggle          = document.getElementById("alertToggle");
 const alertMarginSelect    = document.getElementById("alertMarginSelect");
 const alertBox             = document.getElementById("alertBox");
 const alertOptionsArea     = document.getElementById("alertOptionsArea");
+
 const inAppModalOverlay    = document.getElementById("inAppModalOverlay");
 const inAppModalIcon       = document.getElementById("inAppModalIcon");
 const inAppModalTitle      = document.getElementById("inAppModalTitle");
 const inAppModalMsg        = document.getElementById("inAppModalMsg");
 const inAppModalCloseBtn   = document.getElementById("inAppModalCloseBtn");
+
+// عناصر نافذة حجب الإشعارات
+const permModalOverlay     = document.getElementById("permModalOverlay");
+const permModalCloseBtn    = document.getElementById("permModalCloseBtn");
 
 let reservationInProgress = false;
 let currentTicket = 0;
@@ -700,14 +715,12 @@ let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
 
-// ========================================================
-// متغيرات التحكم الصارم بالتنبيهات لمنع التكرار والانفتاح المفاجئ
-// ========================================================
-let isInitialTicketLoadDone = false; // لمنع انبثاق النافذة عند فتح الصفحة
-let lastObservedCurrentTicket = null; // لمراقبة التغير الحقيقي في الطابور
-let lastAlertedRemaining = null;     // آخر مسافة تم التنبيه عندها
+// متغيرات ضبط التنبيهات
+let isInitialTicketLoadDone = false; 
+let lastObservedCurrentTicket = null; 
+let lastAlertedRemaining = null;     
 let alertedExactTurnForTicket = null;
-let lastAlertTimestamp = 0;          // لمنع الصوت المزدوج نهائياً
+let lastAlertTimestamp = 0;          
 let wakeLock = null;
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
@@ -719,8 +732,16 @@ function formatNumber(number) {
     return String(Math.trunc(n)).padStart(3, "0");
 }
 
+function showPermissionDeniedModal() {
+    permModalOverlay.style.display = "flex";
+}
+
+permModalCloseBtn.addEventListener("click", () => {
+    permModalOverlay.style.display = "none";
+});
+
 /* ========================================================
-   تهيئة FCM (لخلفية النظام فقط - Background Push)
+   تهيئة FCM
 ======================================================== */
 async function initFirebaseMessaging() {
     const supported = await isSupported();
@@ -735,15 +756,23 @@ async function initFirebaseMessaging() {
             console.warn("SW Registration:", e);
         }
     }
-    // تم حذف onMessage من هنا تماماً لمنع حدوث التنبيه الثاني المزدوج
 }
 window.addEventListener("load", initFirebaseMessaging);
 
 async function syncFCMTokenWithDatabase() {
     if (!messaging || !currentUser) return;
     try {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "denied") {
+            showPermissionDeniedModal();
+            return;
+        }
+
         const permission = await Notification.requestPermission();
-        if (permission !== "granted") return;
+        if (permission !== "granted") {
+            showPermissionDeniedModal();
+            return;
+        }
 
         const token = await getToken(messaging, { 
             vapidKey: VAPID_KEY,
@@ -830,7 +859,6 @@ function releaseScreenWakeLock() {
    إطلاق التنبيه الداخلي بدون تكرار
 ======================================================== */
 function triggerTurnAlert(title, message, isTurn = false) {
-    // مانع التكرار الزمني: لا يمكن إطلاق تنبيهين خلال 4 ثوانٍ
     const now = Date.now();
     if (now - lastAlertTimestamp < 4000) return;
     lastAlertTimestamp = now;
@@ -843,7 +871,6 @@ function triggerTurnAlert(title, message, isTurn = false) {
         } catch (e) {}
     }
 
-    // إظهار نافذة التنبيه داخل الصفحة
     inAppModalIcon.textContent = isTurn ? "📢" : "⏳";
     inAppModalTitle.textContent = title;
     inAppModalMsg.textContent = message;
@@ -855,7 +882,7 @@ inAppModalCloseBtn.addEventListener("click", () => {
 });
 
 /* ========================================================
-   حساب المسافة ومحرك التنبيه الذكي عند تغير الدور
+   حساب المسافة ومحرك التنبيه
 ======================================================== */
 function calculateDistanceToTurn(userTicket, curTicket) {
     const u = Number(userTicket);
@@ -877,22 +904,20 @@ function checkAlertsEngine() {
 
     const margin = parseInt(alertMarginSelect.value, 10) || 10;
 
-    // 1. المعالجة الصامتة لأول مرة تفتح فيها الصفحة (Silent Sync):
+    // المزامنة الصامتة عند فتح الصفحة لأول مرة
     if (!isInitialTicketLoadDone) {
         lastAlertedRemaining = remaining;
         lastObservedCurrentTicket = currentTicket;
         if (remaining === 0) alertedExactTurnForTicket = ticketNum;
         isInitialTicketLoadDone = true;
-        return; // خروج فوري بدون فتح أي نافذة تحذير
+        return; 
     }
 
-    // إذا لم يتغير رقم الدور الحالي الفعلي، لا نقوم بأي فحص
     if (currentTicket === lastObservedCurrentTicket) {
         return;
     }
     lastObservedCurrentTicket = currentTicket;
 
-    // 2. وصول الدور بالضبط (بقاء 0 شخص):
     if (remaining === 0) {
         if (alertedExactTurnForTicket !== ticketNum) {
             alertedExactTurnForTicket = ticketNum;
@@ -906,7 +931,6 @@ function checkAlertsEngine() {
         return;
     }
 
-    // 3. التنبيه داخل الهامش وكلما مر 3 أشخاص:
     if (remaining > 0 && remaining <= margin) {
         const justEnteredMargin = (lastAlertedRemaining === null || lastAlertedRemaining > margin);
         const threePeoplePassed = (lastAlertedRemaining !== null && (lastAlertedRemaining - remaining) >= 3);
@@ -923,7 +947,7 @@ function checkAlertsEngine() {
 }
 
 /* ========================================================
-   إدارة إعدادات التنبيه
+   إدارة إعدادات التنبيه وفحص إذن الحجب الصارم
 ======================================================== */
 function initAlertPreferences() {
     const savedState = localStorage.getItem("qms_alert_enabled");
@@ -933,6 +957,15 @@ function initAlertPreferences() {
         alertMarginSelect.value = savedMargin;
     } else {
         alertMarginSelect.value = "10";
+    }
+
+    // إذا كانت الإشعارات محجوبة في المتصفح نلغي حفظ التفعيل
+    if ("Notification" in window && Notification.permission === "denied") {
+        alertToggle.checked = false;
+        localStorage.setItem("qms_alert_enabled", "false");
+        alertOptionsArea.style.opacity = "0.4";
+        alertOptionsArea.style.pointerEvents = "none";
+        return;
     }
 
     if (savedState === "true") {
@@ -947,11 +980,43 @@ function initAlertPreferences() {
     }
 }
 
+// التفاعل مع زر تفعيل الإشعارات والتأكد من عدم حجبها
 alertToggle.addEventListener("change", async () => {
     if (alertToggle.checked) {
-        if ("Notification" in window && Notification.permission !== "granted") {
-            try { await Notification.requestPermission(); } catch (e) {}
+        if (!("Notification" in window)) {
+            alert("Votre navigateur ne supporte pas les notifications.");
+            alertToggle.checked = false;
+            return;
         }
+
+        // فحص: إذا كان المستخدم قد حجب الإشعارات مسبقاً
+        if (Notification.permission === "denied") {
+            alertToggle.checked = false;
+            localStorage.setItem("qms_alert_enabled", "false");
+            alertOptionsArea.style.opacity = "0.4";
+            alertOptionsArea.style.pointerEvents = "none";
+            showPermissionDeniedModal(); // إظهار نافذة التنبيه فورا
+            return;
+        }
+
+        let perm = Notification.permission;
+        if (perm !== "granted") {
+            try { 
+                perm = await Notification.requestPermission(); 
+            } catch (e) {}
+        }
+
+        // إذا رفض المستخدم الآن أو حجبها
+        if (perm === "denied" || perm !== "granted") {
+            alertToggle.checked = false;
+            localStorage.setItem("qms_alert_enabled", "false");
+            alertOptionsArea.style.opacity = "0.4";
+            alertOptionsArea.style.pointerEvents = "none";
+            showPermissionDeniedModal(); // إظهار نافذة التنبيه
+            return;
+        }
+
+        // تم منح الإذن بنجاح
         localStorage.setItem("qms_alert_enabled", "true");
         alertOptionsArea.style.opacity = "1";
         alertOptionsArea.style.pointerEvents = "auto";
@@ -1099,7 +1164,6 @@ onValue(queueRef, (snapshot) => {
     firebaseDataAvailable = true;
     checkMasterStatus();
 
-    // فحص التنبيه الداخلي عند كل تقدم في الطابور
     checkAlertsEngine();
 
     if (activeUserTicketData && activeUserTicketData.ticket > 0) {
@@ -1117,7 +1181,7 @@ onValue(queueRef, (snapshot) => {
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
-    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) &&  !isCurrentTicketOvertaken;
+    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) && !isCurrentTicketOvertaken;
     const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
 
     if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
@@ -1287,6 +1351,7 @@ function resetUserReservationUI() {
     alertedExactTurnForTicket = null;
     releaseScreenWakeLock();
     inAppModalOverlay.style.display = "none";
+    permModalOverlay.style.display = "none";
     reservationSection.style.display = "block";
     ticketSection.style.display = "none";
     duplicateNoticeEl.style.display = "none";
@@ -1421,7 +1486,7 @@ async function createReservation() {
             created_at: serverTimestamp()
         });
 
-        isInitialTicketLoadDone = false; // تفعيل المزامنة الصامتة للتذكرة الجديدة
+        isInitialTicketLoadDone = false;
         showReservation({ status: "pending", ticket: 0, code: "" });
         watchReservationKey(newReqKey);
 
