@@ -543,7 +543,7 @@ footer {
 
         <div class="ticket-status" id="myStatus">En attente de confirmation</div>
 
-        <!-- صندوق التنبيهات مع المفتاح التبادلي وخيارات الهامش 2، 5، 10، 15، 30 -->
+        <!-- صندوق التنبيهات مع المفتاح التبادلي وخيارات الهامش (القيمة الافتراضية 10) -->
         <div class="alert-box" id="alertBox">
             <div class="alert-header">
                 <span class="alert-title">🔔 Activer les alertes</span>
@@ -556,8 +556,8 @@ footer {
                 <span>M'avertir à l'avance :</span>
                 <select id="alertMarginSelect" class="alert-select">
                     <option value="2">2 pers. avant</option>
-                    <option value="5" selected>5 pers. avant</option>
-                    <option value="10">10 pers. avant</option>
+                    <option value="5">5 pers. avant</option>
+                    <option value="10" selected>10 pers. avant</option>
                     <option value="15">15 pers. avant</option>
                     <option value="30">30 pers. avant</option>
                 </select>
@@ -698,8 +698,10 @@ let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
 
-let alertedApproachingForTicket = null;
-let alertedExactTurnForTicket = null;
+// متغيرات تتبع التنبيهات الدورية
+let lastTrackedTicketNum = null;
+let lastAlertedRemaining = null; // يحفظ عدد الأشخاص عند آخر تنبيه تم إرساله
+let alertedExactTurnForTicket = null; // يمنع تكرار تنبيه وصول الدور
 let wakeLock = null;
 let swRegistration = null;
 
@@ -846,7 +848,7 @@ async function triggerTurnAlert(title, message, isTurn = false) {
 }
 
 /* ========================================================
-   محرك حساب مسافة الدور وتفعيل التنبيهات
+   محرك حساب مسافة الدور وتفعيل التنبيهات الدورية
 ======================================================== */
 function calculateDistanceToTurn(userTicket, curTicket) {
     const u = Number(userTicket);
@@ -863,27 +865,47 @@ function checkAlertsEngine() {
 
     if (!["confirmed", "reserved", "arrived", "waiting"].includes(status)) return;
 
-    const remaining = calculateDistanceToTurn(activeUserTicketData.ticket, currentTicket);
-    if (remaining === null) return;
+    const ticketNum = activeUserTicketData.ticket;
 
-    const margin = parseInt(alertMarginSelect.value, 10) || 5;
-
-    // 1. تنبيه اقتراب الدور بحسب الهامش المختار (2, 5, 10, 15, 30)
-    if (remaining > 0 && remaining <= margin && alertedApproachingForTicket !== activeUserTicketData.ticket) {
-        alertedApproachingForTicket = activeUserTicketData.ticket;
-        triggerTurnAlert(
-            "⚠️ Préparez-vous !",
-            `Il ne reste que ${remaining} personne(s) avant votre tour (Ticket #${formatNumber(activeUserTicketData.ticket)}). Veuillez vous approcher du guichet.`,
-            false
-        );
+    // إعادة التهيئة إذا تغيرت التذكرة
+    if (lastTrackedTicketNum !== ticketNum) {
+        lastTrackedTicketNum = ticketNum;
+        lastAlertedRemaining = null;
+        alertedExactTurnForTicket = null;
     }
 
-    // 2. تنبيه وصول الدور بالضبط
-    if (remaining === 0 && alertedExactTurnForTicket !== activeUserTicketData.ticket) {
-        alertedExactTurnForTicket = activeUserTicketData.ticket;
+    const remaining = calculateDistanceToTurn(ticketNum, currentTicket);
+    if (remaining === null) return;
+
+    // القيمة الافتراضية 10
+    const margin = parseInt(alertMarginSelect.value, 10) || 10;
+
+    // معالجة حالة تراجع الطابور
+    if (lastAlertedRemaining !== null && remaining > lastAlertedRemaining) {
+        lastAlertedRemaining = remaining;
+    }
+
+    // 1. التنبيه عند بلوغ الهامش وكلما مر 3 أشخاص بعده
+    if (remaining > 0 && remaining <= margin) {
+        const isInitialAlert = (lastAlertedRemaining === null);
+        const hasThreePeoplePassed = (lastAlertedRemaining !== null && (lastAlertedRemaining - remaining) >= 3);
+
+        if (isInitialAlert || hasThreePeoplePassed) {
+            lastAlertedRemaining = remaining;
+            triggerTurnAlert(
+                "⚠️ Préparez-vous !",
+                `Il ne reste que ${remaining} personne(s) avant votre tour (Ticket #${formatNumber(ticketNum)}). Veuillez vous approcher du guichet.`,
+                false
+            );
+        }
+    }
+
+    // 2. تنبيه وصول الدور بالضبط (بقاء 0 شخص)
+    if (remaining === 0 && alertedExactTurnForTicket !== ticketNum) {
+        alertedExactTurnForTicket = ticketNum;
         triggerTurnAlert(
             "🔔 C'EST VOTRE TOUR !",
-            `Votre numéro #${formatNumber(activeUserTicketData.ticket)} est appelé au guichet !`,
+            `Votre numéro #${formatNumber(ticketNum)} est appelé au guichet !`,
             true
         );
     }
@@ -896,8 +918,11 @@ function initAlertPreferences() {
     const savedState = localStorage.getItem("qms_alert_enabled");
     const savedMargin = localStorage.getItem("qms_alert_margin");
 
+    // القيمة الافتراضية 10
     if (savedMargin) {
         alertMarginSelect.value = savedMargin;
+    } else {
+        alertMarginSelect.value = "10";
     }
 
     if (savedState === "true") {
@@ -934,7 +959,7 @@ alertToggle.addEventListener("change", async () => {
 
 alertMarginSelect.addEventListener("change", () => {
     localStorage.setItem("qms_alert_margin", alertMarginSelect.value);
-    alertedApproachingForTicket = null;
+    lastAlertedRemaining = null; // إعادة الفحص بالهامش الجديد
     checkAlertsEngine();
 });
 
@@ -1245,7 +1270,8 @@ function updateReservationStatus(status) {
 function resetUserReservationUI() {
     clearPendingTimer();
     activeUserTicketData = null;
-    alertedApproachingForTicket = null;
+    lastTrackedTicketNum = null;
+    lastAlertedRemaining = null;
     alertedExactTurnForTicket = null;
     releaseScreenWakeLock();
     inAppModalOverlay.style.display = "none";
@@ -1419,7 +1445,8 @@ newReservationButton.addEventListener("click", async () => {
 
     localStorage.removeItem(getReservationKey(currentUser.uid));
     activeUserTicketData = null;
-    alertedApproachingForTicket = null;
+    lastTrackedTicketNum = null;
+    lastAlertedRemaining = null;
     alertedExactTurnForTicket = null;
 
     await createReservation();
@@ -1496,6 +1523,7 @@ logoutButton.addEventListener("click", async () => {
     }
 });
 
+// تهيئة الإعدادات
 initAlertPreferences();
 updateReserveButton();
 setInterval(checkMasterStatus, 5000);
