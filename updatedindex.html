@@ -183,14 +183,18 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .btn-secondary { background: #e8f0fb; color: var(--primary); margin-top: 15px; }
 .btn-secondary:hover { background: #d6e4f9; }
 
-/* أزرار إعادة الحجز الجديدة */
+/* زر الحجز المباشر بعد فوات الدور */
 .btn-rebook {
     background: var(--primary);
     color: white;
     margin-top: 20px;
     box-shadow: 0 4px 12px rgba(18, 59, 116, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
-.btn-rebook:hover {
+.btn-rebook:not(:disabled):hover {
     background: var(--primary-dark);
 }
 
@@ -201,7 +205,6 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     transition: border-color 0.3s;
 }
 
-/* الألوان الديناميكية للعنوان حسب الحالة */
 .ticket-card h2 { 
     font-size: 22px; 
     margin-bottom: 20px; 
@@ -377,10 +380,11 @@ footer {
 
         <div class="ticket-status" id="myStatus">En attente de confirmation</div>
 
-        <!-- زر إعادة الحجز الذي يظهر فوراً عند فوات الدور أو انتهاء الخدمة -->
+        <!-- زر الحجز المباشر بنقرة واحدة عند انتهاء أو فوات الدور -->
         <button class="btn-rebook" id="newReservationButton" style="display:none;">
-            NOUVELLE RÉSERVATION
+            RÉSERVER UN NOUVEAU TICKET
         </button>
+        <div class="error-message" id="ticketError"></div>
 
         <p class="ticket-message" id="ticketMessage">
             Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>
@@ -453,6 +457,7 @@ const connectionStatusEl   = document.getElementById("connectionStatus");
 const statusDotEl          = document.getElementById("statusDot");
 const reserveButton        = document.getElementById("reserveButton");
 const reservationError     = document.getElementById("reservationError");
+const ticketError          = document.getElementById("ticketError");
 const duplicateNoticeEl    = document.getElementById("duplicateNotice");
 const printerOfflineBanner = document.getElementById("printerOfflineBanner");
 const reservationSection   = document.getElementById("reservationSection");
@@ -623,7 +628,6 @@ onValue(queueRef, (snapshot) => {
     firebaseDataAvailable = true;
     checkMasterStatus();
 
-    // فحص فوري لما إذا كان الدور قد فات أو تم النداء
     if (activeUserTicketData && activeUserTicketData.ticket > 0) {
         if (isTicketOvertaken(activeUserTicketData.ticket, currentTicket)) {
             updateReservationStatus("skipped");
@@ -639,7 +643,6 @@ onValue(queueRef, (snapshot) => {
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status);
-
     const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
 
     if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
@@ -654,9 +657,11 @@ function updateReserveButton() {
     }
 
     reserveButton.disabled = !isHardwareReady || reservationInProgress || !userLoggedIn || hasActiveReservation;
+    newReservationButton.disabled = !isHardwareReady || reservationInProgress;
 
     if (reservationInProgress) {
         reserveButton.textContent = "RÉSERVATION EN COURS...";
+        newReservationButton.textContent = "RÉSERVATION EN COURS...";
     } else if (!userLoggedIn) {
         reserveButton.textContent = "CONNECTEZ-VOUS POUR RÉSERVER";
     } else if (hasActiveReservation) {
@@ -671,17 +676,22 @@ function updateReserveButton() {
         reserveButton.textContent = "SERVICE MOMENTANÉMENT SUSPENDU";
     } else {
         reserveButton.textContent = "RÉSERVER UN TICKET";
+        newReservationButton.textContent = "RÉSERVER UN NOUVEAU TICKET";
     }
 }
 
 function showError(message) {
     reservationError.style.display = "block";
     reservationError.textContent = message;
+    ticketError.style.display = "block";
+    ticketError.textContent = message;
 }
 
 function clearError() {
     reservationError.style.display = "none";
     reservationError.textContent = "";
+    ticketError.style.display = "none";
+    ticketError.textContent = "";
 }
 
 function showReservation(reservation, isDuplicateNotice = false) {
@@ -706,7 +716,6 @@ function showReservation(reservation, isDuplicateNotice = false) {
     updateReservationStatus(status);
 }
 
-// الدالة المسؤولة عن تحديث النصوص والألوان وإظهار زر الحجز الجديد فوراً
 function updateReservationStatus(status) {
     if (activeUserTicketData) {
         activeUserTicketData.status = status;
@@ -714,16 +723,16 @@ function updateReservationStatus(status) {
     }
 
     myStatusEl.className = "ticket-status";
-    ticketTitleEl.className = ""; // تنظيف الكلاسات السابقة
+    ticketTitleEl.className = "";
 
     const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
 
     if (expiredStatuses.includes(status)) {
         myCodeEl.textContent = "----";
-        newReservationButton.style.display = "block"; // إظهار زر حجز جديد فوراً!
+        newReservationButton.style.display = "flex"; // إظهار زر الحجز المباشر فوراً
         newReservationButton.textContent = (status === "called") 
             ? "FAIRE UNE NOUVELLE RÉSERVATION" 
-            : "RÉSERVER À NOUVEAU";
+            : "RÉSERVER UN NOUVEAU TICKET";
     } else {
         const codeVal = (activeUserTicketData && activeUserTicketData.code !== undefined && activeUserTicketData.code !== null) 
                         ? String(activeUserTicketData.code) : "";
@@ -767,10 +776,10 @@ function updateReservationStatus(status) {
 
         case "skipped":
             ticketTitleEl.textContent = "TOUR DÉPASSÉ";
-            ticketTitleEl.classList.add("ticket-title-red"); // لون أحمر واضح لفوات الدور!
+            ticketTitleEl.classList.add("ticket-title-red");
             myStatusEl.textContent = "Votre numéro a été dépassé par le guichet.";
             myStatusEl.classList.add("skipped");
-            ticketMessageEl.innerHTML = "Votre tour est passé. Vous pouvez désormais effectuer une nouvelle réservation en cliquant sur le bouton ci-dessus.";
+            ticketMessageEl.innerHTML = "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.";
             break;
 
         case "completed":
@@ -889,9 +898,10 @@ function watchUserActiveTicket(uid) {
     });
 }
 
+// دالة إنشاء الحجز الأساسية
 async function createReservation() {
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
-        showError("La borne d'accueil est déconnectée. Impossible de réserver pour le moment.");
+        showError("La borne d'accueil est déconnectée ou indisponible. Impossible de réserver pour le moment.");
         return;
     }
 
@@ -900,10 +910,13 @@ async function createReservation() {
     clearError();
     clearPendingTimer();
 
-    // فحص محلي: إذا كانت لديه تذكرة ولم يفت دورها بعد
+    // فحص ما إذا كانت التذكرة الحالية ما زالت صالحة وفعالة
     const localSaved = loadReservation();
     if (localSaved && localSaved.user_id === currentUser.uid && localSaved.ticket > 0) {
-        if (!isTicketOvertaken(localSaved.ticket, currentTicket) && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
+        const isExpired = ["skipped", "called", "completed", "rejected"].includes(localSaved.status);
+        const isOver = isTicketOvertaken(localSaved.ticket, currentTicket);
+
+        if (!isExpired && !isOver && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
             showReservation(localSaved, true);
             updateReserveButton();
             return;
@@ -925,6 +938,7 @@ async function createReservation() {
             created_at: serverTimestamp()
         });
 
+        // إظهار واجهة الانتظار فوراً في نفس الصفحة
         showReservation({ status: "pending", ticket: 0, code: "" });
         watchReservationKey(newReqKey);
 
@@ -939,7 +953,6 @@ async function createReservation() {
     } catch (error) {
         console.error("Erreur d'envoi:", error);
         reservationInProgress = false;
-        resetUserReservationUI();
 
         if (error.code === "PERMISSION_DENIED" || (error.message && error.message.includes("PERMISSION_DENIED"))) {
             showError("Erreur d'accès Firebase : Veuillez vérifier les règles (Rules).");
@@ -950,12 +963,27 @@ async function createReservation() {
     }
 }
 
-// زر الحجز الجديد ينظف التذكرة القديمة ويعيدك مباشرة لواجهة الحجز
-newReservationButton.addEventListener("click", () => {
-    if (!currentUser) return;
+// ✅ الحل الجذري: عند الضغط على الزر، يتم الحجز المباشر فوراً دون أي شاشات وسيطة ودون ضغط مرتين!
+newReservationButton.addEventListener("click", async () => {
+    if (!currentUser || reservationInProgress) return;
+
+    clearError();
+
+    // التأكد من جاهزية العتاد أولاً
+    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+        showError("Impossible de réserver : La borne est actuellement hors ligne ou sans papier.");
+        return;
+    }
+
+    // تنظيف التذكرة السابقة المنتهية فوراً
     localStorage.removeItem(getReservationKey(currentUser.uid));
-    resetUserReservationUI();
+    activeUserTicketData = null;
+
+    // استدعاء مباشر لعملية الحجز الجديدة
+    await createReservation();
 });
+
+reserveButton.addEventListener("click", createReservation);
 
 async function loginWithGoogle() {
     authError.style.display = "none";
@@ -972,7 +1000,6 @@ async function loginWithGoogle() {
     }
 }
 
-reserveButton.addEventListener("click", createReservation);
 googleLoginButton.addEventListener("click", loginWithGoogle);
 
 onAuthStateChanged(auth, (user) => {
