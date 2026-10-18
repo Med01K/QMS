@@ -12,40 +12,27 @@ firebase.initializeApp({
   appId: "1:1018632771701:web:2a87f89d70987bdbbdc03c"
 });
 
+// تهيئة نظام الرسائل (Firebase سيتولى إظهار الإشعار القادم من الكلودفلير تلقائياً وبنسخة واحدة فقط)
 const messaging = firebase.messaging();
 
-// استقبال الإشعارات عندما يكون المتصفح مغلقاً أو في الخلفية
-messaging.onBackgroundMessage((payload) => {
-  const notificationTitle = payload.notification?.title || "POSTE EL AMAL";
-  const notificationOptions = {
-    body: payload.notification?.body || "Votre tour approche au guichet.",
-    icon: new URL("logo.png", self.location.href).href,
-    badge: new URL("logo.png", self.location.href).href,
-    tag: "qms-fcm-alert",
-    requireInteraction: true,
-    vibrate: [400, 150, 400, 150, 600],
-    data: {
-      url: payload.data?.url || self.registration.scope
-    }
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
-// فتح التطبيق عند النقر على الإشعار
+// فتح التطبيق والتركيز عليه عند النقر على الإشعار
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const targetUrl = new URL(event.notification?.data?.url || self.registration.scope, self.location.href).href;
+  
+  const targetUrl = (event.notification?.data && event.notification.data.url) 
+                    ? event.notification.data.url 
+                    : "https://med01k.github.io/QMS/";
 
-  event.waitUntil((async () => {
-    const clientList = await clients.matchAll({ type: "window", includeUncontrolled: true });
-    for (const client of clientList) {
-      if ("focus" in client) {
-        await client.focus();
-        if ("navigate" in client) await client.navigate(targetUrl);
-        return;
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("med01k.github.io/QMS") && "focus" in client) {
+          return client.focus();
+        }
       }
-    }
-    if (clients.openWindow) await clients.openWindow(targetUrl);
-  })());
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
 });
