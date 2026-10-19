@@ -8,59 +8,6 @@
 <title>POSTE EL AMAL | Réservation de ticket</title>
 
 <style>
-    /* =========================================
-   GOOGLE AUTHENTICATION
-========================================= */
-
-.auth-card {
-    text-align: center;
-}
-
-.auth-card h2 {
-    font-size: 21px;
-    color: var(--primary);
-    margin-bottom: 15px;
-}
-
-.auth-card p {
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.7;
-    margin-bottom: 20px;
-}
-
-.btn-google {
-    background: white;
-    color: #334155;
-    border: 1px solid #cbd5e1;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
-}
-
-.btn-google:hover {
-    background: #f8fafc;
-}
-
-.user-photo {
-    width: 75px;
-    height: 75px;
-    border-radius: 50%;
-    margin-bottom: 12px;
-    object-fit: cover;
-}
-
-.user-name {
-    font-size: 17px;
-    font-weight: bold;
-    color: var(--primary);
-    margin-bottom: 6px;
-}
-
-.user-email {
-    font-size: 13px;
-    color: var(--muted);
-    margin-bottom: 15px;
-    overflow-wrap: anywhere;
-}
 :root {
     --primary: #123b74;
     --primary-dark: #09264d;
@@ -89,12 +36,7 @@ body {
 }
 
 header {
-    background: linear-gradient(
-        135deg,
-        var(--primary-dark),
-        var(--primary)
-    );
-
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
     color: white;
     text-align: center;
     padding: 30px 15px;
@@ -116,7 +58,14 @@ header p {
     max-width: 520px;
     margin: auto;
     padding: 20px 15px 40px;
+    display: flex;
+    flex-direction: column;
 }
+
+#queueSection { order: 1; }
+#reservationSection, #ticketSection { order: 2; }
+#authSection { order: 3; }
+#infoSection { order: 4; }
 
 .card {
     background: white;
@@ -144,72 +93,76 @@ header p {
     line-height: 1.1;
 }
 
-.guichet {
-    text-align: center;
-    font-size: 18px;
-    font-weight: bold;
-    color: var(--secondary);
-    margin-bottom: 10px;
-}
-
 .divider {
     height: 1px;
     background: var(--border);
-    margin: 25px 0;
+    margin: 20px 0;
 }
 
-.waiting-box {
-    text-align: center;
-}
+.waiting-box { text-align: center; }
 
 .waiting-number {
     font-size: 55px;
     font-weight: bold;
     color: var(--orange);
     margin-top: 10px;
+    line-height: 1.1;
 }
 
-.status {
+.queue-footer {
+    margin: 25px -20px -25px -20px;
+    padding: 12px 20px;
+    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-top: 15px;
     font-size: 13px;
+    font-weight: 500;
     color: var(--muted);
 }
 
 .status-dot {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--orange);
+    display: inline-block;
 }
 
-.status-dot.online {
-    background: var(--green);
-}
+.status-dot.online { background: var(--green); }
+.status-dot.offline { background: var(--red); }
+.status-dot.warning { background: var(--orange); }
 
-.status-dot.offline {
-    background: var(--red);
-}
+.auth-card { text-align: center; }
+.auth-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 15px; }
+.auth-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
 
-.reservation-card {
-    text-align: center;
+.btn-google {
+    background: white;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
 }
+.btn-google:hover { background: #f8fafc; }
 
-.reservation-card h2 {
-    font-size: 21px;
-    color: var(--primary);
+.user-photo {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
     margin-bottom: 12px;
+    object-fit: cover;
 }
 
-.reservation-card p {
-    color: var(--muted);
-    font-size: 14px;
-    line-height: 1.7;
-    margin-bottom: 20px;
-}
+.user-name { font-size: 17px; font-weight: bold; color: var(--primary); margin-bottom: 6px; }
+.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; }
+
+.reservation-card { text-align: center; }
+.reservation-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 12px; }
+.reservation-card p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
 
 button {
     width: 100%;
@@ -222,37 +175,44 @@ button {
     transition: 0.2s;
 }
 
-button:disabled {
-    opacity: 0.55;
-    cursor: not-allowed;
-}
+button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.btn-primary {
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:not(:disabled):hover { background: var(--primary-dark); }
+
+.btn-secondary { background: #e8f0fb; color: var(--primary); margin-top: 15px; }
+.btn-secondary:hover { background: #d6e4f9; }
+
+.btn-rebook {
     background: var(--primary);
     color: white;
+    margin-top: 20px;
+    box-shadow: 0 4px 12px rgba(18, 59, 116, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
-
-.btn-primary:not(:disabled):hover {
+.btn-rebook:not(:disabled):hover {
     background: var(--primary-dark);
-}
-
-.btn-secondary {
-    background: #e8f0fb;
-    color: var(--primary);
-    margin-top: 12px;
 }
 
 .ticket-card {
     display: none;
     text-align: center;
     border: 2px dashed var(--secondary);
+    transition: border-color 0.3s;
 }
 
-.ticket-card h2 {
-    color: var(--green);
-    font-size: 21px;
-    margin-bottom: 22px;
+.ticket-card h2 { 
+    font-size: 22px; 
+    margin-bottom: 20px; 
+    transition: color 0.3s;
 }
+.ticket-title-green  { color: var(--green) !important; }
+.ticket-title-blue   { color: var(--secondary) !important; }
+.ticket-title-red    { color: var(--red) !important; }
+.ticket-title-dark   { color: var(--primary) !important; }
 
 .ticket-label {
     color: var(--muted);
@@ -282,12 +242,7 @@ button:disabled {
     margin: 15px 0;
 }
 
-.ticket-message {
-    font-size: 14px;
-    line-height: 1.8;
-    color: var(--muted);
-    margin-top: 20px;
-}
+.ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; }
 
 .ticket-status {
     margin-top: 15px;
@@ -299,49 +254,173 @@ button:disabled {
     font-size: 14px;
 }
 
-.ticket-status.waiting {
-    background: #dcfce7;
-    color: #166534;
+.ticket-status.confirmed { background: #fff7ed; color: #9a3412; }
+.ticket-status.arrived   { background: #dcfce7; color: #166534; }
+.ticket-status.called    { background: #dbeafe; color: #1d4ed8; }
+.ticket-status.skipped   { background: #fee2e2; color: #991b1b; }
+.ticket-status.completed { background: #e2e8f0; color: #334155; }
+.ticket-status.rejected  { background: #fee2e2; color: #991b1b; }
+
+/* صندوق التنبيهات */
+.alert-box {
+    margin-top: 22px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 18px;
+    text-align: left;
 }
 
-.ticket-status.skipped {
-    background: #fee2e2;
-    color: #991b1b;
-}
-/* Reservation confirmed - waiting for arrival */
-
-.ticket-status.confirmed {
-    background: #fff7ed;
-    color: #9a3412;
+.alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-/* Customer arrived */
-
-.ticket-status.arrived {
-    background: #dcfce7;
-    color: #166534;
+.alert-title {
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Ticket called */
-
-.ticket-status.called {
-    background: #dbeafe;
-    color: #1d4ed8;
+/* زر التبديل العصري (Toggle Switch) */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    flex-shrink: 0;
 }
 
-/* Reservation completed */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
 
-.ticket-status.completed {
-    background: #e2e8f0;
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e1;
+    transition: 0.3s;
+    border-radius: 28px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+input:checked + .slider {
+    background-color: var(--secondary);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+.alert-options {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
     color: #334155;
+    font-weight: 500;
 }
 
-/* Reservation rejected */
-
-.ticket-status.rejected {
-    background: #fee2e2;
-    color: #991b1b;
+.alert-select {
+    padding: 7px 12px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: white;
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
 }
+
+/* نوافذ التنبيه المنبثقة (Modals) */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(15, 23, 42, 0.75);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.25s ease-out;
+}
+
+.modal-card {
+    background: white;
+    width: 100%;
+    max-width: 420px;
+    border-radius: 20px;
+    padding: 25px 22px;
+    text-align: center;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    animation: slideUp 0.3s ease-out;
+}
+
+.modal-icon {
+    font-size: 55px;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+.modal-card h3 {
+    font-size: 21px;
+    color: var(--primary);
+    margin-bottom: 12px;
+}
+
+.modal-card p {
+    font-size: 15px;
+    color: #475569;
+    line-height: 1.6;
+    margin-bottom: 22px;
+}
+
+.modal-btn {
+    background: var(--primary);
+    color: white;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: bold;
+}
+.modal-btn:hover {
+    background: var(--primary-dark);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
 .error-message {
     display: none;
     background: #fee2e2;
@@ -351,6 +430,32 @@ button:disabled {
     margin-top: 15px;
     font-size: 14px;
     line-height: 1.6;
+}
+
+.info-banner {
+    display: none;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.5;
+}
+
+.warning-banner {
+    display: none;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 14px;
+    border-radius: 12px;
+    margin-top: 15px;
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
 }
 
 .info-card {
@@ -371,23 +476,10 @@ footer {
 }
 
 @media(max-width: 400px) {
-    .current-number {
-        font-size: 75px;
-    }
-
-    .ticket-number {
-        font-size: 65px;
-    }
-
-    .reservation-code {
-        font-size: 34px;
-        letter-spacing: 5px;
-        padding: 15px 20px;
-    }
-
-    header h1 {
-        font-size: 23px;
-    }
+    .current-number { font-size: 75px; }
+    .ticket-number { font-size: 65px; }
+    .reservation-code { font-size: 34px; letter-spacing: 5px; padding: 15px 20px; }
+    header h1 { font-size: 23px; }
 }
 </style>
 </head>
@@ -401,260 +493,142 @@ footer {
 
 <main class="container">
 
-    <!-- CURRENT QUEUE -->
-
-    <section class="card">
-
-        <div class="section-title">
-            Numéro en cours
-        </div>
-
-        <div class="current-number" id="currentTicket">
-            ---
-        </div>
-  
+    <section class="card" id="queueSection">
+        <div class="section-title">Numéro en cours</div>
+        <div class="current-number" id="currentTicket">---</div>
+        
         <div class="divider"></div>
-
+        
         <div class="waiting-box">
-
-            <div class="section-title">
-                Personnes en attente
-            </div>
-
-            <div class="waiting-number" id="waitingCount">
-                --
-            </div>
-
+            <div class="section-title">Personnes en attente</div>
+            <div class="waiting-number" id="waitingCount">--</div>
         </div>
 
-        <div class="status">
+        <div class="queue-footer">
             <span class="status-dot" id="statusDot"></span>
-            <span id="connectionStatus">
-                Connexion...
-            </span>
+            <span id="connectionStatus">Connexion...</span>
         </div>
-
     </section>
-    <!-- GOOGLE AUTHENTICATION -->
-
-<section class="card auth-card">
-
-    <h2>Compte client</h2>
-
-    <div id="loginSection">
-
-        <p>
-            Connectez-vous avec votre compte Google
-            pour réserver un ticket.
-        </p>
-
-        <button
-            class="btn-google"
-            id="googleLoginButton"
-        >
-            Se connecter avec Google
-        </button>
-
-    </div>
-
-    <div id="userSection" style="display:none;">
-
-        <img
-            id="userPhoto"
-            class="user-photo"
-            alt="Photo du profil"
-        >
-
-        <div
-            class="user-name"
-            id="userName"
-        ></div>
-
-        <div
-            class="user-email"
-            id="userEmail"
-        ></div>
-
-        <button
-            class="btn-secondary"
-            id="logoutButton"
-        >
-            Se déconnecter
-        </button>
-
-    </div>
-
-    <div
-        class="error-message"
-        id="authError"
-    ></div>
-
-</section>
-    <!-- RESERVATION -->
 
     <section class="card reservation-card" id="reservationSection">
-
         <h2>Réservation en ligne</h2>
-
-        <p>
-            Réservez votre place dans la file d'attente
-            et récupérez votre ticket à la borne
-            lors de votre arrivée.
-        </p>
-
-        <button
-            class="btn-primary"
-            id="reserveButton"
-            disabled
-        >
-            RÉSERVER UN TICKET
-        </button>
+        <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
+        
+        <button class="btn-primary" id="reserveButton" disabled>RÉSERVER UN TICKET</button>
+        
+        <div class="warning-banner" id="printerOfflineBanner">
+            ⚠️ <strong>Service temporairement suspendu :</strong><br>
+            La borne d'impression est actuellement hors ligne. Veuillez patienter ou prendre votre ticket directement sur place.
+        </div>
 
         <div class="error-message" id="reservationError"></div>
-
     </section>
-
-    <!-- USER TICKET -->
 
     <section class="card ticket-card" id="ticketSection">
-
-        <h2 id="ticketTitle">
-            RÉSERVATION CONFIRMÉE
-        </h2>
-
-        <div class="ticket-label">
-            VOTRE NUMÉRO
+        <div class="info-banner" id="duplicateNotice">
+            ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
         </div>
 
-        <div class="ticket-number" id="myTicket">
-            ---
+        <h2 id="ticketTitle" class="ticket-title-green">RÉSERVATION CONFIRMÉE</h2>
+
+        <div class="ticket-label">VOTRE NUMÉRO</div>
+        <div class="ticket-number" id="myTicket">---</div>
+
+        <div class="ticket-label">CODE DE RETRAIT</div>
+        <div class="reservation-code" id="myCode">----</div>
+
+        <div class="ticket-status" id="myStatus">En attente de confirmation</div>
+
+        <!-- صندوق التنبيهات مع المفتاح التبادلي -->
+        <div class="alert-box" id="alertBox">
+            <div class="alert-header">
+                <span class="alert-title">🔔 Activer les notifications</span>
+                <label class="switch" title="Activer ou désactiver les alertes">
+                    <input type="checkbox" id="alertToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="alert-options" id="alertOptionsArea">
+                <span>M'avertir à l'avance :</span>
+                <select id="alertMarginSelect" class="alert-select">
+                    <option value="2">2 pers. avant</option>
+                    <option value="5">5 pers. avant</option>
+                    <option value="10" selected>10 pers. avant</option>
+                    <option value="15">15 pers. avant</option>
+                    <option value="30">30 pers. avant</option>
+                </select>
+            </div>
         </div>
 
-        <div class="ticket-label">
-            CODE DE RETRAIT
-        </div>
-
-        <div class="reservation-code" id="myCode">
-            ----
-        </div>
-
-        <div class="ticket-status" id="myStatus">
-            En attente de confirmation
-        </div>
-        <button
-            class="btn-secondary"
-            id="newReservationButton"
-            style="display:none;"
-        >
-            NOUVELLE RÉSERVATION
+        <!-- زر الحجز المباشر -->
+        <button class="btn-rebook" id="newReservationButton" style="display:none;">
+            RÉSERVER UN NOUVEAU TICKET
         </button>
-   <p class="ticket-message">
+        <div class="error-message" id="ticketError"></div>
 
-    Votre réservation est enregistrée.
-
-    <br><br>
-
-    Présentez-vous à la borne et saisissez
-    votre code de réservation à 4 chiffres.
-
-    <br><br>
-
-    La borne imprimera votre ticket
-    avec le numéro réservé.
-
-    <br><br>
-
-    Votre arrivée sera automatiquement
-    confirmée après validation du code.
-
-    <br><br>
-
-    <strong>Important :</strong>
-
-    Si votre numéro est dépassé avant
-    la récupération du ticket,
-    votre réservation sera annulée.
-
-</p>
-
+        <p class="ticket-message" id="ticketMessage">
+            Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>
+            La borne imprimera votre ticket avec le numéro réservé.<br><br>
+            <strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération de votre ticket, votre réservation sera annulée.
+        </p>
     </section>
 
-    <!-- INFORMATION -->
+    <section class="card auth-card" id="authSection">
+        <h2>Compte client</h2>
+        <div id="loginSection">
+            <p>Connectez-vous avec votre compte Google pour réserver un ticket.</p>
+            <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
+        </div>
+        <div id="userSection" style="display:none;">
+            <img id="userPhoto" class="user-photo" alt="Photo du profil">
+            <div class="user-name" id="userName"></div>
+            <div class="user-email" id="userEmail"></div>
+            <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
+        </div>
+        <div class="error-message" id="authError"></div>
+    </section>
 
-    <section class="info-card">
-
-        <strong>Informations importantes</strong>
-
-        <br><br>
-
-        • La réservation vous attribue une place
-        dans la file d'attente.
-
-        <br>
-
-        • Vous devez récupérer votre ticket
-        à la borne avant votre passage.
-
-        <br>
-
-        • Une réservation non confirmée
-        peut être dépassée.
-
-        <br>
-
-        • Conservez votre code de réservation.
-
+    <section class="info-card" id="infoSection">
+        <strong>Informations importantes</strong><br><br>
+        • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
+        • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
+        • Une nouvelle réservation ne sera possible qu'après l'appel ou le dépassement de votre numéro.
     </section>
 
 </main>
 
-<footer>
-    © 2026 POSTE EL AMAL
-    <br>
-    Système de gestion des files d'attente
-</footer>
+<!-- 1. نافذة التنبيه لاقتراب الدور داخل الموقع -->
+<div class="modal-overlay" id="inAppModalOverlay">
+    <div class="modal-card">
+        <div class="modal-icon" id="inAppModalIcon">🔔</div>
+        <h3 id="inAppModalTitle">Rappel de votre tour</h3>
+        <p id="inAppModalMsg">Votre numéro approche de son passage au guichet.</p>
+        <button type="button" class="modal-btn" id="inAppModalCloseBtn">J'AI COMPRIS</button>
+    </div>
+</div>
+
+<!-- 2. نافذة تنبيه حجب الإشعارات (تظهر فقط عند حجب الإشعارات) -->
+<div class="modal-overlay" id="permModalOverlay">
+    <div class="modal-card">
+        <div class="modal-icon" style="color: var(--red);">🔕</div>
+        <h3 style="color: var(--red); margin-bottom: 12px;">Notifications bloquées</h3>
+        <p style="text-align: left; font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 22px;">
+            L'activation des notifications est <strong>indispensable</strong> pour être averti à l'avance de votre tour lorsque votre écran est verrouillé ou que vous quittez la page.<br><br>
+            <strong>Comment les autoriser ?</strong><br>
+            1. Cliquez sur l'icône de cadenas ou de réglages (🔒) à gauche de l'adresse du site.<br>
+            2. Activez l'option <strong>Notifications</strong>.<br>
+            3. Rechargez ensuite la page pour appliquer.
+        </p>
+        <button type="button" class="modal-btn" id="permModalCloseBtn">J'AI COMPRIS</button>
+    </div>
+</div>
 
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getDatabase, ref, onValue, push, set, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-    getAuth,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signOut,
-    onAuthStateChanged
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-    getDatabase,
-    ref,
-    onValue,
-    get,
-    push,
-    set,
-    serverTimestamp
-} from
-"https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-/* =====================================================
-   FIREBASE CONFIG
-   =====================================================
-
-   ضع إعدادات تطبيق Firebase Web هنا.
-
-   تجدها في:
-   Firebase Console → Project settings → Your apps
-
-   لا تضع AUTH_QS الخاص بـ ESP32 هنا.
-===================================================== */
-
-
- 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
   authDomain: "qms-online-2658d.firebaseapp.com",
@@ -666,1406 +640,968 @@ const firebaseConfig = {
   measurementId: "G-7GQYF8V9V8"
 };
 
- 
-    
-
-/* =====================================================
-   RESERVATION API
-
-   هذه الخدمة سننشئها لاحقًا.
-
-   يجب أن تقوم الخدمة بما يلي:
-
-   1. التحقق من صلاحية الطلب.
-   2. تخصيص رقم تذكرة دون تكرار.
-   3. إنشاء كود حجز من 4 أرقام.
-   4. حفظ الحجز في Firebase.
-   5. إعادة بيانات الحجز للمستخدم.
-
-   لا يتم توليد رقم التذكرة في المتصفح.
-===================================================== */
- 
-/* =====================================================
-   INITIALIZE
-===================================================== */
-
 const app = initializeApp(firebaseConfig);
-
 const db = getDatabase(app);
-
-/* GOOGLE AUTH */
-
 const auth = getAuth(app);
-
 const googleProvider = new GoogleAuthProvider();
 
-/* =====================================================
-   ELEMENTS
-===================================================== */
-/* AUTH ELEMENTS */
+const VAPID_KEY = "BHVKczf-qi6Dcun5s4GdvMoBnRDUe5vOTsKg5seNNgvgMBodd_fwlMaVNOROwIWJEZYOzRqXIhLC16Ore-3CDSs";
 
-const googleLoginButton =
-    document.getElementById("googleLoginButton");
+let messaging = null;
+let swRegistration = null;
 
-const logoutButton =
-    document.getElementById("logoutButton");
+const googleLoginButton    = document.getElementById("googleLoginButton");
+const logoutButton         = document.getElementById("logoutButton");
+const loginSection         = document.getElementById("loginSection");
+const userSection          = document.getElementById("userSection");
+const userPhoto            = document.getElementById("userPhoto");
+const userName             = document.getElementById("userName");
+const userEmail            = document.getElementById("userEmail");
+const authError            = document.getElementById("authError");
+const currentTicketEl      = document.getElementById("currentTicket");
+const waitingCountEl       = document.getElementById("waitingCount");
+const connectionStatusEl   = document.getElementById("connectionStatus");
+const statusDotEl          = document.getElementById("statusDot");
+const reserveButton        = document.getElementById("reserveButton");
+const reservationError     = document.getElementById("reservationError");
+const ticketError          = document.getElementById("ticketError");
+const duplicateNoticeEl    = document.getElementById("duplicateNotice");
+const printerOfflineBanner = document.getElementById("printerOfflineBanner");
+const reservationSection   = document.getElementById("reservationSection");
+const ticketSection        = document.getElementById("ticketSection");
+const myTicketEl           = document.getElementById("myTicket");
+const myCodeEl             = document.getElementById("myCode");
+const myStatusEl           = document.getElementById("myStatus");
+const ticketTitleEl        = document.getElementById("ticketTitle");
+const ticketMessageEl      = document.getElementById("ticketMessage");
+const newReservationButton = document.getElementById("newReservationButton");
 
-const loginSection =
-    document.getElementById("loginSection");
+const alertToggle          = document.getElementById("alertToggle");
+const alertMarginSelect    = document.getElementById("alertMarginSelect");
+const alertBox             = document.getElementById("alertBox");
+const alertOptionsArea     = document.getElementById("alertOptionsArea");
 
-const userSection =
-    document.getElementById("userSection");
+const inAppModalOverlay    = document.getElementById("inAppModalOverlay");
+const inAppModalIcon       = document.getElementById("inAppModalIcon");
+const inAppModalTitle      = document.getElementById("inAppModalTitle");
+const inAppModalMsg        = document.getElementById("inAppModalMsg");
+const inAppModalCloseBtn   = document.getElementById("inAppModalCloseBtn");
 
-const userPhoto =
-    document.getElementById("userPhoto");
+// عناصر نافذة حجب الإشعارات
+const permModalOverlay     = document.getElementById("permModalOverlay");
+const permModalCloseBtn    = document.getElementById("permModalCloseBtn");
 
-const userName =
-    document.getElementById("userName");
-
-const userEmail =
-    document.getElementById("userEmail");
-
-const authError =
-    document.getElementById("authError");
-const currentTicketEl =
-    document.getElementById("currentTicket");
- 
-
-const waitingCountEl =
-    document.getElementById("waitingCount");
-
-const connectionStatusEl =
-    document.getElementById("connectionStatus");
-
-const statusDotEl =
-    document.getElementById("statusDot");
-
-const reserveButton =
-    document.getElementById("reserveButton");
-
-const reservationError =
-    document.getElementById("reservationError");
-
-const reservationSection =
-    document.getElementById("reservationSection");
-
-const ticketSection =
-    document.getElementById("ticketSection");
-
-const myTicketEl =
-    document.getElementById("myTicket");
-
-const myCodeEl =
-    document.getElementById("myCode");
-
-const myStatusEl =
-    document.getElementById("myStatus");
-
-const ticketTitleEl =
-    document.getElementById("ticketTitle");
-    const newReservationButton =
-    document.getElementById(
-        "newReservationButton"
-    );
-/* =====================================================
-   GLOBAL STATE
-===================================================== */
 let reservationInProgress = false;
 let currentTicket = 0;
 let currentConsole = 0;
+let lastIssuedTicket = 0;
 let waitingCount = null;
 let currentUser = null;
-
 let authReady = false;
 let queueConnected = false;
-/* ===== MASTER CONNECTION MONITOR ===== */
+let isClientInternetConnected = true;
 
-/* ===== QMS WEBSITE AVAILABILITY ===== */
+let serviceAvailable = false;
+let printerOnline = false;
+let printerStatus = 0;
 
-// 30 minutes without a new ticket call
-const REQUEST_TIMEOUT_MS = 30 * 60 * 1000;
-
-// 10 minutes without MASTER heartbeat
-const HEARTBEAT_TIMEOUT_MS = 2 * 60 * 1000;
-
+const HEARTBEAT_TIMEOUT_MS = 200 * 1000; 
 let lastMasterHeartbeat = 0;
-let lastTicketRequest = 0;
-
 let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
-const STORAGE_PREFIX =
-    "poste_elamal_reservation_";
 
-const PENDING_PREFIX =
-    "poste_elamal_pending_";
-    function getReservationKey(uid) {
+let pendingTimeoutTimer = null;
+let unsubscribeReservation = null;
+let unsubscribeUserActiveTicket = null;
+let activeUserTicketData = null;
 
-    return STORAGE_PREFIX + uid;
-}
+// متغيرات ضبط التنبيهات
+let isInitialTicketLoadDone = false; 
+let lastObservedCurrentTicket = null; 
+let lastAlertedRemaining = null;     
+let alertedExactTurnForTicket = null;
+let lastAlertTimestamp = 0;          
+let wakeLock = null;
 
-function getPendingKey(uid) {
-
-    return PENDING_PREFIX + uid;
-}
-/* =====================================================
-   HELPERS
-===================================================== */
+const STORAGE_PREFIX = "poste_elamal_reservation_";
+function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
 
 function formatNumber(number) {
-
     const n = Number(number);
-
-    if (!Number.isFinite(n)) {
-        return "---";
-    }
-
+    if (!Number.isFinite(n) || n <= 0) return "---";
     return String(Math.trunc(n)).padStart(3, "0");
 }
 
-function setConnectionStatus(online) {
-
-    queueConnected = online;
-
-    if (online) {
-
-        connectionStatusEl.textContent =
-            "Données disponibles";
-
-        statusDotEl.className =
-            "status-dot online";
-
-    } else {
-
-        connectionStatusEl.textContent =
-            "Connexion indisponible";
-
-        statusDotEl.className =
-            "status-dot offline";
-    }
-    if (!online) {
-
-    currentTicketEl.textContent = "---";
-
-    waitingCountEl.textContent = "--";
-
-} else {
-
-    currentTicketEl.textContent =
-        formatNumber(currentTicket);
-
-    waitingCountEl.textContent =
-        waitingCount !== null
-            ? Math.max(0, waitingCount)
-            : "--";
+function showPermissionDeniedModal() {
+    permModalOverlay.style.display = "flex";
 }
-    updateReserveButton();
-}
-/* =====================================================
-   MASTER CONNECTION STATUS - V2
-===================================================== */
 
-function checkMasterStatus() {
+permModalCloseBtn.addEventListener("click", () => {
+    permModalOverlay.style.display = "none";
+});
 
-    if (
-        !firebaseDataAvailable ||
-        !lastMasterHeartbeat
-    ) {
+/* ========================================================
+   تهيئة FCM
+======================================================== */
+async function initFirebaseMessaging() {
+    const supported = await isSupported();
+    if (!supported) return;
 
-        setConnectionStatus(false);
+    messaging = getMessaging(app);
 
-        return;
-    }
-
-    const serverNow =
-        Date.now() + serverTimeOffset;
-
-    const heartbeatAge =
-        serverNow - lastMasterHeartbeat;
-
-    const heartbeatOK =
-        heartbeatAge >= 0 &&
-        heartbeatAge < HEARTBEAT_TIMEOUT_MS;
-
-    setConnectionStatus(heartbeatOK);
-}
-/* =====================================================
-   UPDATE RESERVATION BUTTON - V2
-===================================================== */
-
-function updateReserveButton() {
-
-    const userLoggedIn =
-        authReady && currentUser !== null;
-
-    const savedReservation =
-        userLoggedIn
-            ? loadReservation()
-            : null;
-
-    const activeStatuses = [
-        "pending",
-        "confirmed",
-        "reserved",
-        "arrived",
-        "waiting",
-        "called"
-    ];
-
-    const hasActiveReservation =
-        savedReservation &&
-        activeStatuses.includes(
-            savedReservation.status
-        );
-
-    reserveButton.disabled =
-        !queueConnected ||
-        reservationInProgress ||
-        !userLoggedIn ||
-        hasActiveReservation;
-
-    if (reservationInProgress) {
-
-        reserveButton.textContent =
-            "RÉSERVATION EN COURS...";
-
-    } else if (!userLoggedIn) {
-
-        reserveButton.textContent =
-            "CONNECTEZ-VOUS POUR RÉSERVER";
-
-    } else if (hasActiveReservation) {
-
-        reserveButton.textContent =
-            "VOUS AVEZ DÉJÀ UNE RÉSERVATION";
-
-    } else {
-
-        reserveButton.textContent =
-            "RÉSERVER UN TICKET";
+    if ("serviceWorker" in navigator) {
+        try {
+            swRegistration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+        } catch (e) {
+            console.warn("SW Registration:", e);
+        }
     }
 }
+window.addEventListener("load", initFirebaseMessaging);
 
-function showError(message) {
-
-    reservationError.style.display = "block";
-
-    reservationError.textContent = message;
-}
-
-function clearError() {
-
-    reservationError.style.display = "none";
-
-    reservationError.textContent = "";
-}
-
-/* =====================================================
-   FIREBASE REALTIME QUEUE
-===================================================== */
-/* ===== FIREBASE SERVER TIME ===== */
-
-onValue(
-    ref(db, ".info/serverTimeOffset"),
-    (snapshot) => {
-
-        serverTimeOffset =
-            Number(snapshot.val() ?? 0);
-
-        checkMasterStatus();
-    }
-);
-const queueRef = ref(db, "queue");
-
-onValue(
-
-    queueRef,
-
-    (snapshot) => {
-
-        const data = snapshot.val();
-
-       if (!data) {
-
-            firebaseDataAvailable = false;
-        
-            checkMasterStatus();
-        
+async function syncFCMTokenWithDatabase() {
+    if (!messaging || !currentUser) return;
+    try {
+        if (!("Notification" in window)) return;
+        if (Notification.permission === "denied") {
+            showPermissionDeniedModal();
             return;
         }
 
-        currentTicket =
-            Number(data.current_ticket ?? 0);
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+            showPermissionDeniedModal();
+            return;
+        }
 
-        currentConsole =
-            Number(data.current_console ?? 0);
+        const token = await getToken(messaging, { 
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: swRegistration 
+        });
 
-        currentTicketEl.textContent =
-            formatNumber(currentTicket);
- 
-
-        /*
-         waiting_count سيضاف لاحقًا إلى Firebase
-         بعد تحديث MASTER وESP32.
-        */
-            /* ===== CALCULATE WAITING COUNT ===== */
-
-            const lastIssuedTicket =
-                Number(data.last_issued_ticket ?? 0);
-            
-/* =====================================
-   WAITING COUNT WITH 999 WRAP
-===================================== */
-
-if (
-    currentTicket >= 0 &&
-    currentTicket <= 999 &&
-    lastIssuedTicket >= 0 &&
-    lastIssuedTicket <= 999
-) {
-
-    if (lastIssuedTicket >= currentTicket) {
-
-        waitingCount =
-            lastIssuedTicket - currentTicket;
-
-    } else {
-
-        waitingCount =
-            (999 - currentTicket) +
-            lastIssuedTicket;
+        if (token) {
+            await set(ref(db, `users_fcm/${currentUser.uid}`), {
+                token: token,
+                ticket: activeUserTicketData?.ticket || 0,
+                margin: Number(alertMarginSelect.value) || 10,
+                user_email: currentUser.email || "",
+                updated_at: serverTimestamp()
+            });
+        }
+    } catch (err) {
+        console.warn("Token Sync error:", err);
     }
-
-} else {
-
-    waitingCount = null;
 }
-            
-            waitingCountEl.textContent =
-    waitingCount !== null
-        ? waitingCount
-        : "--";
 
-        lastMasterHeartbeat =
-    Number(
-        data.meta?.esp32_last_seen_ms ?? 0
-    );
-lastTicketRequest =
-    Number(
-        data.meta?.last_request_ms ?? 0
-    );
-firebaseDataAvailable = true;
+async function removeFCMTokenFromDatabase() {
+    if (!currentUser) return;
+    try {
+        await remove(ref(db, `users_fcm/${currentUser.uid}`));
+    } catch (e) {}
+}
 
-checkMasterStatus();
+/* ========================================================
+   محرك الصوت الداخلي (Web Audio API)
+======================================================== */
+function playTone(freq, type, startTime, duration, gainLevel) {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+        gain.gain.setValueAtTime(gainLevel, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + duration);
+    } catch (e) {}
+}
 
-    },
+function playNotificationChime(isTurn = false) {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        const now = audioCtx.currentTime;
 
-    (error) => {
+        if (isTurn) {
+            playTone(523.25, "sine", now, 0.20, 0.4);       // C5
+            playTone(659.25, "sine", now + 0.15, 0.20, 0.4); // E5
+            playTone(783.99, "sine", now + 0.30, 0.20, 0.4); // G5
+            playTone(1046.50, "triangle", now + 0.45, 0.6, 0.5); // C6
+        } else {
+            playTone(587.33, "sine", now, 0.22, 0.35); // D5
+            playTone(880.00, "triangle", now + 0.18, 0.45, 0.4); // A5
+        }
+    } catch (e) {}
+}
 
-        console.error(
-            "Firebase connection error:",
-            error
-        );
+/* ========================================================
+   قفل الشاشة النشط (Wake Lock)
+======================================================== */
+async function requestScreenWakeLock() {
+    try {
+        if ("wakeLock" in navigator && !wakeLock) {
+            wakeLock = await navigator.wakeLock.request("screen");
+            wakeLock.addEventListener("release", () => { wakeLock = null; });
+        }
+    } catch (err) {}
+}
 
-        firebaseDataAvailable = false;
+function releaseScreenWakeLock() {
+    if (wakeLock) {
+        wakeLock.release().then(() => { wakeLock = null; }).catch(() => {});
+    }
+}
 
-        checkMasterStatus();
+/* ========================================================
+   إطلاق التنبيه الداخلي بدون تكرار
+======================================================== */
+function triggerTurnAlert(title, message, isTurn = false) {
+    const now = Date.now();
+    if (now - lastAlertTimestamp < 4000) return;
+    lastAlertTimestamp = now;
+
+    playNotificationChime(isTurn);
+
+    if ("vibrate" in navigator) {
+        try {
+            navigator.vibrate(isTurn ? [400, 150, 400, 150, 600] : [300, 150, 300]);
+        } catch (e) {}
     }
 
-);
+    inAppModalIcon.textContent = isTurn ? "📢" : "⏳";
+    inAppModalTitle.textContent = title;
+    inAppModalMsg.textContent = message;
+    inAppModalOverlay.style.display = "flex";
+}
 
-/* =====================================================
-   SAVE RESERVATION LOCALLY
-===================================================== */
+inAppModalCloseBtn.addEventListener("click", () => {
+    inAppModalOverlay.style.display = "none";
+});
+
+/* ========================================================
+   حساب المسافة ومحرك التنبيه
+======================================================== */
+function calculateDistanceToTurn(userTicket, curTicket) {
+    const u = Number(userTicket);
+    const c = Number(curTicket);
+    if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return null;
+    if (u === c) return 0;
+    return (u > c) ? (u - c) : ((999 - c) + u);
+}
+
+function checkAlertsEngine() {
+    if (!alertToggle.checked || !activeUserTicketData || activeUserTicketData.ticket <= 0) return;
+    const status = activeUserTicketData.status;
+
+    if (!["confirmed", "reserved", "arrived", "waiting"].includes(status)) return;
+
+    const ticketNum = activeUserTicketData.ticket;
+    const remaining = calculateDistanceToTurn(ticketNum, currentTicket);
+    if (remaining === null) return;
+
+    const margin = parseInt(alertMarginSelect.value, 10) || 10;
+
+    // المزامنة الصامتة عند فتح الصفحة لأول مرة
+    if (!isInitialTicketLoadDone) {
+        lastAlertedRemaining = remaining;
+        lastObservedCurrentTicket = currentTicket;
+        if (remaining === 0) alertedExactTurnForTicket = ticketNum;
+        isInitialTicketLoadDone = true;
+        return; 
+    }
+
+    if (currentTicket === lastObservedCurrentTicket) {
+        return;
+    }
+    lastObservedCurrentTicket = currentTicket;
+
+    if (remaining === 0) {
+        if (alertedExactTurnForTicket !== ticketNum) {
+            alertedExactTurnForTicket = ticketNum;
+            lastAlertedRemaining = 0;
+            triggerTurnAlert(
+                "🔔 C'EST VOTRE TOUR !",
+                `Votre numéro #${formatNumber(ticketNum)} est appelé au Guichet ${currentConsole || 1} !`,
+                true
+            );
+        }
+        return;
+    }
+
+    if (remaining > 0 && remaining <= margin) {
+        const justEnteredMargin = (lastAlertedRemaining === null || lastAlertedRemaining > margin);
+        const threePeoplePassed = (lastAlertedRemaining !== null && (lastAlertedRemaining - remaining) >= 3);
+
+        if (justEnteredMargin || threePeoplePassed) {
+            lastAlertedRemaining = remaining;
+            triggerTurnAlert(
+                "⚠️ Préparez-vous !",
+                `Il ne reste que ${remaining} personne(s) avant votre tour (Ticket #${formatNumber(ticketNum)}). Veuillez vous approcher du guichet.`,
+                false
+            );
+        }
+    }
+}
+
+/* ========================================================
+   إدارة إعدادات التنبيه وفحص إذن الحجب الصارم
+======================================================== */
+function initAlertPreferences() {
+    const savedState = localStorage.getItem("qms_alert_enabled");
+    const savedMargin = localStorage.getItem("qms_alert_margin");
+
+    if (savedMargin) {
+        alertMarginSelect.value = savedMargin;
+    } else {
+        alertMarginSelect.value = "10";
+    }
+
+    // إذا كانت الإشعارات محجوبة في المتصفح نلغي حفظ التفعيل
+    if ("Notification" in window && Notification.permission === "denied") {
+        alertToggle.checked = false;
+        localStorage.setItem("qms_alert_enabled", "false");
+        alertOptionsArea.style.opacity = "0.4";
+        alertOptionsArea.style.pointerEvents = "none";
+        return;
+    }
+
+    if (savedState === "true") {
+        alertToggle.checked = true;
+        alertOptionsArea.style.opacity = "1";
+        alertOptionsArea.style.pointerEvents = "auto";
+        requestScreenWakeLock();
+    } else {
+        alertToggle.checked = false;
+        alertOptionsArea.style.opacity = "0.4";
+        alertOptionsArea.style.pointerEvents = "none";
+    }
+}
+
+// التفاعل مع زر تفعيل الإشعارات والتأكد من عدم حجبها
+alertToggle.addEventListener("change", async () => {
+    if (alertToggle.checked) {
+        if (!("Notification" in window)) {
+            alert("Votre navigateur ne supporte pas les notifications.");
+            alertToggle.checked = false;
+            return;
+        }
+
+        // فحص: إذا كان المستخدم قد حجب الإشعارات مسبقاً
+        if (Notification.permission === "denied") {
+            alertToggle.checked = false;
+            localStorage.setItem("qms_alert_enabled", "false");
+            alertOptionsArea.style.opacity = "0.4";
+            alertOptionsArea.style.pointerEvents = "none";
+            showPermissionDeniedModal(); // إظهار نافذة التنبيه فورا
+            return;
+        }
+
+        let perm = Notification.permission;
+        if (perm !== "granted") {
+            try { 
+                perm = await Notification.requestPermission(); 
+            } catch (e) {}
+        }
+
+        // إذا رفض المستخدم الآن أو حجبها
+        if (perm === "denied" || perm !== "granted") {
+            alertToggle.checked = false;
+            localStorage.setItem("qms_alert_enabled", "false");
+            alertOptionsArea.style.opacity = "0.4";
+            alertOptionsArea.style.pointerEvents = "none";
+            showPermissionDeniedModal(); // إظهار نافذة التنبيه
+            return;
+        }
+
+        // تم منح الإذن بنجاح
+        localStorage.setItem("qms_alert_enabled", "true");
+        alertOptionsArea.style.opacity = "1";
+        alertOptionsArea.style.pointerEvents = "auto";
+        requestScreenWakeLock();
+        playNotificationChime(false);
+        await syncFCMTokenWithDatabase();
+    } else {
+        localStorage.setItem("qms_alert_enabled", "false");
+        alertOptionsArea.style.opacity = "0.4";
+        alertOptionsArea.style.pointerEvents = "none";
+        releaseScreenWakeLock();
+        await removeFCMTokenFromDatabase();
+    }
+});
+
+alertMarginSelect.addEventListener("change", async () => {
+    localStorage.setItem("qms_alert_margin", alertMarginSelect.value);
+    lastAlertedRemaining = calculateDistanceToTurn(activeUserTicketData?.ticket, currentTicket);
+    if (currentUser && alertToggle.checked) {
+        await syncFCMTokenWithDatabase();
+    }
+});
+
+function isTicketOvertaken(userTicket, curTicket) {
+    const u = Number(userTicket);
+    const c = Number(curTicket);
+    if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return false;
+    if (u === c) return false; 
+    const passedDistance = (c >= u) ? (c - u) : (999 - u + c);
+    return (passedDistance > 0 && passedDistance <= 450);
+}
 
 function saveReservation(reservation) {
-
     if (!currentUser) return;
-
-    const data = {
-        ...reservation,
-        user_id: currentUser.uid
+    const data = { 
+        ...reservation, 
+        user_id: currentUser.uid,
+        saved_at: reservation.saved_at || Date.now()
     };
-
-    localStorage.setItem(
-        getReservationKey(currentUser.uid),
-        JSON.stringify(data)
-    );
+    localStorage.setItem(getReservationKey(currentUser.uid), JSON.stringify(data));
 }
 
 function loadReservation() {
-
     if (!currentUser) return null;
-
     try {
-
-        const saved = localStorage.getItem(
-            getReservationKey(currentUser.uid)
-        );
-
+        const saved = localStorage.getItem(getReservationKey(currentUser.uid));
         if (!saved) return null;
-
-        const reservation = JSON.parse(saved);
-
-        if (
-            reservation.user_id !== currentUser.uid
-        ) {
-            return null;
-        }
-
-        return reservation;
-
-    } catch (error) {
-
-        console.error(
-            "Reservation restore error:",
-            error
-        );
-
+        const res = JSON.parse(saved);
+        return (res.user_id === currentUser.uid) ? res : null;
+    } catch (e) {
         return null;
     }
 }
 
- 
-/* =====================================================
-   SHOW RESERVATION - V2
-===================================================== */
-
-function showReservation(reservation) {
-
-    reservationSection.style.display = "none";
-
-    ticketSection.style.display = "block";
-
-    myTicketEl.textContent =
-        formatNumber(reservation.ticket);
-
-   const expiredStatuses = [
-    "skipped",
-    "completed",
-    "rejected",
-    "cancelled"
-];
-
-if (
-    expiredStatuses.includes(
-        reservation.status
-    )
-) {
-
-    myCodeEl.textContent = "----";
-
-} else {
-
-    myCodeEl.textContent =
-        String(reservation.code).padStart(4, "0");
-}
-
-    const status =
-        reservation.status || "pending";
-
-    updateReservationStatus(status);
-
-    /* =====================================
-       NEW RESERVATION BUTTON
-    ===================================== */
-
-    const finishedStatuses = [
-        "skipped",
-        "completed",
-        "rejected",
-        "cancelled"
-    ];
-
-    if (
-        finishedStatuses.includes(status)
-    ) {
-
-        newReservationButton.style.display =
-            "block";
-
-    } else {
-
-        newReservationButton.style.display =
-            "none";
+function clearPendingTimer() {
+    if (pendingTimeoutTimer) {
+        clearTimeout(pendingTimeoutTimer);
+        pendingTimeoutTimer = null;
     }
 }
- 
 
-/* =====================================================
-   RESERVATION STATUS - V2
-===================================================== */
+function setConnectionStatus(masterOnline) {
+    queueConnected = masterOnline;
+
+    if (!isClientInternetConnected) {
+        connectionStatusEl.textContent = "Reconnexion réseau...";
+        statusDotEl.className = "status-dot warning";
+        return;
+    }
+
+    if (!masterOnline) {
+        connectionStatusEl.textContent = "Système central déconnecté";
+        statusDotEl.className = "status-dot offline";
+        currentTicketEl.textContent = "---";
+        waitingCountEl.textContent = "--";
+    } else {
+        currentTicketEl.textContent = formatNumber(currentTicket);
+        waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
+
+        if (!printerOnline) {
+            connectionStatusEl.textContent = "Borne d'accueil hors ligne";
+            statusDotEl.className = "status-dot warning";
+        } else if (printerStatus !== 0) {
+            connectionStatusEl.textContent = "Borne : Papier épuisé";
+            statusDotEl.className = "status-dot warning";
+        } else {
+            connectionStatusEl.textContent = "Service disponible";
+            statusDotEl.className = "status-dot online";
+        }
+    }
+    updateReserveButton();
+}
+
+function checkMasterStatus() {
+    if (!firebaseDataAvailable || !lastMasterHeartbeat) {
+        setConnectionStatus(false);
+        return;
+    }
+    const serverNow = Date.now() + serverTimeOffset;
+    const heartbeatAge = serverNow - lastMasterHeartbeat;
+    const isOnline = (heartbeatAge > -60000) && (heartbeatAge < HEARTBEAT_TIMEOUT_MS);
+    setConnectionStatus(isOnline);
+}
+
+onValue(ref(db, ".info/connected"), (snapshot) => {
+    isClientInternetConnected = (snapshot.val() === true);
+    checkMasterStatus();
+});
+
+onValue(ref(db, ".info/serverTimeOffset"), (snapshot) => {
+    serverTimeOffset = Number(snapshot.val() ?? 0);
+    checkMasterStatus();
+});
+
+const queueRef = ref(db, "queue");
+onValue(queueRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) {
+        firebaseDataAvailable = false;
+        checkMasterStatus();
+        return;
+    }
+
+    currentTicket = Number(data.current_ticket ?? 0);
+    currentConsole = Number(data.current_console ?? 0);
+
+    serviceAvailable = (data.service_available === true);
+    printerOnline    = (data.printer_online === true);
+    printerStatus    = Number(data.printer_status ?? 0);
+    lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
+
+    if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
+        if (lastIssuedTicket >= currentTicket) {
+            waitingCount = lastIssuedTicket - currentTicket;
+        } else if (lastIssuedTicket < 150 && currentTicket > 850) {
+            waitingCount = (999 - currentTicket) + lastIssuedTicket;
+        } else {
+            waitingCount = 0;
+        }
+    } else {
+        waitingCount = null;
+    }
+
+    lastMasterHeartbeat = Number(data.meta?.esp32_last_seen_ms ?? 0);
+    firebaseDataAvailable = true;
+    checkMasterStatus();
+
+    checkAlertsEngine();
+
+    if (activeUserTicketData && activeUserTicketData.ticket > 0) {
+        if (isTicketOvertaken(activeUserTicketData.ticket, currentTicket)) {
+            updateReservationStatus("skipped");
+        } else if (currentTicket === activeUserTicketData.ticket) {
+            updateReservationStatus("called");
+        }
+    }
+}, () => {
+    firebaseDataAvailable = false;
+    checkMasterStatus();
+});
+
+function updateReserveButton() {
+    const userLoggedIn = authReady && currentUser !== null;
+    const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
+    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) && !isCurrentTicketOvertaken;
+    const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
+
+    if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
+        printerOfflineBanner.style.display = "block";
+        if (!printerOnline) {
+            printerOfflineBanner.innerHTML = "⚠️ <strong>Borne d'impression hors ligne :</strong><br>Le guichet physique n'est pas connecté. Les réservations en ligne sont suspendues.";
+        } else if (printerStatus !== 0) {
+            printerOfflineBanner.innerHTML = "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.";
+        }
+    } else {
+        printerOfflineBanner.style.display = "none";
+    }
+
+    reserveButton.disabled = !isHardwareReady || reservationInProgress || !userLoggedIn || hasActiveReservation;
+    newReservationButton.disabled = !isHardwareReady || reservationInProgress;
+
+    if (reservationInProgress) {
+        reserveButton.textContent = "RÉSERVATION EN COURS...";
+        newReservationButton.textContent = "RÉSERVATION EN COURS...";
+    } else if (!userLoggedIn) {
+        reserveButton.textContent = "CONNECTEZ-VOUS POUR RÉSERVER";
+    } else if (hasActiveReservation) {
+        reserveButton.textContent = "VOUS AVEZ DÉJÀ UNE RÉSERVATION";
+    } else if (!queueConnected) {
+        reserveButton.textContent = "SYSTÈME HORS LIGNE";
+    } else if (!printerOnline) {
+        reserveButton.textContent = "BORNE HORS LIGNE (RÉSERVATION FERMÉE)";
+    } else if (printerStatus !== 0) {
+        reserveButton.textContent = "PAPIER ÉPUISÉ (RÉSERVATION FERMÉE)";
+    } else if (!serviceAvailable) {
+        reserveButton.textContent = "SERVICE MOMENTANÉMENT SUSPENDU";
+    } else {
+        reserveButton.textContent = "RÉSERVER UN TICKET";
+        newReservationButton.textContent = "RÉSERVER UN NOUVEAU TICKET";
+    }
+}
+
+function showError(message) {
+    reservationError.style.display = "block";
+    reservationError.textContent = message;
+    ticketError.style.display = "block";
+    ticketError.textContent = message;
+}
+
+function clearError() {
+    reservationError.style.display = "none";
+    reservationError.textContent = "";
+    ticketError.style.display = "none";
+    ticketError.textContent = "";
+}
+
+function showReservation(reservation, isDuplicateNotice = false) {
+    activeUserTicketData = reservation;
+    reservationSection.style.display = "none";
+    ticketSection.style.display = "block";
+    myTicketEl.textContent = formatNumber(reservation.ticket);
+
+    if (isDuplicateNotice || reservation.is_duplicate === true) {
+        duplicateNoticeEl.style.display = "block";
+    } else {
+        duplicateNoticeEl.style.display = "none";
+    }
+
+    let status = reservation.status || "pending";
+    if (currentTicket > 0 && reservation.ticket === currentTicket) {
+        status = "called";
+    } else if (currentTicket > 0 && isTicketOvertaken(reservation.ticket, currentTicket)) {
+        status = "skipped";
+    }
+
+    updateReservationStatus(status);
+}
 
 function updateReservationStatus(status) {
+    if (activeUserTicketData) {
+        activeUserTicketData.status = status;
+        saveReservation(activeUserTicketData);
+    }
 
     myStatusEl.className = "ticket-status";
+    ticketTitleEl.className = "";
+
+    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
+
+    if (expiredStatuses.includes(status)) {
+        myCodeEl.textContent = "----";
+        newReservationButton.style.display = "flex";
+        newReservationButton.textContent = (status === "called") 
+            ? "FAIRE UNE NOUVELLE RÉSERVATION" 
+            : "RÉSERVER UN NOUVEAU TICKET";
+        alertBox.style.display = "none";
+        releaseScreenWakeLock();
+    } else {
+        const codeVal = (activeUserTicketData && activeUserTicketData.code !== undefined && activeUserTicketData.code !== null) 
+                        ? String(activeUserTicketData.code) : "";
+        myCodeEl.textContent = codeVal ? codeVal.padStart(4, "0") : "----";
+        newReservationButton.style.display = "none";
+        alertBox.style.display = "block";
+        if (alertToggle.checked) requestScreenWakeLock();
+    }
 
     switch (status) {
-
-        /* =====================================
-           PENDING
-        ===================================== */
-
         case "pending":
-
-            ticketTitleEl.textContent =
-                "RÉSERVATION EN COURS";
-
-            myStatusEl.textContent =
-                "Votre réservation est en cours de traitement";
-
+            ticketTitleEl.textContent = "RÉSERVATION EN COURS";
+            ticketTitleEl.classList.add("ticket-title-dark");
+            myStatusEl.textContent = "Votre réservation est en cours de traitement...";
+            ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.";
             break;
-
-        /* =====================================
-           CONFIRMED
-        ===================================== */
 
         case "confirmed":
         case "reserved":
-
-            ticketTitleEl.textContent =
-                "RÉSERVATION CONFIRMÉE";
-
-            myStatusEl.textContent =
-                "Présentez votre code à la borne pour récupérer votre ticket";
-
+            ticketTitleEl.textContent = "RÉSERVATION CONFIRMÉE";
+            ticketTitleEl.classList.add("ticket-title-green");
+            myStatusEl.textContent = "Présentez votre code à la borne pour imprimer votre ticket.";
             myStatusEl.classList.add("confirmed");
-
+            ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération, la réservation est annulée.";
             break;
-
-        /* =====================================
-           ARRIVED
-        ===================================== */
 
         case "arrived":
         case "waiting":
-
-            ticketTitleEl.textContent =
-                "ARRIVÉE CONFIRMÉE";
-
-            myStatusEl.textContent =
-                "Votre ticket a été récupéré. Veuillez attendre votre tour.";
-
+            ticketTitleEl.textContent = "ARRIVÉE CONFIRMÉE";
+            ticketTitleEl.classList.add("ticket-title-green");
+            myStatusEl.textContent = "Ticket récupéré ! Veuillez attendre votre appel.";
             myStatusEl.classList.add("arrived");
-
+            ticketMessageEl.innerHTML = "Votre ticket physique a été imprimé avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.";
             break;
-
-        /* =====================================
-           CALLED
-        ===================================== */
 
         case "called":
-
-            ticketTitleEl.textContent =
-                "C'EST VOTRE TOUR";
-
-            myStatusEl.textContent =
-                "Veuillez vous présenter au guichet";
-
+            ticketTitleEl.textContent = "C'EST VOTRE TOUR";
+            ticketTitleEl.classList.add("ticket-title-blue");
+            myStatusEl.textContent = `Votre numéro (#${formatNumber(activeUserTicketData?.ticket || currentTicket)}) est appelé au guichet !`;
             myStatusEl.classList.add("called");
-
+            ticketMessageEl.innerHTML = "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.";
             break;
-
-        /* =====================================
-           SKIPPED
-        ===================================== */
 
         case "skipped":
-
-            ticketTitleEl.textContent =
-                "RÉSERVATION DÉPASSÉE";
-
-            myStatusEl.textContent =
-                "Votre réservation a été dépassée car votre ticket n'a pas été récupéré à temps.";
-
+            ticketTitleEl.textContent = "TOUR DÉPASSÉ";
+            ticketTitleEl.classList.add("ticket-title-red");
+            myStatusEl.textContent = "Votre numéro a été dépassé par le guichet.";
             myStatusEl.classList.add("skipped");
-
+            ticketMessageEl.innerHTML = "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.";
             break;
-
-        /* =====================================
-           COMPLETED
-        ===================================== */
 
         case "completed":
-
-            ticketTitleEl.textContent =
-                "SERVICE TERMINÉ";
-
-            myStatusEl.textContent =
-                "Votre passage est terminé.";
-
+            ticketTitleEl.textContent = "SERVICE TERMINÉ";
+            ticketTitleEl.classList.add("ticket-title-dark");
+            myStatusEl.textContent = "Votre passage est terminé.";
             myStatusEl.classList.add("completed");
-
+            ticketMessageEl.innerHTML = "Merci pour votre visite chez Poste El Amal.";
             break;
-
-        /* =====================================
-           REJECTED
-        ===================================== */
-
-        case "rejected":
-        case "cancelled":
-
-            ticketTitleEl.textContent =
-                "RÉSERVATION REFUSÉE";
-
-            myStatusEl.textContent =
-                "Cette réservation n'est plus valide.";
-
-            myStatusEl.classList.add("rejected");
-
-            break;
-
-        /* =====================================
-           UNKNOWN
-        ===================================== */
 
         default:
-
-            ticketTitleEl.textContent =
-                "STATUT DE RÉSERVATION";
-
-            myStatusEl.textContent =
-                "En attente de mise à jour";
+            ticketTitleEl.textContent = "STATUT DE RÉSERVATION";
+            ticketTitleEl.classList.add("ticket-title-dark");
+            myStatusEl.textContent = "En attente de mise à jour";
     }
+
+    updateReserveButton();
 }
 
-/* =====================================================
-   CREATE RESERVATION
+function resetUserReservationUI() {
+    clearPendingTimer();
+    activeUserTicketData = null;
+    isInitialTicketLoadDone = false;
+    lastObservedCurrentTicket = null;
+    lastAlertedRemaining = null;
+    alertedExactTurnForTicket = null;
+    releaseScreenWakeLock();
+    inAppModalOverlay.style.display = "none";
+    permModalOverlay.style.display = "none";
+    reservationSection.style.display = "block";
+    ticketSection.style.display = "none";
+    duplicateNoticeEl.style.display = "none";
+    myTicketEl.textContent = "---";
+    myCodeEl.textContent = "----";
+    reservationInProgress = false;
+    clearError();
+    updateReserveButton();
+}
 
-   يتطلب خدمة خلفية آمنة.
-
-   شكل الاستجابة المتوقع:
-
-   {
-       "success": true,
-       "reservation_id": "abc123",
-       "ticket": 151,
-       "code": "4827",
-       "status": "reserved"
-   }
-
-===================================================== */
-let unsubscribeReservation = null;
-
-/* =====================================================
-   RESERVATION REALTIME MONITOR - V2
-===================================================== */
-
-function watchReservation(requestRef) {
-
-    if (!currentUser) return;
-
-    const ownerUid = currentUser.uid;
-
+function watchReservationKey(key) {
+    if (!key) return;
     if (unsubscribeReservation) {
-
         unsubscribeReservation();
-
         unsubscribeReservation = null;
     }
 
-    unsubscribeReservation = onValue(
-
-        requestRef,
-
-        (snapshot) => {
-
-            /* CHECK USER */
-
-            if (
-                !currentUser ||
-                currentUser.uid !== ownerUid
-            ) {
-                return;
-            }
-
-            const data = snapshot.val();
-
-            /* RESERVATION REMOVED */
-
-           /* =====================================
-   RESERVATION REMOVED
-===================================== */
-
-if (!data) {
-
-    console.log(
-        "[RES] Reservation removed from Firebase"
-    );
-
-    localStorage.removeItem(
-        getReservationKey(ownerUid)
-    );
-
-    localStorage.removeItem(
-        getPendingKey(ownerUid)
-    );
-
-    reservationInProgress = false;
-
-    resetUserReservationUI();
-
-    updateReserveButton();
-
-    return;
-}
-            /* CHECK OWNER */
-
-            if (data.user_id !== ownerUid) {
-
-                console.warn(
-                    "[RES] Invalid reservation owner"
-                );
-
-                return;
-            }
-
-            const status = data.status || "pending";
-
-            console.log(
-                "[RES] Firebase status:",
-                status
-            );
-
-            /* =====================================
-               PENDING
-            ===================================== */
-
-            if (status === "pending") {
-
-                reservationInProgress = true;
-
-                updateReserveButton();
-
-                return;
-            }
-
-            /* =====================================
-               REJECTED
-            ===================================== */
-/* =====================================
-   REJECTED RESERVATION
-===================================== */
-
-if (status === "rejected") {
-
-    localStorage.removeItem(
-        getPendingKey(ownerUid)
-    );
-
-    localStorage.removeItem(
-        getReservationKey(ownerUid)
-    );
-
-    resetUserReservationUI();
-
-  alert(
-    "Votre réservation est encore active."
-);
-
-    reservationInProgress = false;
-
-    updateReserveButton();
-
-    return;
-}
-
-            /* =====================================
-               VALIDATE RESERVATION DATA
-            ===================================== */
-
-            const ticketNumber = Number(data.ticket);
-
-            const reservationCode = String(
-                data.code ?? ""
-            );
-
-            if (
-                !Number.isInteger(ticketNumber) ||
-                ticketNumber < 1 ||
-                ticketNumber > 999 ||
-                !/^\d{4}$/.test(reservationCode)
-            ) {
-
-                console.warn(
-                    "[RES] Invalid reservation data"
-                );
-
-                return;
-            }
-
-            /* =====================================
-               SAVE RESERVATION
-            ===================================== */
-
-            const reservation = {
-
-                id: requestRef.key,
-
-                ticket: ticketNumber,
-
-                code: reservationCode,
-
-                status: status,
-
-                user_id: ownerUid
-
-            };
-
-            saveReservation(reservation);
-
-            /* =====================================
-               UPDATE PAGE
-            ===================================== */
-
-            showReservation(reservation);
-
-            /* =====================================
-               REMOVE PENDING REQUEST
-            ===================================== */
-
-            localStorage.removeItem(
-                getPendingKey(ownerUid)
-            );
-
-            reservationInProgress = false;
-
-            updateReserveButton();
-
-            /* =====================================
-               STATUS LOGS
-            ===================================== */
-
-            switch (status) {
-
-                case "confirmed":
-
-                    console.log(
-                        "[RES] Waiting for customer arrival"
-                    );
-
-                    break;
-
-                case "arrived":
-
-                    console.log(
-                        "[RES] Customer arrived"
-                    );
-
-                    break;
-
-                case "called":
-
-                    console.log(
-                        "[RES] Ticket called"
-                    );
-
-                    break;
-
-                case "skipped":
-
-                    console.log(
-                        "[RES] Reservation skipped"
-                    );
-
-                    break;
-
-                case "completed":
-
-                    console.log(
-                        "[RES] Reservation completed"
-                    );
-
-                    break;
-            }
-
-        },
-
-        (error) => {
-
-            console.error(
-                "[RES] Firebase listener error:",
-                error
-            );
-
-            if (
-                currentUser?.uid !== ownerUid
-            ) {
-                return;
-            }
-
-            reservationInProgress = false;
-
-            showError(
-                "Erreur de suivi de réservation."
-            );
-
-            updateReserveButton();
+    const reqRef = ref(db, `reservation_requests/${key}`);
+    unsubscribeReservation = onValue(reqRef, (snapshot) => {
+        if (!snapshot.exists()) return;
+        const data = snapshot.val();
+        if (!data) return;
+
+        const status = String(data.status || "pending").toLowerCase();
+        if (status === "pending") return;
+
+        clearPendingTimer();
+        reservationInProgress = false;
+
+        if (status === "rejected") {
+            showError("Votre demande n'a pas pu être validée par le système.");
+            resetUserReservationUI();
+            return;
         }
 
-    );
+        const ticketNum = Number(data.ticket || 0);
+        const codeStr = String(data.code || "");
+
+        if (ticketNum >= 1 && ticketNum <= 999) {
+            const resData = {
+                id: key,
+                ticket: ticketNum,
+                code: codeStr,
+                status: status,
+                user_id: currentUser?.uid,
+                saved_at: Date.now()
+            };
+
+            saveReservation(resData);
+            showReservation(resData, data.is_duplicate === true);
+            if (alertToggle.checked) syncFCMTokenWithDatabase();
+        }
+    });
 }
-function resetUserReservationUI() {
 
-    reservationSection.style.display = "block";
+function watchUserActiveTicket(uid) {
+    if (!uid) return;
+    if (unsubscribeUserActiveTicket) {
+        unsubscribeUserActiveTicket();
+        unsubscribeUserActiveTicket = null;
+    }
 
-    ticketSection.style.display = "none";
+    const userTicketRef = ref(db, `user_active_tickets/${uid}`);
+    unsubscribeUserActiveTicket = onValue(userTicketRef, (snapshot) => {
+        if (!snapshot.exists()) return;
 
-    myTicketEl.textContent = "---";
+        const data = snapshot.val();
+        const status = String(data.status || "").toLowerCase();
+        const tNum = Number(data.ticket || 0);
 
-    myCodeEl.textContent = "----";
+        if (["confirmed", "reserved", "arrived", "waiting"].includes(status) && tNum > 0) {
+            clearPendingTimer();
+            reservationInProgress = false;
 
-    reservationInProgress = false;
+            const resData = {
+                id: data.original_key || "",
+                ticket: tNum,
+                code: data.code || "",
+                status: status,
+                user_id: uid
+            };
+            saveReservation(resData);
 
-    clearError();
+            if (isTicketOvertaken(tNum, currentTicket)) {
+                showReservation(resData, false);
+                updateReservationStatus("skipped");
+            } else {
+                showReservation(resData, data.is_duplicate === true);
+            }
+            if (alertToggle.checked) syncFCMTokenWithDatabase();
+        } else if (["called", "skipped", "completed"].includes(status)) {
+            updateReservationStatus(status);
+        }
+    });
+}
 
-    updateReserveButton();
-}    
 async function createReservation() {
+    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+        showError("La borne d'accueil est déconnectée ou indisponible. Impossible de réserver pour le moment.");
+        return;
+    }
 
- const savedReservation = loadReservation();
-
-const activeStatuses = [
-    "pending",
-    "confirmed",
-    "reserved",
-    "arrived",
-    "waiting",
-    "called"
-];
-
-const hasActiveReservation =
-    savedReservation &&
-    activeStatuses.includes(
-        savedReservation.status
-    );
-
-if (
-    !authReady ||
-    !currentUser ||
-    !queueConnected ||
-    reservationInProgress ||
-    hasActiveReservation
-) {
-    return;
-}
+    if (!authReady || !currentUser || reservationInProgress) return;
 
     clearError();
+    clearPendingTimer();
+
+    const localSaved = loadReservation();
+    if (localSaved && localSaved.user_id === currentUser.uid && localSaved.ticket > 0) {
+        const isExpired = ["skipped", "called", "completed", "rejected"].includes(localSaved.status);
+        const isOver = isTicketOvertaken(localSaved.ticket, currentTicket);
+
+        if (!isExpired && !isOver && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
+            showReservation(localSaved, true);
+            updateReserveButton();
+            return;
+        }
+    }
 
     reservationInProgress = true;
     updateReserveButton();
 
     try {
+        const requestsRef = ref(db, "reservation_requests");
+        const newRequestRef = push(requestsRef);
+        const newReqKey = newRequestRef.key;
 
-        const requestsRef =
-            ref(db, "reservation_requests");
-
-        const newRequestRef =
-            push(requestsRef);
-            localStorage.setItem(
-            getPendingKey(currentUser.uid),
-            newRequestRef.key
-        );
         await set(newRequestRef, {
-
             status: "pending",
-
             source: "web",
-
             user_id: currentUser.uid,
-
             created_at: serverTimestamp()
-
         });
 
- 
-        localStorage.setItem(
-         getPendingKey(currentUser.uid),
-        newRequestRef.key
-        );
-        watchReservation(newRequestRef);
+        isInitialTicketLoadDone = false;
+        showReservation({ status: "pending", ticket: 0, code: "" });
+        watchReservationKey(newReqKey);
+
+        pendingTimeoutTimer = setTimeout(() => {
+            if (reservationInProgress) {
+                reservationInProgress = false;
+                showError("Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.");
+                resetUserReservationUI();
+            }
+        }, 15000);
 
     } catch (error) {
-
-        console.error(error);
-
         reservationInProgress = false;
-
-        showError(
-            "Impossible d'envoyer la réservation."
-        );
-
+        showError("Impossible d'envoyer la réservation. Veuillez réessayer.");
         updateReserveButton();
     }
 }
-/* =========================================
-   GOOGLE LOGIN
-========================================= */
 
-async function loginWithGoogle() {
+newReservationButton.addEventListener("click", async () => {
+    if (!currentUser || reservationInProgress) return;
+    clearError();
 
-    authError.style.display = "none";
-    googleLoginButton.disabled = true;
-
-    try {
-
-        await signInWithPopup(
-            auth,
-            googleProvider
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Google login error:",
-            error
-        );
-
-        if (
-            error.code !==
-            "auth/popup-closed-by-user"
-        ) {
-
-            authError.textContent =
-                "Impossible de se connecter avec Google.";
-
-            authError.style.display = "block";
-        }
-
-    } finally {
-
-        googleLoginButton.disabled = false;
-    }
-}
-/* =====================================================
-   BUTTON EVENT
-===================================================== */
-
-reserveButton.addEventListener(
-    "click",
-    createReservation
-);
-    /* =====================================================
-   NEW RESERVATION BUTTON
-===================================================== */
-
-/* =====================================================
-   NEW RESERVATION BUTTON - VERIFIED
-===================================================== */
-
-newReservationButton.addEventListener(
-    "click",
-    async () => {
-
-        if (!currentUser) return;
-
-        const uid = currentUser.uid;
-
-        const saved = loadReservation();
-
-        if (!saved || !saved.id) {
-            return;
-        }
-
-        const finishedStatuses = [
-            "skipped",
-            "completed",
-            "rejected",
-            "cancelled"
-        ];
-
-        newReservationButton.disabled = true;
-
-        try {
-
-            /* =====================================
-               CHECK FIREBASE STATUS
-            ===================================== */
-
-            const reservationRef = ref(
-                db,
-                "reservation_requests/" +
-                saved.id
-            );
-
-            const snapshot = await get(
-                reservationRef
-            );
-
-            if (!snapshot.exists()) {
-
-                console.log(
-                    "[RES] Reservation no longer exists"
-                );
-
-            } else {
-
-                const data = snapshot.val();
-
-                if (data.user_id !== uid) {
-                    return;
-                }
-
-                if (
-                    !finishedStatuses.includes(
-                        data.status
-                    )
-                ) {
-
-                    console.log(
-                        "[RES] Reservation still active"
-                    );
-
-                    showError(
-                        "Votre réservation est encore active."
-                    );
-
-                    return;
-                }
-            }
-
-            /* =====================================
-               STOP LISTENER
-            ===================================== */
-
-            if (unsubscribeReservation) {
-
-                unsubscribeReservation();
-
-                unsubscribeReservation = null;
-            }
-
-            /* =====================================
-               REMOVE LOCAL DATA
-            ===================================== */
-
-            localStorage.removeItem(
-                getReservationKey(uid)
-            );
-
-            localStorage.removeItem(
-                getPendingKey(uid)
-            );
-
-            /* =====================================
-               RESET UI
-            ===================================== */
-
-            resetUserReservationUI();
-
-            console.log(
-                "[RES] New reservation allowed"
-            );
-
-} catch (error) {
-
-    console.error(
-        "[RES] Firebase validation failed:",
-        error
-    );
-
-    alert(
-        "Impossible de vérifier votre réservation. Veuillez réessayer."
-    );
-
-} finally {
-
-            newReservationButton.disabled = false;
-        }
-    }
-);
-googleLoginButton.addEventListener(
-    "click",
-    loginWithGoogle
-);
-/* =====================================================
-   RESTORE USER RESERVATION - V2
-===================================================== */
-
-function restoreUserReservation() {
-
-    if (!currentUser) return;
-
-    const uid = currentUser.uid;
-
-    /* =====================================
-       LOAD SAVED RESERVATION
-    ===================================== */
-
-    const savedReservation = loadReservation();
-
-    if (
-        savedReservation &&
-        savedReservation.id
-    ) {
-
-        console.log(
-            "[RES] Restoring reservation:",
-            savedReservation.id
-        );
-
-        /* Show cached data immediately */
-
-        showReservation(savedReservation);
-
-        /* Firebase is the source of truth */
-
-        const reservationRef = ref(
-            db,
-            "reservation_requests/" +
-            savedReservation.id
-        );
-
-        watchReservation(reservationRef);
-
-        updateReserveButton();
-
+    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+        showError("Impossible de réserver : La borne est actuellement hors ligne ou sans papier.");
         return;
     }
 
-    /* =====================================
-       RESTORE PENDING REQUEST
-    ===================================== */
+    localStorage.removeItem(getReservationKey(currentUser.uid));
+    await removeFCMTokenFromDatabase();
+    activeUserTicketData = null;
+    isInitialTicketLoadDone = false;
+    lastObservedCurrentTicket = null;
+    lastAlertedRemaining = null;
+    alertedExactTurnForTicket = null;
 
-    const pendingId = localStorage.getItem(
-        getPendingKey(uid)
-    );
+    await createReservation();
+});
 
-    if (pendingId) {
+reserveButton.addEventListener("click", createReservation);
 
-        console.log(
-            "[RES] Restoring pending request:",
-            pendingId
-        );
-
-        reservationInProgress = true;
-
-        const pendingRef = ref(
-            db,
-            "reservation_requests/" +
-            pendingId
-        );
-
-        watchReservation(pendingRef);
-    }
-
-    updateReserveButton();
-}       
-    /* =========================================
-   AUTH STATE MONITOR
-========================================= */
-
-onAuthStateChanged(
-    auth,
-    (user) => {
-
-        // إيقاف مراقبة الحجز السابق
-
-        if (unsubscribeReservation) {
-
-            unsubscribeReservation();
-
-            unsubscribeReservation = null;
-        }
-
-        // تنظيف واجهة الحساب السابق
-
-            // تحديث المستخدم أولًا
-
-currentUser = user;
-
-authReady = true;
-
-// تنظيف واجهة المستخدم
-
-resetUserReservationUI();
-
-        if (user) {
-
-            loginSection.style.display = "none";
-
-            userSection.style.display = "block";
-
-            userName.textContent =
-                user.displayName || "Utilisateur";
-
-            userEmail.textContent =
-                user.email || "";
-
-            if (user.photoURL) {
-
-                userPhoto.src = user.photoURL;
-
-                userPhoto.style.display =
-                    "inline-block";
-
-            } else {
-
-                userPhoto.removeAttribute("src");
-
-                userPhoto.style.display = "none";
-            }
-
-            // استعادة حجز هذا المستخدم فقط
-
-            restoreUserReservation();
-
-        } else {
-
-            loginSection.style.display = "block";
-
-            userSection.style.display = "none";
-        }
-
-        updateReserveButton();
-    }
-);
-    /* =========================================
-   GOOGLE LOGOUT
-========================================= */
-
-async function logoutGoogle() {
-
+async function loginWithGoogle() {
+    authError.style.display = "none";
+    googleLoginButton.disabled = true;
     try {
-
-        await signOut(auth);
-
+        await signInWithPopup(auth, googleProvider);
     } catch (error) {
-
-        console.error(
-            "Logout error:",
-            error
-        );
-
-        authError.textContent =
-            "Impossible de se déconnecter.";
-
-        authError.style.display = "block";
+        if (error.code !== "auth/popup-closed-by-user") {
+            authError.textContent = "Impossible de se connecter avec Google.";
+            authError.style.display = "block";
+        }
+    } finally {
+        googleLoginButton.disabled = false;
     }
 }
-    logoutButton.addEventListener(
-    "click",
-    logoutGoogle
-);
- 
 
-/*
- ملاحظة:
+googleLoginButton.addEventListener("click", loginWithGoogle);
 
- استعادة الحجز من localStorage لا تعني أن
- حالته ما زالت صالحة.
+onAuthStateChanged(auth, (user) => {
+    if (unsubscribeReservation) {
+        unsubscribeReservation();
+        unsubscribeReservation = null;
+    }
+    if (unsubscribeUserActiveTicket) {
+        unsubscribeUserActiveTicket();
+        unsubscribeUserActiveTicket = null;
+    }
 
- عند إنشاء خدمة الحجوزات سنضيف الاستعلام
- عن الحالة الفعلية باستخدام reservation_id
- ورمز وصول آمن، ثم تحديثها تلقائيًا.
-*/
+    currentUser = user;
+    authReady = true;
 
+    if (user) {
+        loginSection.style.display = "none";
+        userSection.style.display = "block";
+        userName.textContent = user.displayName || "Utilisateur";
+        userEmail.textContent = user.email || "";
+        if (user.photoURL) {
+            userPhoto.src = user.photoURL;
+            userPhoto.style.display = "inline-block";
+        } else {
+            userPhoto.removeAttribute("src");
+            userPhoto.style.display = "none";
+        }
+
+        const localSaved = loadReservation();
+        if (localSaved && localSaved.user_id === user.uid && localSaved.ticket > 0) {
+            showReservation(localSaved);
+            if (isTicketOvertaken(localSaved.ticket, currentTicket)) {
+                updateReservationStatus("skipped");
+            }
+        }
+
+        watchUserActiveTicket(user.uid);
+        if (alertToggle.checked) syncFCMTokenWithDatabase();
+    } else {
+        loginSection.style.display = "block";
+        userSection.style.display = "none";
+        resetUserReservationUI();
+    }
+    updateReserveButton();
+});
+
+logoutButton.addEventListener("click", async () => {
+    try {
+        await removeFCMTokenFromDatabase();
+        await signOut(auth);
+    } catch (error) {
+        authError.textContent = "Impossible de se déconnecter.";
+        authError.style.display = "block";
+    }
+});
+
+// تهيئة الإعدادات
+initAlertPreferences();
 updateReserveButton();
-/* ===== CHECK MASTER EVERY 5 SECONDS ===== */
-
-setInterval(
-    checkMasterStatus,
-    5000
-);
+setInterval(checkMasterStatus, 5000);
 </script>
 
 </body>
