@@ -1,25 +1,24 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#151A5D">
 
-<title>POSTE EL AMAL | Réservation de ticket</title>
+<title id="pageTitle">POSTE EL AMAL | Réservation de ticket</title>
 
 <style>
 :root {
-    /* ألوان هوية البريد التونسي الرسمية */
-    --primary: #151A5D;       /* الأزرق الداكن الأساسي */
-    --primary-dark: #0c0f38;  /* أزرق ليلي عميق للتدرج والحالات النشطة */
-    --secondary: #252d87;     /* أزرق متوسط متناسق للحدود والتركيز */
-    --yellow: #F6BE29;        /* الأصفر الذهبي المميز */
-    --yellow-dark: #cf9a11;   /* درجة ذهبية مناسبة لوضوح النصوص والأرقام */
-    --green: #16a34a;         /* أخضر للنجاح */
-    --red: #dc2626;           /* أحمر للإنذار والأخطاء */
-    --background: #f4f6fa;    /* خلفية رمادية ناعمة ومريحة للعين */
+    --primary: #151A5D;
+    --primary-dark: #0c0f38;
+    --secondary: #252d87;
+    --yellow: #F6BE29;
+    --yellow-dark: #cf9a11;
+    --green: #16a34a;
+    --red: #dc2626;
+    --background: #f4f6fa;
     --white: #ffffff;
-    --text: #13173d;          /* نصوص بأزرق غامق جداً */
+    --text: #13173d;
     --muted: #64748b;
     --border: #e2e8f0;
 }
@@ -31,22 +30,65 @@
 }
 
 body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif;
     background: var(--background);
     color: var(--text);
     min-height: 100vh;
+    transition: direction 0.2s;
+}
+
+/* تنسيقات اتجاه اليمين لليسار (RTL) للغة العربية */
+body[dir="rtl"] {
+    text-align: right;
 }
 
 header {
     background: linear-gradient(135deg, var(--primary-dark), var(--primary));
     color: white;
     text-align: center;
-    padding: 25px 15px 20px;
+    padding: 20px 15px 22px;
     box-shadow: 0 4px 15px rgba(21, 26, 93, 0.25);
     border-bottom: 3px solid var(--yellow);
+    position: relative;
 }
 
-/* تنسيق الشعار ليتناسب مع الخلفية الزرقاء */
+/* زر اختيار اللغة */
+.lang-switcher {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    display: flex;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    padding: 2px;
+    gap: 2px;
+}
+
+body[dir="rtl"] .lang-switcher {
+    right: auto;
+    left: 15px;
+}
+
+.lang-btn {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 5px 10px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: 0.2s;
+    width: auto;
+}
+
+.lang-btn.active {
+    background: var(--yellow);
+    color: var(--primary);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
 .header-logo {
     max-height: 80px;
     width: auto;
@@ -104,6 +146,7 @@ header p {
     color: var(--primary);
     margin: 15px 0 5px;
     line-height: 1.1;
+    direction: ltr !important;
 }
 
 .divider {
@@ -120,6 +163,7 @@ header p {
     color: var(--yellow-dark);
     margin-top: 10px;
     line-height: 1.1;
+    direction: ltr !important;
 }
 
 .queue-footer {
@@ -172,7 +216,7 @@ header p {
 }
 
 .user-name { font-size: 17px; font-weight: bold; color: var(--primary); margin-bottom: 6px; }
-.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; }
+.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; direction: ltr; }
 
 .reservation-card { text-align: center; }
 .reservation-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 12px; }
@@ -251,9 +295,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     font-weight: 800;
     color: var(--primary);
     margin: 10px 0 20px;
+    direction: ltr !important;
 }
 
-/* بطاقة كود الحجز المتناسقة مع الأصفر والأزرق */
 .reservation-code {
     display: inline-block;
     background: #fffdf5;
@@ -266,6 +310,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     letter-spacing: 7px;
     margin: 15px 0;
     box-shadow: 0 3px 10px rgba(246, 190, 41, 0.15);
+    direction: ltr !important;
 }
 
 .ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; }
@@ -298,6 +343,10 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     text-align: left;
 }
 
+body[dir="rtl"] .alert-box {
+    text-align: right;
+}
+
 .alert-header {
     display: flex;
     justify-content: space-between;
@@ -313,7 +362,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     gap: 8px;
 }
 
-/* زر التبديل العصري (Toggle Switch) متناسق مع الأصفر */
+/* زر التبديل العصري (Toggle Switch) */
 .switch {
     position: relative;
     display: inline-block;
@@ -496,6 +545,11 @@ input:checked + .slider:before {
     line-height: 1.8;
 }
 
+body[dir="rtl"] .info-card {
+    border-left: none;
+    border-right: 4px solid var(--primary);
+}
+
 footer {
     text-align: center;
     font-size: 12px;
@@ -515,20 +569,26 @@ footer {
 <body>
 
 <header>
-    <img src="logo.png" alt="La Poste Tunisienne" class="header-logo">
-    <p>Poste Cité El Amel 6033 Gabès</p>
+    <!-- محول اللغة العصري -->
+    <div class="lang-switcher">
+        <button type="button" class="lang-btn" id="langArBtn">عربي</button>
+        <button type="button" class="lang-btn active" id="langFrBtn">FR</button>
+    </div>
+
+    <img src="logo.png" alt="البريد التونسي | La Poste Tunisienne" class="header-logo">
+    <p id="headerSubtitle">Poste Cité El Amel 6033 Gabès</p>
 </header>
 
 <main class="container">
 
     <section class="card" id="queueSection">
-        <div class="section-title">Numéro en cours</div>
+        <div class="section-title" id="lblCurrentNumber">Numéro en cours</div>
         <div class="current-number" id="currentTicket">---</div>
         
         <div class="divider"></div>
         
         <div class="waiting-box">
-            <div class="section-title">Personnes en attente</div>
+            <div class="section-title" id="lblWaitingCount">Personnes en attente</div>
             <div class="waiting-number" id="waitingCount">--</div>
         </div>
 
@@ -539,30 +599,24 @@ footer {
     </section>
 
     <section class="card reservation-card" id="reservationSection">
-        <h2>Réservation en ligne</h2>
-        <p>Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
+        <h2 id="lblReservationTitle">Réservation en ligne</h2>
+        <p id="lblReservationDesc">Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
         
         <button class="btn-primary" id="reserveButton" disabled>RÉSERVER UN TICKET</button>
         
-        <div class="warning-banner" id="printerOfflineBanner">
-            ⚠️ <strong>Service temporairement suspendu :</strong><br>
-            La borne d'impression est actuellement hors ligne. Veuillez patienter ou prendre votre ticket directement sur place.
-        </div>
-
+        <div class="warning-banner" id="printerOfflineBanner"></div>
         <div class="error-message" id="reservationError"></div>
     </section>
 
     <section class="card ticket-card" id="ticketSection">
-        <div class="info-banner" id="duplicateNotice">
-            ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.
-        </div>
+        <div class="info-banner" id="duplicateNotice"></div>
 
         <h2 id="ticketTitle" class="ticket-title-green">RÉSERVATION CONFIRMÉE</h2>
 
-        <div class="ticket-label">VOTRE NUMÉRO</div>
+        <div class="ticket-label" id="lblYourNumber">VOTRE NUMÉRO</div>
         <div class="ticket-number" id="myTicket">---</div>
 
-        <div class="ticket-label">CODE DE RETRAIT</div>
+        <div class="ticket-label" id="lblPickupCode">CODE DE RETRAIT</div>
         <div class="reservation-code" id="myCode">----</div>
 
         <div class="ticket-status" id="myStatus">En attente de confirmation</div>
@@ -570,14 +624,14 @@ footer {
         <!-- صندوق التنبيهات مع المفتاح التبادلي -->
         <div class="alert-box" id="alertBox">
             <div class="alert-header">
-                <span class="alert-title">🔔 Activer les notifications</span>
-                <label class="switch" title="Activer ou désactiver les alertes">
+                <span class="alert-title" id="lblAlertTitle">🔔 Activer les notifications</span>
+                <label class="switch" title="Activer / Désactiver">
                     <input type="checkbox" id="alertToggle">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="alert-options" id="alertOptionsArea">
-                <span>M'avertir à l'avance :</span>
+                <span id="lblAlertMargin">M'avertir à l'avance :</span>
                 <select id="alertMarginSelect" class="alert-select">
                     <option value="2">2 pers. avant</option>
                     <option value="5">5 pers. avant</option>
@@ -594,17 +648,13 @@ footer {
         </button>
         <div class="error-message" id="ticketError"></div>
 
-        <p class="ticket-message" id="ticketMessage">
-            Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>
-            La borne imprimera votre ticket avec le numéro réservé.<br><br>
-            <strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération de votre ticket, votre réservation sera annulée.
-        </p>
+        <p class="ticket-message" id="ticketMessage"></p>
     </section>
 
     <section class="card auth-card" id="authSection">
-        <h2>Compte client</h2>
+        <h2 id="lblAuthTitle">Compte client</h2>
         <div id="loginSection">
-            <p>Connectez-vous avec votre compte Google pour réserver un ticket.</p>
+            <p id="lblAuthDesc">Connectez-vous avec votre compte Google pour réserver un ticket.</p>
             <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
         </div>
         <div id="userSection" style="display:none;">
@@ -617,10 +667,12 @@ footer {
     </section>
 
     <section class="info-card" id="infoSection">
-        <strong>Informations importantes</strong><br><br>
-        • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
-        • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
-        • Une nouvelle réservation ne sera possible qu'après l'appel ou le dépassement de votre numéro.
+        <strong id="lblInfoTitle">Informations importantes</strong><br><br>
+        <span id="lblInfoContent">
+            • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
+            • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
+            • Une nouvelle réservation ne sera possible qu'après l'appel ou le dépassement de votre numéro.
+        </span>
     </section>
 
 </main>
@@ -639,8 +691,8 @@ footer {
 <div class="modal-overlay" id="permModalOverlay">
     <div class="modal-card">
         <div class="modal-icon" style="color: var(--red);">🔕</div>
-        <h3 style="color: var(--red); margin-bottom: 12px;">Notifications bloquées</h3>
-        <p style="text-align: left; font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 22px;">
+        <h3 style="color: var(--red); margin-bottom: 12px;" id="lblPermDeniedTitle">Notifications bloquées</h3>
+        <p style="text-align: inherit; font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 22px;" id="lblPermDeniedMsg">
             L'activation des notifications est <strong>indispensable</strong> pour être averti à l'avance de votre tour lorsque votre écran est verrouillé ou que vous quittez la page.<br><br>
             <strong>Comment les autoriser ?</strong><br>
             1. Cliquez sur l'icône de cadenas ou de réglages (🔒) à gauche de l'adresse du site.<br>
@@ -657,6 +709,207 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { getDatabase, ref, onValue, push, set, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
+/* ========================================================
+   قاموس الترجمة المزدوج (العربية الفصحى / الفرنسية)
+======================================================== */
+const i18n = {
+    fr: {
+        pageTitle: "POSTE EL AMAL | Réservation de ticket",
+        headerSubtitle: "Poste Cité El Amel 6033 Gabès",
+        lblCurrentNumber: "Numéro en cours",
+        lblWaitingCount: "Personnes en attente",
+        lblReservationTitle: "Réservation en ligne",
+        lblReservationDesc: "Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.",
+        btnReserve: "RÉSERVER UN TICKET",
+        btnReserving: "RÉSERVATION EN COURS...",
+        btnNeedLogin: "CONNECTEZ-VOUS POUR RÉSERVER",
+        btnAlreadyActive: "VOUS AVEZ DÉJÀ UNE RÉSERVATION",
+        btnSysOffline: "SYSTÈME HORS LIGNE",
+        btnBorneOffline: "BORNE HORS LIGNE (RÉSERVATION FERMÉE)",
+        btnNoPaper: "PAPIER ÉPUISÉ (RÉSERVATION FERMÉE)",
+        btnServiceSuspended: "SERVICE MOMENTANÉMENT SUSPENDU",
+        btnNewTicket: "RÉSERVER UN NOUVEAU TICKET",
+        btnNewTicketCalled: "FAIRE UNE NOUVELLE RÉSERVATION",
+        duplicateNotice: "ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.",
+        lblYourNumber: "VOTRE NUMÉRO",
+        lblPickupCode: "CODE DE RETRAIT",
+        lblAlertTitle: "🔔 Activer les notifications",
+        lblAlertMargin: "M'avertir à l'avance :",
+        marginOption: (n) => `${n} pers. avant`,
+        lblAuthTitle: "Compte client",
+        lblAuthDesc: "Connectez-vous avec votre compte Google pour réserver un ticket.",
+        btnLoginGoogle: "Se connecter avec Google",
+        btnLogout: "Se déconnecter",
+        lblInfoTitle: "Informations importantes",
+        lblInfoContent: "• Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>• Vous devez récupérer votre ticket à la borne avant votre passage.<br>• Une nouvelle réservation ne sera possible qu'après l'appel ou le dépassement de votre numéro.",
+        connReconnecting: "Reconnexion réseau...",
+        connSysOffline: "Système central déconnecté",
+        connBorneOffline: "Borne d'accueil hors ligne",
+        connNoPaper: "Borne : Papier épuisé",
+        connAvailable: "Service disponible",
+        bannerBorneOffline: "⚠️ <strong>Borne d'impression hors ligne :</strong><br>Le guichet physique n'est pas connecté. Les réservations en ligne sont suspendues.",
+        bannerNoPaper: "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.",
+        errBorneOffline: "La borne d'accueil est déconnectée ou indisponible. Impossible de réserver pour le moment.",
+        errRejected: "Votre demande n'a pas pu être validée par le système.",
+        errTimeout: "Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.",
+        errNetwork: "Impossible d'envoyer la réservation. Veuillez réessayer.",
+        errAuth: "Impossible de se connecter avec Google.",
+        errLogout: "Impossible de se déconnecter.",
+        statusPendingTitle: "RÉSERVATION EN COURS",
+        statusPendingMsg: "Votre réservation est en cours de traitement...",
+        statusConfirmedTitle: "RÉSERVATION CONFIRMÉE",
+        statusConfirmedMsg: "Présentez votre code à la borne pour imprimer votre ticket.",
+        statusArrivedTitle: "ARRIVÉE CONFIRMÉE",
+        statusArrivedMsg: "Ticket récupéré ! Veuillez attendre votre appel.",
+        statusCalledTitle: "C'EST VOTRE TOUR",
+        statusCalledMsg: (t) => `Votre numéro (#${t}) est appelé au guichet !`,
+        statusSkippedTitle: "TOUR DÉPASSÉ",
+        statusSkippedMsg: "Votre numéro a été dépassé par le guichet.",
+        statusCompletedTitle: "SERVICE TERMINÉ",
+        statusCompletedMsg: "Votre passage est terminé.",
+        ticketInstructionConfirmed: "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération, la réservation est annulée.",
+        ticketInstructionArrived: "Votre ticket physique a été imprimé avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.",
+        ticketInstructionCalled: "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.",
+        ticketInstructionSkipped: "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.",
+        ticketInstructionCompleted: "Merci pour votre visite chez Poste El Amal.",
+        modalCloseBtn: "J'AI COMPRIS",
+        alertTurnTitle: "🔔 C'EST VOTRE TOUR !",
+        alertTurnMsg: (t, c) => `Votre numéro #${t} est appelé au Guichet ${c} !`,
+        alertPrepareTitle: "⚠️ Préparez-vous !",
+        alertPrepareMsg: (rem, t) => `Il ne reste que ${rem} personne(s) avant votre tour (Ticket #${t}). Veuillez vous approcher du guichet.`,
+        permTitle: "Notifications bloquées",
+        permMsg: "L'activation des notifications est <strong>indispensable</strong> pour être averti à l'avance de votre tour lorsque votre écran est verrouillé ou que vous quittez la page.<br><br><strong>Comment les autoriser ?</strong><br>1. Cliquez sur l'icône de cadenas ou de réglages (🔒) à gauche de l'adresse du site.<br>2. Activez l'option <strong>Notifications</strong>.<br>3. Rechargez ensuite la page pour appliquer."
+    },
+    ar: {
+        pageTitle: "بريد حي الأمل | الحجز الإلكتروني للتذاكر",
+        headerSubtitle: "مكتب بريد حي الأمل 6033 قابس",
+        lblCurrentNumber: "الرقم قيد المناداة",
+        lblWaitingCount: "في قائمة الانتظار",
+        lblReservationTitle: "الحجز الإلكتروني عن بُعد",
+        lblReservationDesc: "احجز دورك مسبقاً في طابور الانتظار واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.",
+        btnReserve: "حجز تذكرة الآن",
+        btnReserving: "جارٍ تأكيد الحجز...",
+        btnNeedLogin: "سجّل الدخول للمتابعة والحجز",
+        btnAlreadyActive: "لديك تذكرة حجز نشطة بالفعل",
+        btnSysOffline: "النظام المركزي غير متصل",
+        btnBorneOffline: "الموزع الآلي غير متاح (الحجز متوقف)",
+        btnNoPaper: "نفاد ورق الطباعة (الحجز متوقف)",
+        btnServiceSuspended: "الخدمة معلّقة مؤقتاً",
+        btnNewTicket: "حجز تذكرة جديدة",
+        btnNewTicketCalled: "إجراء حجز جديد",
+        duplicateNotice: "ℹ️ <strong>حجز نشط:</strong> لديك بالفعل تذكرة جارية مسجلة. إليك بيانات حجزك الأصلي.",
+        lblYourNumber: "رقم تذكرتكم",
+        lblPickupCode: "رمز الاستلام",
+        lblAlertTitle: "🔔 تفعيل التنبيهات الآنية",
+        lblAlertMargin: "تنبيه مسبق قبل:",
+        marginOption: (n) => `${n} منتظرين مسبقاً`,
+        lblAuthTitle: "حساب المتعامل",
+        lblAuthDesc: "قم بتسجيل الدخول عبر حساب Google لتتمكن من حجز تذكرتك بكل سهولة.",
+        btnLoginGoogle: "تسجيل الدخول عبر Google",
+        btnLogout: "تسجيل الخروج",
+        lblInfoTitle: "إرشادات هامة",
+        lblInfoContent: "• لا يُسمح بأكثر من حجز إلكتروني نشط واحد في نفس الوقت.<br>• يتعين إدخال رمز الاستلام في الموزع الآلي وطباعة التذكرة قبل المناداة على دورك.<br>• لا يمكن فتح حجز جديد إلا بعد مناداة رقمك الحالي أو تجاوزه.",
+        connReconnecting: "جارٍ إعادة الاتصال بالشبكة...",
+        connSysOffline: "النظام المركزي غير متصل",
+        connBorneOffline: "موزع التذاكر بالمكتب غير متصل",
+        connNoPaper: "الموزع الآلي: الورق نافد",
+        connAvailable: "الخدمة متوفرة وجاهزة",
+        bannerBorneOffline: "⚠️ <strong>موزع التذاكر غير متصل:</strong><br>جهاز الطباعة بمكتب البريد غير متصل حالياً. الحجوزات عن بُعد معلقة مؤقتاً.",
+        bannerNoPaper: "⚠️ <strong>نفاد ورق الطباعة:</strong><br>نفد الورق من موزع التذاكر بالمكتب. الحجوزات معلّقة حتى إعادة تزويده.",
+        errBorneOffline: "موزع التذاكر بالمكتب غير متصل أو غير متاح حالياً. يتعذر إتمام الحجز الآن.",
+        errRejected: "تعذر اعتماد طلب الحجز من قِبل النظام المركزي.",
+        errTimeout: "انتهت مهلة استجابة النظام. يُرجى التحقق من الاتصال أو استلام تذكرتكم مباشرة من المكتب.",
+        errNetwork: "تعذر إرسال طلب الحجز، يُرجى إعادة المحاولة.",
+        errAuth: "تعذر تسجيل الدخول عبر حساب Google.",
+        errLogout: "تعذر إتمام تسجيل الخروج.",
+        statusPendingTitle: "جارٍ معالجة الحجز",
+        statusPendingMsg: "يتم الآن تأكيد حجزكم مع النظام المركزي...",
+        statusConfirmedTitle: "تم تأكيد الحجز بنجاح",
+        statusConfirmedMsg: "يُرجى إدخال رمز الاستلام في الموزع الآلي عند وصولكم لطبع التذكرة.",
+        statusArrivedTitle: "تم تأكيد الحضور بالمكتب",
+        statusArrivedMsg: "تم سحب تذكرتكم بنجاح! يُرجى انتظار النداء في قاعة الانتظار.",
+        statusCalledTitle: "حان دوركم الآن",
+        statusCalledMsg: (t) => `الرقم (#${t}) مدعو للتقدم إلى الشباك الآن !`,
+        statusSkippedTitle: "فات دوركم",
+        statusSkippedMsg: "تم تجاوز رقمكم في طابور النداء.",
+        statusCompletedTitle: "اكتملت المعاملة",
+        statusCompletedMsg: "تم الانتهاء من خدمتكم بنجاح.",
+        ticketInstructionConfirmed: "توجّه إلى موزع التذاكر بالمكتب وأدخل رمز الاستلام المكوّن من 4 أرقام.<br><br>سيقوم الموزع بطباعة تذكرتكم بالرقم المحجوز فوراً.<br><br><strong>تنبيه هام:</strong> يُلغى الحجز تلقائياً إذا تمت المناداة على رقمكم أو تجاوزه قبل سحب التذكرة.",
+        ticketInstructionArrived: "تمت طباعة تذكرتكم الورقية بنجاح.<br><br>يُرجى متابعة شاشات العرض المركزية بقاعة الانتظار.",
+        ticketInstructionCalled: "تفضلوا بالتوجه فوراً إلى الشباك الموضح على شاشة العرض.",
+        ticketInstructionSkipped: "لقد مرّ دوركم. يمكنكم الآن القيام بحجز جديد فوراً بالضغط على الزر أعلاه.",
+        ticketInstructionCompleted: "شكراً لزيارتكم مكتب بريد حي الأمل.",
+        modalCloseBtn: "حسناً، فهمت",
+        alertTurnTitle: "🔔 حان دوركم الآن !",
+        alertTurnMsg: (t, c) => `الرقم #${t} مدعو للتوجه إلى الشباك ${c} !`,
+        alertPrepareTitle: "⚠️ استعدوا، اقترب دوركم !",
+        alertPrepareMsg: (rem, t) => `بقي ${rem} أشخاص فقط قبل دوركم (التذكرة #${t}). يُرجى الاقتراب من الشبابيك.`,
+        permTitle: "الإشعارات محجوبة",
+        permMsg: "تفعيل الإشعارات <strong>ضروري جداً</strong> لتنبيهكم باقتراب دوركم حتى أثناء قفل الشاشة أو مغادرة الصفحة.<br><br><strong>كيفية السماح بها؟</strong><br>1. اضغط على أيقونة القفل أو الإعدادات (🔒) بجانب شريط العنوان للموقع.<br>2. فعّل خيار <strong>الإشعارات (Notifications)</strong>.<br>3. أعد تحميل الصفحة لتطبيق التغيير."
+    }
+};
+
+let currentLang = localStorage.getItem("poste_elamal_lang") || "fr";
+
+function applyLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("poste_elamal_lang", lang);
+
+    document.documentElement.lang = lang;
+    document.body.dir = (lang === "ar") ? "rtl" : "ltr";
+
+    document.getElementById("langArBtn").classList.toggle("active", lang === "ar");
+    document.getElementById("langFrBtn").classList.toggle("active", lang === "fr");
+
+    const t = i18n[lang];
+    document.getElementById("pageTitle").textContent = t.pageTitle;
+    document.getElementById("headerSubtitle").textContent = t.headerSubtitle;
+    document.getElementById("lblCurrentNumber").textContent = t.lblCurrentNumber;
+    document.getElementById("lblWaitingCount").textContent = t.lblWaitingCount;
+    document.getElementById("lblReservationTitle").textContent = t.lblReservationTitle;
+    document.getElementById("lblReservationDesc").textContent = t.lblReservationDesc;
+    document.getElementById("lblYourNumber").textContent = t.lblYourNumber;
+    document.getElementById("lblPickupCode").textContent = t.lblPickupCode;
+    document.getElementById("lblAlertTitle").textContent = t.lblAlertTitle;
+    document.getElementById("lblAlertMargin").textContent = t.lblAlertMargin;
+    document.getElementById("lblAuthTitle").textContent = t.lblAuthTitle;
+    document.getElementById("lblAuthDesc").textContent = t.lblAuthDesc;
+    document.getElementById("googleLoginButton").textContent = t.btnLoginGoogle;
+    document.getElementById("logoutButton").textContent = t.btnLogout;
+    document.getElementById("lblInfoTitle").textContent = t.lblInfoTitle;
+    document.getElementById("lblInfoContent").innerHTML = t.lblInfoContent;
+    document.getElementById("duplicateNotice").innerHTML = t.duplicateNotice;
+    document.getElementById("inAppModalCloseBtn").textContent = t.modalCloseBtn;
+    document.getElementById("permModalCloseBtn").textContent = t.modalCloseBtn;
+    document.getElementById("lblPermDeniedTitle").textContent = t.permTitle;
+    document.getElementById("lblPermDeniedMsg").innerHTML = t.permMsg;
+
+    // تحديث خيارات الاختيار (Margin Select)
+    const marginSelect = document.getElementById("alertMarginSelect");
+    const currentVal = marginSelect.value;
+    const margins = [2, 5, 10, 15, 30];
+    marginSelect.innerHTML = "";
+    margins.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m;
+        opt.textContent = t.marginOption(m);
+        if (String(m) === String(currentVal)) opt.selected = true;
+        marginSelect.appendChild(opt);
+    });
+
+    updateReserveButton();
+    if (activeUserTicketData) {
+        updateReservationStatus(activeUserTicketData.status);
+    }
+    checkMasterStatus();
+}
+
+document.getElementById("langArBtn").addEventListener("click", () => applyLanguage("ar"));
+document.getElementById("langFrBtn").addEventListener("click", () => applyLanguage("fr"));
+
+/* ========================================================
+   إعدادات فايربيس والمنظومة
+======================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
   authDomain: "qms-online-2658d.firebaseapp.com",
@@ -908,7 +1161,7 @@ inAppModalCloseBtn.addEventListener("click", () => {
 });
 
 /* ========================================================
-   حساب المسافة ومحرك التنبيه
+   محرك حساب المسافة والتنبيه
 ======================================================== */
 function calculateDistanceToTurn(userTicket, curTicket) {
     const u = Number(userTicket);
@@ -929,6 +1182,7 @@ function checkAlertsEngine() {
     if (remaining === null) return;
 
     const margin = parseInt(alertMarginSelect.value, 10) || 10;
+    const t = i18n[currentLang];
 
     if (!isInitialTicketLoadDone) {
         lastAlertedRemaining = remaining;
@@ -948,8 +1202,8 @@ function checkAlertsEngine() {
             alertedExactTurnForTicket = ticketNum;
             lastAlertedRemaining = 0;
             triggerTurnAlert(
-                "🔔 C'EST VOTRE TOUR !",
-                `Votre numéro #${formatNumber(ticketNum)} est appelé au Guichet ${currentConsole || 1} !`,
+                t.alertTurnTitle,
+                t.alertTurnMsg(formatNumber(ticketNum), currentConsole || 1),
                 true
             );
         }
@@ -963,8 +1217,8 @@ function checkAlertsEngine() {
         if (justEnteredMargin || threePeoplePassed) {
             lastAlertedRemaining = remaining;
             triggerTurnAlert(
-                "⚠️ Préparez-vous !",
-                `Il ne reste que ${remaining} personne(s) avant votre tour (Ticket #${formatNumber(ticketNum)}). Veuillez vous approcher du guichet.`,
+                t.alertPrepareTitle,
+                t.alertPrepareMsg(remaining, formatNumber(ticketNum)),
                 false
             );
         }
@@ -972,7 +1226,7 @@ function checkAlertsEngine() {
 }
 
 /* ========================================================
-   إدارة إعدادات التنبيه وفحص إذن الحجب الصارم
+   إدارة إعدادات التنبيه
 ======================================================== */
 function initAlertPreferences() {
     const savedState = localStorage.getItem("qms_alert_enabled");
@@ -1007,7 +1261,7 @@ function initAlertPreferences() {
 alertToggle.addEventListener("change", async () => {
     if (alertToggle.checked) {
         if (!("Notification" in window)) {
-            alert("Votre navigateur ne supporte pas les notifications.");
+            alert("Votre navigateur ne supporte pas les notifications / متصفحكم لا يدعم التنبيهات");
             alertToggle.checked = false;
             return;
         }
@@ -1100,15 +1354,16 @@ function clearPendingTimer() {
 
 function setConnectionStatus(masterOnline) {
     queueConnected = masterOnline;
+    const t = i18n[currentLang];
 
     if (!isClientInternetConnected) {
-        connectionStatusEl.textContent = "Reconnexion réseau...";
+        connectionStatusEl.textContent = t.connReconnecting;
         statusDotEl.className = "status-dot warning";
         return;
     }
 
     if (!masterOnline) {
-        connectionStatusEl.textContent = "Système central déconnecté";
+        connectionStatusEl.textContent = t.connSysOffline;
         statusDotEl.className = "status-dot offline";
         currentTicketEl.textContent = "---";
         waitingCountEl.textContent = "--";
@@ -1117,13 +1372,13 @@ function setConnectionStatus(masterOnline) {
         waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
 
         if (!printerOnline) {
-            connectionStatusEl.textContent = "Borne d'accueil hors ligne";
+            connectionStatusEl.textContent = t.connBorneOffline;
             statusDotEl.className = "status-dot warning";
         } else if (printerStatus !== 0) {
-            connectionStatusEl.textContent = "Borne : Papier épuisé";
+            connectionStatusEl.textContent = t.connNoPaper;
             statusDotEl.className = "status-dot warning";
         } else {
-            connectionStatusEl.textContent = "Service disponible";
+            connectionStatusEl.textContent = t.connAvailable;
             statusDotEl.className = "status-dot online";
         }
     }
@@ -1203,13 +1458,14 @@ function updateReserveButton() {
     const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
     const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) && !isCurrentTicketOvertaken;
     const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
+    const t = i18n[currentLang];
 
     if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
         printerOfflineBanner.style.display = "block";
         if (!printerOnline) {
-            printerOfflineBanner.innerHTML = "⚠️ <strong>Borne d'impression hors ligne :</strong><br>Le guichet physique n'est pas connecté. Les réservations en ligne sont suspendues.";
+            printerOfflineBanner.innerHTML = t.bannerBorneOffline;
         } else if (printerStatus !== 0) {
-            printerOfflineBanner.innerHTML = "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.";
+            printerOfflineBanner.innerHTML = t.bannerNoPaper;
         }
     } else {
         printerOfflineBanner.style.display = "none";
@@ -1219,23 +1475,23 @@ function updateReserveButton() {
     newReservationButton.disabled = !isHardwareReady || reservationInProgress;
 
     if (reservationInProgress) {
-        reserveButton.textContent = "RÉSERVATION EN COURS...";
-        newReservationButton.textContent = "RÉSERVATION EN COURS...";
+        reserveButton.textContent = t.btnReserving;
+        newReservationButton.textContent = t.btnReserving;
     } else if (!userLoggedIn) {
-        reserveButton.textContent = "CONNECTEZ-VOUS POUR RÉSERVER";
+        reserveButton.textContent = t.btnNeedLogin;
     } else if (hasActiveReservation) {
-        reserveButton.textContent = "VOUS AVEZ DÉJÀ UNE RÉSERVATION";
+        reserveButton.textContent = t.btnAlreadyActive;
     } else if (!queueConnected) {
-        reserveButton.textContent = "SYSTÈME HORS LIGNE";
+        reserveButton.textContent = t.btnSysOffline;
     } else if (!printerOnline) {
-        reserveButton.textContent = "BORNE HORS LIGNE (RÉSERVATION FERMÉE)";
+        reserveButton.textContent = t.btnBorneOffline;
     } else if (printerStatus !== 0) {
-        reserveButton.textContent = "PAPIER ÉPUISÉ (RÉSERVATION FERMÉE)";
+        reserveButton.textContent = t.btnNoPaper;
     } else if (!serviceAvailable) {
-        reserveButton.textContent = "SERVICE MOMENTANÉMENT SUSPENDU";
+        reserveButton.textContent = t.btnServiceSuspended;
     } else {
-        reserveButton.textContent = "RÉSERVER UN TICKET";
-        newReservationButton.textContent = "RÉSERVER UN NOUVEAU TICKET";
+        reserveButton.textContent = t.btnReserve;
+        newReservationButton.textContent = t.btnNewTicket;
     }
 }
 
@@ -1259,11 +1515,7 @@ function showReservation(reservation, isDuplicateNotice = false) {
     ticketSection.style.display = "block";
     myTicketEl.textContent = formatNumber(reservation.ticket);
 
-    if (isDuplicateNotice || reservation.is_duplicate === true) {
-        duplicateNoticeEl.style.display = "block";
-    } else {
-        duplicateNoticeEl.style.display = "none";
-    }
+    duplicateNoticeEl.style.display = (isDuplicateNotice || reservation.is_duplicate === true) ? "block" : "none";
 
     let status = reservation.status || "pending";
     if (currentTicket > 0 && reservation.ticket === currentTicket) {
@@ -1283,6 +1535,7 @@ function updateReservationStatus(status) {
 
     myStatusEl.className = "ticket-status";
     ticketTitleEl.className = "";
+    const t = i18n[currentLang];
 
     const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
 
@@ -1290,8 +1543,8 @@ function updateReservationStatus(status) {
         myCodeEl.textContent = "----";
         newReservationButton.style.display = "flex";
         newReservationButton.textContent = (status === "called") 
-            ? "FAIRE UNE NOUVELLE RÉSERVATION" 
-            : "RÉSERVER UN NOUVEAU TICKET";
+            ? t.btnNewTicketCalled 
+            : t.btnNewTicket;
         alertBox.style.display = "none";
         releaseScreenWakeLock();
     } else {
@@ -1305,58 +1558,58 @@ function updateReservationStatus(status) {
 
     switch (status) {
         case "pending":
-            ticketTitleEl.textContent = "RÉSERVATION EN COURS";
+            ticketTitleEl.textContent = t.statusPendingTitle;
             ticketTitleEl.classList.add("ticket-title-dark");
-            myStatusEl.textContent = "Votre réservation est en cours de traitement...";
-            ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.";
+            myStatusEl.textContent = t.statusPendingMsg;
+            ticketMessageEl.innerHTML = t.ticketInstructionConfirmed;
             break;
 
         case "confirmed":
         case "reserved":
-            ticketTitleEl.textContent = "RÉSERVATION CONFIRMÉE";
+            ticketTitleEl.textContent = t.statusConfirmedTitle;
             ticketTitleEl.classList.add("ticket-title-green");
-            myStatusEl.textContent = "Présentez votre code à la borne pour imprimer votre ticket.";
+            myStatusEl.textContent = t.statusConfirmedMsg;
             myStatusEl.classList.add("confirmed");
-            ticketMessageEl.innerHTML = "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération, la réservation est annulée.";
+            ticketMessageEl.innerHTML = t.ticketInstructionConfirmed;
             break;
 
         case "arrived":
         case "waiting":
-            ticketTitleEl.textContent = "ARRIVÉE CONFIRMÉE";
+            ticketTitleEl.textContent = t.statusArrivedTitle;
             ticketTitleEl.classList.add("ticket-title-green");
-            myStatusEl.textContent = "Ticket récupéré ! Veuillez attendre votre appel.";
+            myStatusEl.textContent = t.statusArrivedMsg;
             myStatusEl.classList.add("arrived");
-            ticketMessageEl.innerHTML = "Votre ticket physique a été imprimé avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.";
+            ticketMessageEl.innerHTML = t.ticketInstructionArrived;
             break;
 
         case "called":
-            ticketTitleEl.textContent = "C'EST VOTRE TOUR";
+            ticketTitleEl.textContent = t.statusCalledTitle;
             ticketTitleEl.classList.add("ticket-title-blue");
-            myStatusEl.textContent = `Votre numéro (#${formatNumber(activeUserTicketData?.ticket || currentTicket)}) est appelé au guichet !`;
+            myStatusEl.textContent = t.statusCalledMsg(formatNumber(activeUserTicketData?.ticket || currentTicket));
             myStatusEl.classList.add("called");
-            ticketMessageEl.innerHTML = "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.";
+            ticketMessageEl.innerHTML = t.ticketInstructionCalled;
             break;
 
         case "skipped":
-            ticketTitleEl.textContent = "TOUR DÉPASSÉ";
+            ticketTitleEl.textContent = t.statusSkippedTitle;
             ticketTitleEl.classList.add("ticket-title-red");
-            myStatusEl.textContent = "Votre numéro a été dépassé par le guichet.";
+            myStatusEl.textContent = t.statusSkippedMsg;
             myStatusEl.classList.add("skipped");
-            ticketMessageEl.innerHTML = "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.";
+            ticketMessageEl.innerHTML = t.ticketInstructionSkipped;
             break;
 
         case "completed":
-            ticketTitleEl.textContent = "SERVICE TERMINÉ";
+            ticketTitleEl.textContent = t.statusCompletedTitle;
             ticketTitleEl.classList.add("ticket-title-dark");
-            myStatusEl.textContent = "Votre passage est terminé.";
+            myStatusEl.textContent = t.statusCompletedMsg;
             myStatusEl.classList.add("completed");
-            ticketMessageEl.innerHTML = "Merci pour votre visite chez Poste El Amal.";
+            ticketMessageEl.innerHTML = t.ticketInstructionCompleted;
             break;
 
         default:
-            ticketTitleEl.textContent = "STATUT DE RÉSERVATION";
+            ticketTitleEl.textContent = (currentLang === "ar") ? "حالة الحجز" : "STATUT DE RÉSERVATION";
             ticketTitleEl.classList.add("ticket-title-dark");
-            myStatusEl.textContent = "En attente de mise à jour";
+            myStatusEl.textContent = (currentLang === "ar") ? "في انتظار التحديث" : "En attente de mise à jour";
     }
 
     updateReserveButton();
@@ -1402,7 +1655,7 @@ function watchReservationKey(key) {
         reservationInProgress = false;
 
         if (status === "rejected") {
-            showError("Votre demande n'a pas pu être validée par le système.");
+            showError(i18n[currentLang].errRejected);
             resetUserReservationUI();
             return;
         }
@@ -1469,8 +1722,9 @@ function watchUserActiveTicket(uid) {
 }
 
 async function createReservation() {
+    const t = i18n[currentLang];
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
-        showError("La borne d'accueil est déconnectée ou indisponible. Impossible de réserver pour le moment.");
+        showError(t.errBorneOffline);
         return;
     }
 
@@ -1513,14 +1767,14 @@ async function createReservation() {
         pendingTimeoutTimer = setTimeout(() => {
             if (reservationInProgress) {
                 reservationInProgress = false;
-                showError("Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.");
+                showError(t.errTimeout);
                 resetUserReservationUI();
             }
         }, 15000);
 
     } catch (error) {
         reservationInProgress = false;
-        showError("Impossible d'envoyer la réservation. Veuillez réessayer.");
+        showError(t.errNetwork);
         updateReserveButton();
     }
 }
@@ -1530,7 +1784,7 @@ newReservationButton.addEventListener("click", async () => {
     clearError();
 
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
-        showError("Impossible de réserver : La borne est actuellement hors ligne ou sans papier.");
+        showError(i18n[currentLang].errBorneOffline);
         return;
     }
 
@@ -1554,7 +1808,7 @@ async function loginWithGoogle() {
         await signInWithPopup(auth, googleProvider);
     } catch (error) {
         if (error.code !== "auth/popup-closed-by-user") {
-            authError.textContent = "Impossible de se connecter avec Google.";
+            authError.textContent = i18n[currentLang].errAuth;
             authError.style.display = "block";
         }
     } finally {
@@ -1580,7 +1834,7 @@ onAuthStateChanged(auth, (user) => {
     if (user) {
         loginSection.style.display = "none";
         userSection.style.display = "block";
-        userName.textContent = user.displayName || "Utilisateur";
+        userName.textContent = user.displayName || ((currentLang === "ar") ? "مستخدم" : "Utilisateur");
         userEmail.textContent = user.email || "";
         if (user.photoURL) {
             userPhoto.src = user.photoURL;
@@ -1613,11 +1867,13 @@ logoutButton.addEventListener("click", async () => {
         await removeFCMTokenFromDatabase();
         await signOut(auth);
     } catch (error) {
-        authError.textContent = "Impossible de se déconnecter.";
+        authError.textContent = i18n[currentLang].errLogout;
         authError.style.display = "block";
     }
 });
 
+// تطبيق اللغة المحفوظة وتهيئة الصفحة
+applyLanguage(currentLang);
 initAlertPreferences();
 updateReserveButton();
 setInterval(checkMasterStatus, 5000);
