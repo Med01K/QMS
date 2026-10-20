@@ -7,10 +7,10 @@
 
 <title id="pageTitle">POSTE EL AMAL | Réservation de ticket</title>
 
-<!-- استيراد خط Cairo بأقصى درجات الخشونة (900 Black) + خط Chakra Petch للأرقام الرقمية الأنيقة -->
+<!-- استيراد خط Cairo بأقصى درجات الخشونة (800 و 900 Black) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&family=Chakra+Petch:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -42,10 +42,12 @@ body {
     transition: direction 0.2s;
 }
 
-/* تطبيق الخط العربي Cairo شديد الخشونة والوضوح */
+/* ========================================================
+   تطبيق الخط العربي الخشن جداً (Ultra Bold)
+======================================================== */
 body[dir="rtl"] {
     font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
-    font-weight: 700;
+    font-weight: 800; /* خط خشن للنصوص العامة */
     text-align: right;
 }
 
@@ -55,19 +57,36 @@ body[dir="rtl"] h3,
 body[dir="rtl"] .section-title,
 body[dir="rtl"] .ticket-label,
 body[dir="rtl"] .user-name,
-body[dir="rtl"] .btn-primary,
-body[dir="rtl"] .btn-rebook,
-body[dir="rtl"] .btn-secondary,
-body[dir="rtl"] .btn-google {
+body[dir="rtl"] strong {
     font-family: 'Cairo', sans-serif;
-    font-weight: 900; /* أقصى درجات الخشونة والقوة للخط */
-    letter-spacing: -0.2px;
+    font-weight: 900 !important; /* أقصى درجات الخشونة للعناوين والأزرار */
+    letter-spacing: -0.3px;
 }
 
-body[dir="rtl"] p, 
+body[dir="rtl"] p,
 body[dir="rtl"] span,
-body[dir="rtl"] .info-card {
-    font-weight: 700;
+body[dir="rtl"] .info-card,
+body[dir="rtl"] .ticket-status,
+body[dir="rtl"] .alert-title {
+    font-weight: 800; /* نصوص ممتلئة وواضحة جداً */
+}
+
+/* ========================================================
+   تثبيت شكل الأرقام لتكون مطابقة تماماً للشكل الفرنسي
+   (استخدام Segoe UI الأصلي حتى في الواجهة العربية)
+======================================================== */
+.current-number,
+.waiting-number,
+.ticket-number,
+.reservation-code,
+body[dir="rtl"] .current-number,
+body[dir="rtl"] .waiting-number,
+body[dir="rtl"] .ticket-number,
+body[dir="rtl"] .reservation-code {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Arial, sans-serif !important;
+    direction: ltr !important;
+    unicode-bidi: isolate;
+    font-variant-numeric: tabular-nums;
 }
 
 header {
@@ -80,7 +99,7 @@ header {
     position: relative;
 }
 
-/* زر اختيار اللغة العصري والثابت في مكانه */
+/* زر اختيار اللغة العصري والثابت في مكانه دون تحرك */
 .lang-switcher {
     position: absolute;
     top: 15px;
@@ -164,28 +183,20 @@ header p {
 
 .section-title {
     font-size: 14px;
-    font-weight: 800;
+    font-weight: 900;
     color: var(--muted);
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-/* ========================================================
-   تنسيق خط الأرقام العصري والشاشات الرقمية (Chakra Petch)
-======================================================== */
 .current-number {
-    font-family: 'Chakra Petch', 'Segoe UI', monospace, sans-serif;
     text-align: center;
-    font-size: 96px;
+    font-size: 92px;
     font-weight: 800;
     color: var(--primary);
     margin: 15px 0 5px;
-    line-height: 1;
-    direction: ltr !important;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 2px;
-    text-shadow: 0 3px 12px rgba(21, 26, 93, 0.12);
+    line-height: 1.1;
 }
 
 .divider {
@@ -197,15 +208,11 @@ header p {
 .waiting-box { text-align: center; }
 
 .waiting-number {
-    font-family: 'Chakra Petch', 'Segoe UI', monospace, sans-serif;
-    font-size: 60px;
+    font-size: 58px;
     font-weight: 800;
     color: var(--yellow-dark);
     margin-top: 10px;
-    line-height: 1;
-    direction: ltr !important;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 1px;
+    line-height: 1.1;
 }
 
 .queue-footer {
@@ -261,7 +268,7 @@ header p {
 .user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; direction: ltr; font-weight: 600; }
 
 .reservation-card { text-align: center; }
-.reservation-card h2 { font-size: 22px; color: var(--primary); margin-bottom: 12px; }
+.reservation-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 12px; }
 .reservation-card p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
 
 button {
@@ -327,41 +334,34 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .ticket-label {
     color: var(--muted);
     font-size: 13px;
-    font-weight: 800;
+    font-weight: 900;
     letter-spacing: 1px;
     margin-top: 15px;
 }
 
 .ticket-number {
-    font-family: 'Chakra Petch', 'Segoe UI', monospace, sans-serif;
-    font-size: 82px;
+    font-size: 78px;
     font-weight: 800;
     color: var(--primary);
     margin: 10px 0 20px;
-    direction: ltr !important;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 2px;
-    text-shadow: 0 3px 12px rgba(21, 26, 93, 0.12);
+    line-height: 1.1;
 }
 
 .reservation-code {
-    font-family: 'Chakra Petch', 'Segoe UI', monospace, sans-serif;
     display: inline-block;
     background: #fffdf5;
     border: 2px solid var(--yellow);
-    padding: 12px 28px;
+    padding: 15px 30px;
     border-radius: 14px;
     color: var(--primary);
-    font-size: 44px;
+    font-size: 42px;
     font-weight: 800;
-    letter-spacing: 8px;
+    letter-spacing: 7px;
     margin: 15px 0;
-    box-shadow: 0 4px 15px rgba(246, 190, 41, 0.2);
-    direction: ltr !important;
-    font-variant-numeric: tabular-nums;
+    box-shadow: 0 3px 10px rgba(246, 190, 41, 0.15);
 }
 
-.ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; font-weight: 600; }
+.ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; }
 
 .ticket-status {
     margin-top: 15px;
@@ -369,7 +369,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     border-radius: 10px;
     background: #fffdf5;
     color: #92400e;
-    font-weight: 800;
+    font-weight: 900;
     font-size: 14px;
     border: 1px solid #fef3c7;
 }
@@ -402,7 +402,7 @@ body[dir="rtl"] .alert-box {
 
 .alert-title {
     font-size: 15px;
-    font-weight: 800;
+    font-weight: 900;
     color: var(--primary);
     display: flex;
     align-items: center;
@@ -472,7 +472,7 @@ input:checked + .slider:before {
     border: 1px solid #cbd5e1;
     background: white;
     color: var(--primary);
-    font-weight: 800;
+    font-weight: 900;
     font-size: 13px;
     outline: none;
     cursor: pointer;
@@ -520,7 +520,6 @@ input:checked + .slider:before {
     color: #475569;
     line-height: 1.6;
     margin-bottom: 22px;
-    font-weight: 600;
 }
 
 .modal-btn {
@@ -554,7 +553,7 @@ input:checked + .slider:before {
     margin-top: 15px;
     font-size: 14px;
     line-height: 1.6;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .info-banner {
@@ -566,7 +565,7 @@ input:checked + .slider:before {
     border-radius: 12px;
     margin-bottom: 20px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
     line-height: 1.5;
 }
 
@@ -581,7 +580,7 @@ input:checked + .slider:before {
     font-size: 14px;
     line-height: 1.5;
     text-align: center;
-    font-weight: 700;
+    font-weight: 800;
 }
 
 .info-card {
@@ -605,13 +604,13 @@ footer {
     font-size: 12px;
     color: var(--muted);
     padding: 10px 15px 30px;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 @media(max-width: 400px) {
-    .current-number { font-size: 80px; }
-    .ticket-number { font-size: 70px; }
-    .reservation-code { font-size: 36px; letter-spacing: 5px; padding: 12px 18px; }
+    .current-number { font-size: 75px; }
+    .ticket-number { font-size: 65px; }
+    .reservation-code { font-size: 34px; letter-spacing: 5px; padding: 15px 20px; }
     .header-logo { max-height: 65px; }
 }
 </style>
