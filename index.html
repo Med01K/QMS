@@ -39,19 +39,26 @@ header {
     background: linear-gradient(135deg, var(--primary-dark), var(--primary));
     color: white;
     text-align: center;
-    padding: 30px 15px;
+    padding: 25px 15px 20px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.12);
 }
 
-header h1 {
-    font-size: 27px;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
+/* تنسيق الشعار ليتناسب مع الخلفية الزرقاء */
+.header-logo {
+    max-height: 75px;
+    width: auto;
+    background: var(--white);
+    padding: 6px 14px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    margin-bottom: 10px;
+    display: inline-block;
+    object-fit: contain;
 }
 
 header p {
     font-size: 14px;
-    opacity: 0.85;
+    opacity: 0.9;
 }
 
 .container {
@@ -479,7 +486,7 @@ footer {
     .current-number { font-size: 75px; }
     .ticket-number { font-size: 65px; }
     .reservation-code { font-size: 34px; letter-spacing: 5px; padding: 15px 20px; }
-    header h1 { font-size: 23px; }
+    .header-logo { max-height: 60px; }
 }
 </style>
 </head>
@@ -487,8 +494,9 @@ footer {
 <body>
 
 <header>
-    <h1>POSTE EL AMAL</h1>
-    <p>Système de gestion des files d'attente</p>
+    <!-- تم إضافة الشعار هنا -->
+    <img src="logo.png" alt="La Poste Tunisienne" class="header-logo">
+    <p>Poste Cité El Amel 6033 Gabès</p>
 </header>
 
 <main class="container">
@@ -607,7 +615,7 @@ footer {
     </div>
 </div>
 
-<!-- 2. نافذة تنبيه حجب الإشعارات (تظهر فقط عند حجب الإشعارات) -->
+<!-- 2. نافذة تنبيه حجب الإشعارات -->
 <div class="modal-overlay" id="permModalOverlay">
     <div class="modal-card">
         <div class="modal-icon" style="color: var(--red);">🔕</div>
@@ -687,7 +695,6 @@ const inAppModalTitle      = document.getElementById("inAppModalTitle");
 const inAppModalMsg        = document.getElementById("inAppModalMsg");
 const inAppModalCloseBtn   = document.getElementById("inAppModalCloseBtn");
 
-// عناصر نافذة حجب الإشعارات
 const permModalOverlay     = document.getElementById("permModalOverlay");
 const permModalCloseBtn    = document.getElementById("permModalCloseBtn");
 
@@ -715,7 +722,6 @@ let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
 
-// متغيرات ضبط التنبيهات
 let isInitialTicketLoadDone = false; 
 let lastObservedCurrentTicket = null; 
 let lastAlertedRemaining = null;     
@@ -826,13 +832,13 @@ function playNotificationChime(isTurn = false) {
         const now = audioCtx.currentTime;
 
         if (isTurn) {
-            playTone(523.25, "sine", now, 0.20, 0.4);       // C5
-            playTone(659.25, "sine", now + 0.15, 0.20, 0.4); // E5
-            playTone(783.99, "sine", now + 0.30, 0.20, 0.4); // G5
-            playTone(1046.50, "triangle", now + 0.45, 0.6, 0.5); // C6
+            playTone(523.25, "sine", now, 0.20, 0.4);
+            playTone(659.25, "sine", now + 0.15, 0.20, 0.4);
+            playTone(783.99, "sine", now + 0.30, 0.20, 0.4);
+            playTone(1046.50, "triangle", now + 0.45, 0.6, 0.5);
         } else {
-            playTone(587.33, "sine", now, 0.22, 0.35); // D5
-            playTone(880.00, "triangle", now + 0.18, 0.45, 0.4); // A5
+            playTone(587.33, "sine", now, 0.22, 0.35);
+            playTone(880.00, "triangle", now + 0.18, 0.45, 0.4);
         }
     } catch (e) {}
 }
@@ -856,7 +862,7 @@ function releaseScreenWakeLock() {
 }
 
 /* ========================================================
-   إطلاق التنبيه الداخلي بدون تكرار
+   إطلاق التنبيه الداخلي
 ======================================================== */
 function triggerTurnAlert(title, message, isTurn = false) {
     const now = Date.now();
@@ -904,7 +910,6 @@ function checkAlertsEngine() {
 
     const margin = parseInt(alertMarginSelect.value, 10) || 10;
 
-    // المزامنة الصامتة عند فتح الصفحة لأول مرة
     if (!isInitialTicketLoadDone) {
         lastAlertedRemaining = remaining;
         lastObservedCurrentTicket = currentTicket;
@@ -959,7 +964,6 @@ function initAlertPreferences() {
         alertMarginSelect.value = "10";
     }
 
-    // إذا كانت الإشعارات محجوبة في المتصفح نلغي حفظ التفعيل
     if ("Notification" in window && Notification.permission === "denied") {
         alertToggle.checked = false;
         localStorage.setItem("qms_alert_enabled", "false");
@@ -980,7 +984,6 @@ function initAlertPreferences() {
     }
 }
 
-// التفاعل مع زر تفعيل الإشعارات والتأكد من عدم حجبها
 alertToggle.addEventListener("change", async () => {
     if (alertToggle.checked) {
         if (!("Notification" in window)) {
@@ -989,13 +992,12 @@ alertToggle.addEventListener("change", async () => {
             return;
         }
 
-        // فحص: إذا كان المستخدم قد حجب الإشعارات مسبقاً
         if (Notification.permission === "denied") {
             alertToggle.checked = false;
             localStorage.setItem("qms_alert_enabled", "false");
             alertOptionsArea.style.opacity = "0.4";
             alertOptionsArea.style.pointerEvents = "none";
-            showPermissionDeniedModal(); // إظهار نافذة التنبيه فورا
+            showPermissionDeniedModal();
             return;
         }
 
@@ -1006,17 +1008,15 @@ alertToggle.addEventListener("change", async () => {
             } catch (e) {}
         }
 
-        // إذا رفض المستخدم الآن أو حجبها
         if (perm === "denied" || perm !== "granted") {
             alertToggle.checked = false;
             localStorage.setItem("qms_alert_enabled", "false");
             alertOptionsArea.style.opacity = "0.4";
             alertOptionsArea.style.pointerEvents = "none";
-            showPermissionDeniedModal(); // إظهار نافذة التنبيه
+            showPermissionDeniedModal();
             return;
         }
 
-        // تم منح الإذن بنجاح
         localStorage.setItem("qms_alert_enabled", "true");
         alertOptionsArea.style.opacity = "1";
         alertOptionsArea.style.pointerEvents = "auto";
@@ -1598,7 +1598,6 @@ logoutButton.addEventListener("click", async () => {
     }
 });
 
-// تهيئة الإعدادات
 initAlertPreferences();
 updateReserveButton();
 setInterval(checkMasterStatus, 5000);
