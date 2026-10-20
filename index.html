@@ -7,7 +7,7 @@
 
 <title id="pageTitle">POSTE EL AMAL | Réservation de ticket</title>
 
-<!-- استدعاء خط Cairo العربي الفخم والمتناسق -->
+<!-- استدعاء خط Cairo المتناسق للعربية واللاتينية بكافة الأوزان -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -18,9 +18,12 @@
     --primary-dark: #0c0f38;
     --primary-light: #1e2478;
     --accent: #2563EB;
+    --accent-hover: #1d4ed8;
     --accent-soft: #eff6ff;
     --green: #16a34a;
+    --green-soft: #dcfce7;
     --red: #dc2626;
+    --red-soft: #fee2e2;
     --amber: #d97706;
     --background: #f8fafc;
     --white: #ffffff;
@@ -46,26 +49,27 @@ body[dir="rtl"] {
     text-align: right;
 }
 
-/* ================= الهيدر ================= */
 header {
     background: linear-gradient(135deg, var(--primary-dark), var(--primary));
     color: white;
     text-align: center;
-    padding: 24px 16px 22px;
-    box-shadow: 0 4px 18px rgba(21, 26, 93, 0.18);
+    padding: 22px 15px 24px;
+    box-shadow: 0 4px 18px rgba(21, 26, 93, 0.22);
+    border-bottom: 3px solid var(--accent);
     position: relative;
 }
 
-/* محول اللغة: مثبت بشكل دائم في أعلى اليمين دون أي حركة أو قفز */
+/* زر اختيار اللغة ثابت دائماً في أقصى اليمين دون أي قفز أو تغيير في الموضع */
 .lang-switcher {
     position: absolute;
     top: 14px;
     right: 14px;
     left: auto !important;
     display: inline-flex !important;
-    direction: ltr !important; /* ضمان بقاء الترتيب ثابتاً في اليمين دائماً */
+    direction: ltr !important;
     background: rgba(255, 255, 255, 0.14);
     backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 20px;
     padding: 3px;
@@ -83,53 +87,52 @@ body[dir="rtl"] .lang-switcher {
     background: transparent;
     border: none;
     color: rgba(255, 255, 255, 0.85);
-    font-family: 'Cairo', sans-serif;
+    font-family: inherit;
     font-size: 12px;
     font-weight: 700;
-    padding: 4px 12px;
-    border-radius: 14px;
+    padding: 5px 12px;
+    border-radius: 16px;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: auto;
-    line-height: 1.4;
+    line-height: 1.2;
+    outline: none;
 }
 
 .lang-btn.active {
     background: var(--white);
     color: var(--primary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+    font-weight: 800;
 }
 
-.header-logo-card {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--white);
-    padding: 8px 18px;
-    border-radius: 14px;
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
-    margin-bottom: 10px;
+.lang-btn:not(.active):hover {
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.12);
 }
 
 .header-logo {
-    max-height: 56px;
+    max-height: 80px;
     width: auto;
-    display: block;
+    background: var(--white);
+    padding: 8px 18px;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    margin-bottom: 12px;
+    display: inline-block;
     object-fit: contain;
 }
 
 header p {
-    font-size: 13.5px;
-    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
     font-weight: 600;
+    opacity: 0.95;
     letter-spacing: 0.3px;
 }
 
-/* ================= الحاوية والبطاقات ================= */
 .container {
-    max-width: 490px;
+    max-width: 520px;
     margin: auto;
-    padding: 20px 16px 40px;
+    padding: 20px 15px 40px;
     display: flex;
     flex-direction: column;
 }
@@ -140,47 +143,46 @@ header p {
 #infoSection { order: 4; }
 
 .card {
-    background: var(--white);
+    background: white;
     border-radius: 18px;
     padding: 24px 20px;
-    margin-bottom: 18px;
-    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.04);
-    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    box-shadow: 0 5px 20px rgba(21, 26, 93, 0.05);
+    border: 1px solid #eef2f7;
 }
 
 .section-title {
-    font-size: 13.5px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     color: var(--muted);
     text-align: center;
+    letter-spacing: 0.5px;
 }
 
 .current-number {
     text-align: center;
-    font-size: 88px;
-    font-weight: 800;
+    font-size: 92px;
+    font-weight: 900;
     color: var(--primary);
-    margin: 10px 0 4px;
-    line-height: 1;
+    margin: 12px 0 4px;
+    line-height: 1.05;
     direction: ltr !important;
 }
 
 .divider {
     height: 1px;
     background: var(--border);
-    margin: 20px 0;
+    margin: 18px 0;
 }
 
-.waiting-box { 
-    text-align: center; 
-}
+.waiting-box { text-align: center; }
 
 .waiting-number {
-    font-size: 52px;
+    font-size: 56px;
     font-weight: 800;
     color: var(--accent);
     margin-top: 6px;
-    line-height: 1;
+    line-height: 1.1;
     direction: ltr !important;
 }
 
@@ -204,7 +206,7 @@ header p {
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: var(--muted);
+    background: var(--amber);
     display: inline-block;
 }
 
@@ -212,44 +214,43 @@ header p {
 .status-dot.offline { background: var(--red); }
 .status-dot.warning { background: var(--amber); }
 
-/* ================= بطاقة الحساب ================= */
 .auth-card { text-align: center; }
-.auth-card h2 { font-size: 19px; color: var(--primary); margin-bottom: 8px; font-weight: 800; }
-.auth-card p { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+.auth-card h2 { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 12px; }
+.auth-card p { font-size: 14px; font-weight: 500; color: var(--muted); line-height: 1.7; margin-bottom: 18px; }
 
 .btn-google {
-    background: var(--white);
+    background: white;
     color: #1e293b;
     border: 1px solid #cbd5e1;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    font-weight: 700;
 }
-.btn-google:hover { background: #f8fafc; border-color: #94a3b8; }
+.btn-google:hover { background: #f8fafc; }
 
 .user-photo {
-    width: 68px;
-    height: 68px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     object-fit: cover;
-    border: 3px solid #cbd5e1;
+    border: 3px solid var(--accent);
 }
 
-.user-name { font-size: 16px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
-.user-email { font-size: 13px; color: var(--muted); margin-bottom: 14px; overflow-wrap: anywhere; direction: ltr; }
+.user-name { font-size: 17px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+.user-email { font-size: 13px; font-weight: 500; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; direction: ltr; }
 
-/* ================= بطاقة الحجز ================= */
 .reservation-card { text-align: center; }
-.reservation-card h2 { font-size: 20px; color: var(--primary); margin-bottom: 8px; font-weight: 800; }
-.reservation-card p { color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 18px; }
+.reservation-card h2 { font-size: 21px; font-weight: 800; color: var(--primary); margin-bottom: 10px; }
+.reservation-card p { color: var(--muted); font-size: 14px; font-weight: 500; line-height: 1.7; margin-bottom: 20px; }
 
 button {
+    font-family: inherit;
     width: 100%;
     border: none;
     border-radius: 12px;
-    padding: 15px;
-    font-size: 15px;
-    font-family: inherit;
-    font-weight: 700;
+    padding: 16px;
+    font-size: 16px;
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -258,44 +259,46 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .btn-primary { 
     background: var(--primary); 
-    color: var(--white); 
-    box-shadow: 0 4px 12px rgba(21, 26, 93, 0.2);
+    color: white; 
+    box-shadow: 0 4px 14px rgba(21, 26, 93, 0.22);
 }
 .btn-primary:not(:disabled):hover { 
-    background: var(--primary-dark); 
+    background: var(--primary-light); 
 }
 
 .btn-secondary { 
-    background: #f1f5f9; 
-    color: #334155; 
-    margin-top: 12px; 
+    background: #eef2f9; 
+    color: var(--primary); 
+    margin-top: 14px; 
 }
-.btn-secondary:hover { background: #e2e8f0; }
+.btn-secondary:hover { background: #e0e7f4; }
 
 .btn-rebook {
     background: var(--primary);
-    color: var(--white);
+    color: white;
     margin-top: 18px;
-    box-shadow: 0 4px 12px rgba(21, 26, 93, 0.2);
+    box-shadow: 0 4px 12px rgba(21, 26, 93, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
 }
 .btn-rebook:not(:disabled):hover {
-    background: var(--primary-dark);
+    background: var(--primary-light);
 }
 
-/* ================= بطاقة التذكرة ================= */
 .ticket-card {
     display: none;
     text-align: center;
-    border: 2px dashed #cbd5e1;
+    border: 2px dashed #93c5fd;
+    transition: border-color 0.3s;
 }
 
 .ticket-card h2 { 
-    font-size: 20px; 
-    margin-bottom: 14px; 
+    font-size: 22px; 
     font-weight: 800;
+    margin-bottom: 18px; 
+    transition: color 0.3s;
 }
 .ticket-title-green  { color: var(--green) !important; }
 .ticket-title-blue   { color: var(--primary) !important; }
@@ -304,61 +307,68 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .ticket-label {
     color: var(--muted);
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 800;
     letter-spacing: 0.5px;
-    margin-top: 12px;
+    margin-top: 14px;
 }
 
 .ticket-number {
-    font-size: 72px;
-    font-weight: 800;
+    font-size: 78px;
+    font-weight: 900;
     color: var(--primary);
-    margin: 6px 0 14px;
-    line-height: 1;
+    margin: 8px 0 16px;
     direction: ltr !important;
 }
 
 .reservation-code {
     display: inline-block;
     background: var(--accent-soft);
-    border: 2px solid #bfdbfe;
-    padding: 10px 26px;
-    border-radius: 12px;
+    border: 2px solid var(--accent);
+    padding: 12px 28px;
+    border-radius: 14px;
     color: var(--primary);
-    font-size: 38px;
-    font-weight: 800;
+    font-size: 42px;
+    font-weight: 900;
     letter-spacing: 6px;
-    margin: 8px 0 14px;
+    margin: 12px 0;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.12);
     direction: ltr !important;
 }
 
-.ticket-message { font-size: 14px; line-height: 1.7; color: var(--muted); margin-top: 16px; }
+.ticket-message { 
+    font-size: 14px; 
+    font-weight: 500;
+    line-height: 1.8; 
+    color: var(--muted); 
+    margin-top: 18px; 
+}
 
 .ticket-status {
-    margin-top: 12px;
-    padding: 10px 14px;
+    margin-top: 15px;
+    padding: 12px 14px;
     border-radius: 10px;
     background: #f1f5f9;
     color: #334155;
     font-weight: 700;
-    font-size: 13px;
-    border: 1px solid var(--border);
+    font-size: 14px;
+    border: 1px solid #cbd5e1;
 }
 
-.ticket-status.confirmed { background: var(--accent-soft); color: #1e40af; border-color: #dbeafe; }
-.ticket-status.arrived   { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.ticket-status.confirmed { background: var(--accent-soft); color: #1d4ed8; border-color: #bfdbfe; }
+.ticket-status.arrived   { background: var(--green-soft); color: #166534; border-color: #bbf7d0; }
 .ticket-status.called    { background: #e0e7ff; color: var(--primary); border-color: #c7d2fe; }
-.ticket-status.skipped   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.ticket-status.skipped   { background: var(--red-soft); color: #991b1b; border-color: #fecaca; }
 .ticket-status.completed { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+.ticket-status.rejected  { background: var(--red-soft); color: #991b1b; border-color: #fecaca; }
 
-/* ================= صندوق التنبيهات ================= */
+/* صندوق التنبيهات */
 .alert-box {
     margin-top: 20px;
     background: #f8fafc;
-    border: 1px solid var(--border);
+    border: 1px solid #e2e8f0;
     border-radius: 14px;
-    padding: 14px 16px;
+    padding: 16px 18px;
     text-align: left;
 }
 
@@ -374,11 +384,11 @@ body[dir="rtl"] .alert-box {
 
 .alert-title {
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--primary);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .switch {
@@ -389,14 +399,18 @@ body[dir="rtl"] .alert-box {
     flex-shrink: 0;
 }
 
-.switch input { opacity: 0; width: 0; height: 0; }
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
 
 .slider {
     position: absolute;
     cursor: pointer;
     top: 0; left: 0; right: 0; bottom: 0;
     background-color: #cbd5e1;
-    transition: 0.3s;
+    transition: 0.25s;
     border-radius: 26px;
 }
 
@@ -408,89 +422,122 @@ body[dir="rtl"] .alert-box {
     left: 3px;
     bottom: 3px;
     background-color: white;
-    transition: 0.3s;
+    transition: 0.25s;
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 input:checked + .slider {
-    background-color: var(--primary);
+    background-color: var(--accent);
 }
 
 input:checked + .slider:before {
     transform: translateX(22px);
+    background-color: white;
 }
 
 .alert-options {
     margin-top: 12px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 13px;
-    color: #475569;
+    color: #334155;
     font-weight: 600;
 }
 
 .alert-select {
+    font-family: inherit;
     padding: 6px 10px;
     border-radius: 8px;
     border: 1px solid #cbd5e1;
     background: white;
     color: var(--primary);
-    font-family: inherit;
     font-weight: 700;
     font-size: 13px;
     outline: none;
     cursor: pointer;
 }
 
-/* ================= النوافذ المنبثقة ================= */
 .modal-overlay {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(12, 15, 56, 0.75);
+    background: rgba(12, 15, 56, 0.78);
     z-index: 99999;
     align-items: center;
     justify-content: center;
     padding: 20px;
     backdrop-filter: blur(4px);
+    animation: fadeIn 0.2s ease-out;
 }
 
 .modal-card {
     background: white;
     width: 100%;
-    max-width: 400px;
-    border-radius: 18px;
-    padding: 24px 20px;
+    max-width: 420px;
+    border-radius: 20px;
+    padding: 26px 22px;
     text-align: center;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    animation: slideUp 0.25s ease-out;
 }
 
-.modal-icon { font-size: 46px; margin-bottom: 8px; }
-.modal-card h3 { font-size: 19px; color: var(--primary); margin-bottom: 10px; font-weight: 800; }
-.modal-card p { font-size: 14px; color: #475569; line-height: 1.6; margin-bottom: 20px; }
+.modal-icon {
+    font-size: 52px;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+.modal-card h3 {
+    font-size: 21px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.modal-card p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.7;
+    margin-bottom: 22px;
+}
 
 .modal-btn {
     background: var(--primary);
     color: white;
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 14px;
-    font-weight: 700;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 15px;
+    font-weight: 800;
+}
+.modal-btn:hover {
+    background: var(--primary-light);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(25px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .error-message {
     display: none;
-    background: #fee2e2;
+    background: var(--red-soft);
     color: #991b1b;
-    padding: 12px;
+    padding: 13px;
     border-radius: 10px;
-    margin-top: 14px;
+    margin-top: 15px;
     font-size: 13px;
-    line-height: 1.5;
+    font-weight: 600;
+    line-height: 1.6;
 }
 
 .info-banner {
@@ -498,12 +545,12 @@ input:checked + .slider:before {
     background: var(--accent-soft);
     border: 1px solid #bfdbfe;
     color: #1e40af;
-    padding: 12px;
-    border-radius: 10px;
-    margin-bottom: 16px;
+    padding: 14px;
+    border-radius: 12px;
+    margin-bottom: 18px;
     font-size: 13px;
     font-weight: 600;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 .warning-banner {
@@ -511,34 +558,43 @@ input:checked + .slider:before {
     background: #fef2f2;
     border: 1px solid #fecaca;
     color: #991b1b;
-    padding: 12px;
-    border-radius: 10px;
-    margin-top: 14px;
+    padding: 14px;
+    border-radius: 12px;
+    margin-top: 15px;
     font-size: 13px;
-    line-height: 1.5;
+    font-weight: 600;
+    line-height: 1.6;
     text-align: center;
 }
 
 .info-card {
-    background: #f1f5f9;
-    border-left: 4px solid var(--primary);
-    padding: 16px;
+    background: #eff6ff;
+    border-left: 4px solid var(--accent);
+    padding: 18px;
     border-radius: 12px;
     font-size: 13px;
-    color: #334155;
+    color: #1e293b;
     line-height: 1.8;
 }
 
 body[dir="rtl"] .info-card {
     border-left: none;
-    border-right: 4px solid var(--primary);
+    border-right: 4px solid var(--accent);
+}
+
+footer {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    padding: 10px 15px 30px;
 }
 
 @media(max-width: 400px) {
-    .current-number { font-size: 74px; }
-    .ticket-number { font-size: 62px; }
-    .reservation-code { font-size: 32px; letter-spacing: 4px; padding: 10px 18px; }
-    .header-logo { max-height: 48px; }
+    .current-number { font-size: 76px; }
+    .ticket-number { font-size: 65px; }
+    .reservation-code { font-size: 36px; letter-spacing: 5px; padding: 12px 20px; }
+    .header-logo { max-height: 65px; }
 }
 </style>
 </head>
@@ -546,15 +602,13 @@ body[dir="rtl"] .info-card {
 <body>
 
 <header>
-    <!-- زر تبديل اللغة ثابت في مكانه دائماً ولا يقفز -->
+    <!-- محول لغة ثابت ومستقر تماماً في مكانه دون قفز -->
     <div class="lang-switcher">
         <button type="button" class="lang-btn" id="langArBtn">عربي</button>
         <button type="button" class="lang-btn active" id="langFrBtn">FR</button>
     </div>
 
-    <div class="header-logo-card">
-        <img src="logo.png" alt="البريد التونسي | La Poste Tunisienne" class="header-logo">
-    </div>
+    <img src="logo.png" alt="البريد التونسي | La Poste Tunisienne" class="header-logo">
     <p id="headerSubtitle">Poste Cité El Amel 6033 Gabès</p>
 </header>
 
@@ -567,7 +621,7 @@ body[dir="rtl"] .info-card {
         <div class="divider"></div>
         
         <div class="waiting-box">
-            <div class="section-title" id="lblWaitingCount">Personnes en attente</div>
+            <div class="section-title" id="lblWaitingCount">En attente</div>
             <div class="waiting-number" id="waitingCount">--</div>
         </div>
 
@@ -578,8 +632,8 @@ body[dir="rtl"] .info-card {
     </section>
 
     <section class="card reservation-card" id="reservationSection">
-        <h2 id="lblReservationTitle">Réservation en ligne</h2>
-        <p id="lblReservationDesc">Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
+        <h2 id="lblReservationTitle">Réservation de ticket</h2>
+        <p id="lblReservationDesc">Réservez votre tour à l'avance et imprimez votre ticket à la borne dès votre arrivée.</p>
         
         <button class="btn-primary" id="reserveButton" disabled>RÉSERVER UN TICKET</button>
         
@@ -600,22 +654,23 @@ body[dir="rtl"] .info-card {
 
         <div class="ticket-status" id="myStatus">En attente de confirmation</div>
 
+        <!-- صندوق التنبيهات -->
         <div class="alert-box" id="alertBox">
             <div class="alert-header">
-                <span class="alert-title" id="lblAlertTitle">🔔 Activer les notifications</span>
+                <span class="alert-title" id="lblAlertTitle">🔔 Alerte à l'approche du tour</span>
                 <label class="switch" title="Activer / Désactiver">
                     <input type="checkbox" id="alertToggle">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="alert-options" id="alertOptionsArea">
-                <span id="lblAlertMargin">M'avertir à l'avance :</span>
+                <span id="lblAlertMargin">M'avertir avant :</span>
                 <select id="alertMarginSelect" class="alert-select">
-                    <option value="2">2 pers. avant</option>
-                    <option value="5">5 pers. avant</option>
-                    <option value="10" selected>10 pers. avant</option>
-                    <option value="15">15 pers. avant</option>
-                    <option value="30">30 pers. avant</option>
+                    <option value="2">2 personnes avant</option>
+                    <option value="5">5 personnes avant</option>
+                    <option value="10" selected>10 personnes avant</option>
+                    <option value="15">15 personnes avant</option>
+                    <option value="30">30 personnes avant</option>
                 </select>
             </div>
         </div>
@@ -635,7 +690,7 @@ body[dir="rtl"] .info-card {
             <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
         </div>
         <div id="userSection" style="display:none;">
-            <img id="userPhoto" class="user-photo" alt="Photo du profil">
+            <img id="userPhoto" class="user-photo" alt="Photo">
             <div class="user-name" id="userName"></div>
             <div class="user-email" id="userEmail"></div>
             <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
@@ -646,15 +701,15 @@ body[dir="rtl"] .info-card {
     <section class="info-card" id="infoSection">
         <strong id="lblInfoTitle">Informations importantes</strong><br><br>
         <span id="lblInfoContent">
-            • Vous ne pouvez avoir qu'un seul ticket actif à la fois.<br>
-            • Vous devez récupérer votre ticket à la borne avant votre passage.<br>
-            • Une nouvelle réservation ne sera possible qu'après l'appel ou le dépassement de votre numéro.
+            • Une seule réservation active par utilisateur.<br>
+            • Récupérez votre ticket à la borne avant votre passage.<br>
+            • Un nouveau ticket n'est possible qu'après l'appel ou le dépassement de votre numéro.
         </span>
     </section>
 
 </main>
 
-<!-- نافذة التنبيه لاقتراب الدور داخل الموقع -->
+<!-- نافذة التنبيه لاقتراب الدور -->
 <div class="modal-overlay" id="inAppModalOverlay">
     <div class="modal-card">
         <div class="modal-icon" id="inAppModalIcon">🔔</div>
@@ -664,13 +719,17 @@ body[dir="rtl"] .info-card {
     </div>
 </div>
 
-<!-- نافذة تنبيه حجب الإشعارات -->
+<!-- نافذة الإشعارات المحجوبة -->
 <div class="modal-overlay" id="permModalOverlay">
     <div class="modal-card">
         <div class="modal-icon" style="color: var(--red);">🔕</div>
         <h3 style="color: var(--red); margin-bottom: 10px;" id="lblPermDeniedTitle">Notifications bloquées</h3>
-        <p style="text-align: inherit; font-size: 13px; line-height: 1.6; color: #475569; margin-bottom: 20px;" id="lblPermDeniedMsg">
-            L'activation des notifications est nécessaire pour être averti à l'avance de votre tour lorsque l'écran est éteint.
+        <p style="text-align: inherit; font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 22px;" id="lblPermDeniedMsg">
+            L'autorisation des notifications est indispensable pour être averti à l'approche de votre tour.<br><br>
+            <strong>Comment les activer ?</strong><br>
+            1. Cliquez sur l'icône de cadenas (🔒) à côté de l'adresse du site.<br>
+            2. Activez l'option <strong>Notifications</strong>.<br>
+            3. Rechargez la page.
         </p>
         <button type="button" class="modal-btn" id="permModalCloseBtn">J'AI COMPRIS</button>
     </div>
@@ -683,75 +742,75 @@ import { getDatabase, ref, onValue, push, set, remove, serverTimestamp } from "h
 import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
 /* ========================================================
-   قاموس الترجمة المزدوج (العربية الفصيحة الدقيقة / الفرنسية)
+   قاموس الترجمة: صياغة فصيحة، مختصرة، ورصينة
 ======================================================== */
 const i18n = {
     fr: {
         pageTitle: "POSTE EL AMAL | Réservation de ticket",
         headerSubtitle: "Poste Cité El Amel 6033 Gabès",
         lblCurrentNumber: "Numéro en cours",
-        lblWaitingCount: "Personnes en attente",
-        lblReservationTitle: "Réservation en ligne",
-        lblReservationDesc: "Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.",
+        lblWaitingCount: "En attente",
+        lblReservationTitle: "Réservation de ticket",
+        lblReservationDesc: "Réservez votre tour à l'avance et imprimez votre ticket à la borne dès votre arrivée.",
         btnReserve: "RÉSERVER UN TICKET",
         btnReserving: "RÉSERVATION EN COURS...",
         btnNeedLogin: "CONNECTEZ-VOUS POUR RÉSERVER",
         btnAlreadyActive: "VOUS AVEZ DÉJÀ UNE RÉSERVATION",
         btnSysOffline: "SYSTÈME HORS LIGNE",
-        btnBorneOffline: "BORNE HORS LIGNE",
-        btnNoPaper: "PAPIER ÉPUISÉ",
+        btnBorneOffline: "BORNE HORS LIGNE (RÉSERVATION SUSPENDUE)",
+        btnNoPaper: "PAPIER ÉPUISÉ (RÉSERVATION SUSPENDUE)",
         btnServiceSuspended: "SERVICE MOMENTANÉMENT SUSPENDU",
         btnNewTicket: "RÉSERVER UN NOUVEAU TICKET",
-        btnNewTicketCalled: "FAIRE UNE NOUVELLE RÉSERVATION",
+        btnNewTicketCalled: "NOUVELLE RÉSERVATION",
         duplicateNotice: "ℹ️ <strong>Réservation active :</strong> Vous avez déjà un ticket en cours.",
         lblYourNumber: "VOTRE NUMÉRO",
         lblPickupCode: "CODE DE RETRAIT",
-        lblAlertTitle: "🔔 Activer les notifications",
-        lblAlertMargin: "M'avertir à l'avance :",
-        marginOption: (n) => `${n} pers. avant`,
+        lblAlertTitle: "🔔 Alerte à l'approche du tour",
+        lblAlertMargin: "M'avertir avant :",
+        marginOption: (n) => `${n} personnes avant`,
         lblAuthTitle: "Compte client",
-        lblAuthDesc: "Connectez-vous avec votre compte Google pour réserver un ticket.",
+        lblAuthDesc: "Connectez-vous avec votre compte Google pour réserver votre ticket.",
         btnLoginGoogle: "Se connecter avec Google",
         btnLogout: "Se déconnecter",
         lblInfoTitle: "Informations importantes",
-        lblInfoContent: "• Une seule réservation active à la fois.<br>• Récupérez votre ticket à la borne dès votre arrivée.<br>• Nouvelle réservation possible une fois votre numéro appelé ou dépassé.",
-        connReconnecting: "Connexion en cours...",
-        connSysOffline: "Système déconnecté",
-        connBorneOffline: "Borne déconnectée",
+        lblInfoContent: "• Une seule réservation active par utilisateur.<br>• Récupérez votre ticket à la borne dès votre arrivée.<br>• Une nouvelle réservation est possible après l'appel ou le dépassement de votre numéro.",
+        connReconnecting: "Connexion réseau...",
+        connSysOffline: "Système central déconnecté",
+        connBorneOffline: "Borne du bureau hors ligne",
         connNoPaper: "Borne : papier épuisé",
-        connAvailable: "Système en ligne",
-        bannerBorneOffline: "⚠️ <strong>Borne hors ligne :</strong> Réservations suspendues temporairement.",
-        bannerNoPaper: "⚠️ <strong>Papier épuisé :</strong> La borne n'a plus de papier.",
-        errBorneOffline: "La borne est indisponible pour le moment.",
+        connAvailable: "Service disponible",
+        bannerBorneOffline: "⚠️ <strong>Borne hors ligne :</strong> La borne du bureau est déconnectée. Réservation temporairement indisponible.",
+        bannerNoPaper: "⚠️ <strong>Papier épuisé :</strong> La borne n'a plus de papier. Réservation temporairement indisponible.",
+        errBorneOffline: "La borne est hors ligne pour le moment.",
         errRejected: "Demande non validée par le système.",
-        errTimeout: "Délai d'attente dépassé. Veuillez prendre votre ticket au guichet.",
+        errTimeout: "Délai dépassé. Veuillez réessayer ou prendre un ticket sur place.",
         errNetwork: "Erreur de connexion. Veuillez réessayer.",
         errAuth: "Échec de connexion Google.",
-        errLogout: "Erreur lors de la déconnexion.",
+        errLogout: "Échec de déconnexion.",
         statusPendingTitle: "RÉSERVATION EN COURS",
         statusPendingMsg: "Traitement de votre demande...",
         statusConfirmedTitle: "RÉSERVATION CONFIRMÉE",
-        statusConfirmedMsg: "Saisissez votre code à la borne pour imprimer le ticket.",
-        statusArrivedTitle: "TICKET RÉCUPÉRÉ",
-        statusArrivedMsg: "Ticket imprimé ! Veuillez attendre votre tour.",
-        statusCalledTitle: "C'EST VOTRE TOUR",
+        statusConfirmedMsg: "Saisissez votre code de retrait à la borne pour imprimer votre ticket.",
+        statusArrivedTitle: "TICKET RETIRÉ",
+        statusArrivedMsg: "Ticket imprimé. Veuillez attendre l'appel au guichet.",
+        statusCalledTitle: "C'EST VOTRE TOUR !",
         statusCalledMsg: (t) => `Le numéro #${t} est appelé au guichet !`,
         statusSkippedTitle: "TOUR DÉPASSÉ",
         statusSkippedMsg: "Votre numéro a été dépassé.",
         statusCompletedTitle: "SERVICE TERMINÉ",
-        statusCompletedMsg: "Merci de votre visite.",
-        ticketInstructionConfirmed: "À votre arrivée au bureau, composez votre code à 4 chiffres sur la borne.<br><br><strong>Important :</strong> La réservation s'annule si votre numéro est dépassé avant le retrait.",
-        ticketInstructionArrived: "Votre ticket est imprimé. Suivez l'affichage dans la salle d'attente.",
+        statusCompletedMsg: "Votre passage est terminé.",
+        ticketInstructionConfirmed: "Présentez-vous à la borne du bureau et entrez votre code à 4 chiffres.<br><br><strong>Attention :</strong> Si votre tour passe avant le retrait, la réservation sera annulée.",
+        ticketInstructionArrived: "Votre ticket a été retiré avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.",
         ticketInstructionCalled: "Veuillez vous diriger vers le guichet d'appel.",
-        ticketInstructionSkipped: "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation maintenant.",
-        ticketInstructionCompleted: "Merci pour votre visite au bureau de poste.",
+        ticketInstructionSkipped: "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation ci-dessus.",
+        ticketInstructionCompleted: "Merci pour votre visite.",
         modalCloseBtn: "J'AI COMPRIS",
-        alertTurnTitle: "📢 C'EST VOTRE TOUR !",
-        alertTurnMsg: (t, c) => `Ticket #${t} appelé au Guichet ${c} !`,
-        alertPrepareTitle: "⏳ Préparez-vous !",
-        alertPrepareMsg: (rem, t) => `Il reste ${rem} personne(s) avant votre tour (Ticket #${t}).`,
-        permTitle: "Notifications requises",
-        permMsg: "Veuillez autoriser les notifications pour être averti lorsque votre tour arrive.<br><br>Cliquez sur l'icône de cadenas (🔒) à côté du lien du site et activez les notifications."
+        alertTurnTitle: "🔔 C'EST VOTRE TOUR !",
+        alertTurnMsg: (t, c) => `Le numéro #${t} est appelé au Guichet ${c} !`,
+        alertPrepareTitle: "⚠️ Préparez-vous !",
+        alertPrepareMsg: (rem, t) => `Il ne reste que ${rem} personne(s) avant votre tour (Ticket #${t}).`,
+        permTitle: "Notifications bloquées",
+        permMsg: "L'autorisation des notifications est indispensable pour être averti de votre tour.<br><br><strong>Comment les activer ?</strong><br>1. Cliquez sur l'icône de cadenas (🔒) à côté de l'adresse du site.<br>2. Activez l'option <strong>Notifications</strong>.<br>3. Rechargez la page."
     },
     ar: {
         pageTitle: "بريد حي الأمل | حجز تذكرة",
@@ -763,62 +822,62 @@ const i18n = {
         btnReserve: "حجز تذكرة",
         btnReserving: "جارٍ الحجز...",
         btnNeedLogin: "سجّل الدخول للحجز",
-        btnAlreadyActive: "لديك حجز جارٍ بالفعل",
+        btnAlreadyActive: "لديك تذكرة نشطة",
         btnSysOffline: "النظام غير متصل",
-        btnBorneOffline: "جهاز التذاكر غير متاح",
-        btnNoPaper: "ورق الطباعة نافد",
+        btnBorneOffline: "جهاز التذاكر غير متصل",
+        btnNoPaper: "نفاد ورق الطباعة",
         btnServiceSuspended: "الخدمة متوقفة مؤقتاً",
         btnNewTicket: "حجز تذكرة جديدة",
         btnNewTicketCalled: "حجز تذكرة جديدة",
-        duplicateNotice: "ℹ️ <strong>تنبيه:</strong> لديك حجز نشط، تفاصيل تذكرتك الحالية معروضة أدناه.",
+        duplicateNotice: "ℹ️ <strong>تنبيه:</strong> لديك تذكرة نشطة حالياً، وهذه بياناتها.",
         lblYourNumber: "رقم تذكرتك",
         lblPickupCode: "رمز السحب",
         lblAlertTitle: "🔔 تنبيهات اقتراب الدور",
         lblAlertMargin: "التنبيه قبل دوري بـ:",
         marginOption: (n) => `${n} أرقام قبل دوري`,
         lblAuthTitle: "تسجيل الدخول",
-        lblAuthDesc: "سجّل دخولك بحساب Google لمتابعة دورك وتلقي الإشعارات.",
-        btnLoginGoogle: "الدخول بحساب Google",
+        lblAuthDesc: "سجّل الدخول بحساب Google لحجز تذكرتك ومتابعة دورك.",
+        btnLoginGoogle: "الدخول بواسطة Google",
         btnLogout: "تسجيل الخروج",
         lblInfoTitle: "معلومات هامة",
-        lblInfoContent: "• لا يمكن حجز أكثر من تذكرة واحدة في نفس الوقت.<br>• يرجى إدخال رمز السحب في جهاز التذاكر فور وصولك للمكتب.<br>• يتاح حجز تذكرة جديدة بمجرد مناداة رقمك أو تجاوزه.",
-        connReconnecting: "جارٍ إعادة الاتصال...",
+        lblInfoContent: "• يُسمح بحجز تذكرة واحدة فقط لكل مستخدم.<br>• أدخل رمز السحب في جهاز التذاكر فور وصولك للمكتب لطباعة تذكرتك.<br>• يُتاح حجز تذكرة جديدة بعد استدعاء رقمك أو تجاوزه.",
+        connReconnecting: "جارٍ الاتصال...",
         connSysOffline: "النظام غير متصل",
         connBorneOffline: "جهاز التذاكر غير متصل",
-        connNoPaper: "ورق التذاكر نافد",
-        connAvailable: "الخدمة متاحة وجاهزة",
-        bannerBorneOffline: "⚠️ <strong>جهاز التذاكر غير متصل:</strong> الحجز الإلكتروني متوقف مؤقتاً.",
-        bannerNoPaper: "⚠️ <strong>نفاد ورق الطباعة:</strong> يُرجى أخذ تذكرتك مباشرة عند إعادة تزويد الجهاز.",
-        errBorneOffline: "جهاز التذاكر غير متاح حالياً.",
-        errRejected: "تعذر قبول طلب الحجز.",
-        errTimeout: "انتهت مهلة الطلب، يُرجى سحب التذكرة مباشرة من المكتب.",
-        errNetwork: "تعذر الاتصال، يُرجى المحاولة لاحقاً.",
-        errAuth: "تعذر تسجيل الدخول بحساب Google.",
-        errLogout: "تعذر تسجيل الخروج.",
+        connNoPaper: "جهاز التذاكر: نفد الورق",
+        connAvailable: "الخدمة متوفرة",
+        bannerBorneOffline: "⚠️ <strong>جهاز التذاكر غير متصل:</strong> جهاز التذاكر بالمكتب غير متاح حالياً. الحجز متوقف مؤقتاً.",
+        bannerNoPaper: "⚠️ <strong>نفاد الورق:</strong> نفد ورق الطباعة من الجهاز بالمكتب. الحجز متوقف حتى تزويده بالورق.",
+        errBorneOffline: "جهاز التذاكر بالمكتب غير متاح حالياً.",
+        errRejected: "تعذر قبول طلب الحجز من قِبل النظام.",
+        errTimeout: "انتهت مهلة الانتظار. يرجى المحاولة ثانية أو سحب التذكرة مباشرة من المكتب.",
+        errNetwork: "تعذر إرسال الطلب، تأكد من اتصال الإنترنت.",
+        errAuth: "فشل تسجيل الدخول عبر Google.",
+        errLogout: "فشل تسجيل الخروج.",
         statusPendingTitle: "جارٍ الحجز...",
-        statusPendingMsg: "يتم الآن تسجيل حجزك في النظام...",
+        statusPendingMsg: "يتم الآن تأكيد حجزك في النظام...",
         statusConfirmedTitle: "تم الحجز بنجاح",
         statusConfirmedMsg: "أدخل رمز السحب في جهاز التذاكر بالمكتب لطباعة تذكرتك.",
         statusArrivedTitle: "تم سحب التذكرة",
-        statusArrivedMsg: "تذكرتك مطبوعة معك، تفضل بانتظار النداء.",
+        statusArrivedMsg: "تمت طباعة تذكرتك، يرجى انتظار المناداة في قاعة الانتظار.",
         statusCalledTitle: "حان دورك الآن!",
-        statusCalledMsg: (t) => `تذكرتك رقم #${t} مدعوة للشباك الآن!`,
+        statusCalledMsg: (t) => `الرقم #${t} مدعو للشباك الآن!`,
         statusSkippedTitle: "فاتك الدور",
-        statusSkippedMsg: "تم تجاوز رقم تذكرتك في طابور النداء.",
+        statusSkippedMsg: "تم تجاوز رقمك في قائمة المناداة.",
         statusCompletedTitle: "اكتملت المعاملة",
-        statusCompletedMsg: "شكراً لزيارتكم.",
-        ticketInstructionConfirmed: "توجه إلى جهاز التذاكر بالمكتب وأدخل رمز السحب (4 أرقام) لطباعة تذكرتك.<br><br><strong>ملاحظة:</strong> يُلغى الحجز تلقائياً إذا نودي رقمك قبل سحب التذكرة.",
-        ticketInstructionArrived: "تذكرتك جاهزة ومطبوعة معك، يرجى متابعة شاشات قاعة الانتظار.",
-        ticketInstructionCalled: "تفضل بالتوجه فوراً إلى الشباك المحدد على الشاشة.",
-        ticketInstructionSkipped: "لقد فاتك الدور، يمكنك حجز تذكرة جديدة الآن بالضغط على الزر أعلاه.",
+        statusCompletedMsg: "شكراً لزيارتك.",
+        ticketInstructionConfirmed: "توجّه إلى جهاز التذاكر عند وصولك للمكتب وأدخل رمز السحب المكوّن من 4 أرقام لطبع تذكرتك.<br><br><strong>تنبيه:</strong> يُلغى الحجز تلقائياً إذا نودي على رقمك قبل سحب التذكرة.",
+        ticketInstructionArrived: "تم سحب تذكرتك الورقية بنجاح.<br><br>تابع شاشات العرض داخل القاعة.",
+        ticketInstructionCalled: "توجّه فوراً إلى الشباك الموضح في شاشات العرض.",
+        ticketInstructionSkipped: "فاتك الدور. يمكنك الآن حجز تذكرة جديدة عبر الزر أعلاه.",
         ticketInstructionCompleted: "شكراً لزيارتكم مكتب بريد حي الأمل.",
         modalCloseBtn: "حسناً",
-        alertTurnTitle: "📢 حان دورك الآن!",
-        alertTurnMsg: (t, c) => `تذكرتك رقم #${t} مدعوة إلى الشباك ${c}!`,
-        alertPrepareTitle: "⏳ استعد، اقترب دورك!",
-        alertPrepareMsg: (rem, t) => `بقي ${rem} أرقام فقط قبل دورك (تذكرة #${t}). يرجى الاقتراب من الشبابيك.`,
-        permTitle: "تفعيل الإشعارات مطلوب",
-        permMsg: "تفعيل الإشعارات ضروري لتنبيهك عند اقتراب دورك حتى لو كانت الشاشة مقفلة.<br><br>اضغط على أيقونة (🔒) بجانب شريط العنوان وفعّل خيار <strong>الإشعارات</strong>."
+        alertTurnTitle: "🔔 حان دورك الآن!",
+        alertTurnMsg: (t, c) => `الرقم #${t} مدعو للتقدم إلى الشباك ${c}!`,
+        alertPrepareTitle: "⚠️ اقترب دورك!",
+        alertPrepareMsg: (rem, t) => `بقي ${rem} أرقام فقط على دورك (التذكرة #${t}). يرجى الاستعداد.`,
+        permTitle: "الإشعارات محجوبة",
+        permMsg: "تفعيل الإشعارات <strong>ضروري</strong> لتنبيهك باقتراب دورك حتى عند قفل الشاشة.<br><br><strong>طريقة التفعيل:</strong><br>1. اضغط على رمز القفل (🔒) بجانب شريط العنوان للموقع.<br>2. فعّل خيار <strong>الإشعارات (Notifications)</strong>.<br>3. أعد تحميل الصفحة."
     }
 };
 
@@ -880,7 +939,7 @@ document.getElementById("langArBtn").addEventListener("click", () => applyLangua
 document.getElementById("langFrBtn").addEventListener("click", () => applyLanguage("fr"));
 
 /* ========================================================
-   إعدادات فايربيس
+   تهيئة فايربيس
 ======================================================== */
 const firebaseConfig = {
   apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
@@ -991,6 +1050,9 @@ permModalCloseBtn.addEventListener("click", () => {
     permModalOverlay.style.display = "none";
 });
 
+/* ========================================================
+   تهيئة FCM للإشعارات
+======================================================== */
 async function initFirebaseMessaging() {
     const supported = await isSupported();
     if (!supported) return;
@@ -1048,6 +1110,9 @@ async function removeFCMTokenFromDatabase() {
     } catch (e) {}
 }
 
+/* ========================================================
+   محرك التنبيه الصوتي الداخلي
+======================================================== */
 function playTone(freq, type, startTime, duration, gainLevel) {
     try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1149,9 +1214,7 @@ function checkAlertsEngine() {
         return; 
     }
 
-    if (currentTicket === lastObservedCurrentTicket) {
-        return;
-    }
+    if (currentTicket === lastObservedCurrentTicket) return;
     lastObservedCurrentTicket = currentTicket;
 
     if (remaining === 0) {
@@ -1215,7 +1278,7 @@ function initAlertPreferences() {
 alertToggle.addEventListener("change", async () => {
     if (alertToggle.checked) {
         if (!("Notification" in window)) {
-            alert("Votre navigateur ne supporte pas les notifications");
+            alert(currentLang === "ar" ? "متصفحكم لا يدعم التنبيهات" : "Votre navigateur ne supporte pas les notifications");
             alertToggle.checked = false;
             return;
         }
@@ -1231,9 +1294,7 @@ alertToggle.addEventListener("change", async () => {
 
         let perm = Notification.permission;
         if (perm !== "granted") {
-            try { 
-                perm = await Notification.requestPermission(); 
-            } catch (e) {}
+            try { perm = await Notification.requestPermission(); } catch (e) {}
         }
 
         if (perm === "denied" || perm !== "granted") {
@@ -1561,9 +1622,9 @@ function updateReservationStatus(status) {
             break;
 
         default:
-            ticketTitleEl.textContent = (currentLang === "ar") ? "حالة الحجز" : "STATUT";
+            ticketTitleEl.textContent = (currentLang === "ar") ? "حالة الحجز" : "STATUT DE RÉSERVATION";
             ticketTitleEl.classList.add("ticket-title-dark");
-            myStatusEl.textContent = (currentLang === "ar") ? "في انتظار التحديث" : "En attente";
+            myStatusEl.textContent = (currentLang === "ar") ? "في انتظار التحديث" : "En attente de mise à jour";
     }
 
     updateReserveButton();
@@ -1826,7 +1887,6 @@ logoutButton.addEventListener("click", async () => {
     }
 });
 
-// بدء التشغيل وتطبيق اللغة المحفوظة
 applyLanguage(currentLang);
 initAlertPreferences();
 updateReserveButton();
