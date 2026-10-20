@@ -3,21 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#123b74">
+<meta name="theme-color" content="#151A5D">
 
 <title>POSTE EL AMAL | Réservation de ticket</title>
 
 <style>
 :root {
-    --primary: #123b74;
-    --primary-dark: #09264d;
-    --secondary: #1976d2;
-    --green: #16a34a;
-    --orange: #f59e0b;
-    --red: #dc2626;
-    --background: #f2f5fa;
+    /* ألوان هوية البريد التونسي الرسمية */
+    --primary: #151A5D;       /* الأزرق الداكن الأساسي */
+    --primary-dark: #0c0f38;  /* أزرق ليلي عميق للتدرج والحالات النشطة */
+    --secondary: #252d87;     /* أزرق متوسط متناسق للحدود والتركيز */
+    --yellow: #F6BE29;        /* الأصفر الذهبي المميز */
+    --yellow-dark: #cf9a11;   /* درجة ذهبية مناسبة لوضوح النصوص والأرقام */
+    --green: #16a34a;         /* أخضر للنجاح */
+    --red: #dc2626;           /* أحمر للإنذار والأخطاء */
+    --background: #f4f6fa;    /* خلفية رمادية ناعمة ومريحة للعين */
     --white: #ffffff;
-    --text: #1e293b;
+    --text: #13173d;          /* نصوص بأزرق غامق جداً */
     --muted: #64748b;
     --border: #e2e8f0;
 }
@@ -40,25 +42,28 @@ header {
     color: white;
     text-align: center;
     padding: 25px 15px 20px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    box-shadow: 0 4px 15px rgba(21, 26, 93, 0.25);
+    border-bottom: 3px solid var(--yellow);
 }
 
 /* تنسيق الشعار ليتناسب مع الخلفية الزرقاء */
 .header-logo {
-    max-height: 75px;
+    max-height: 80px;
     width: auto;
     background: var(--white);
-    padding: 6px 14px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-    margin-bottom: 10px;
+    padding: 8px 18px;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+    margin-bottom: 12px;
     display: inline-block;
     object-fit: contain;
 }
 
 header p {
     font-size: 14px;
-    opacity: 0.9;
+    opacity: 0.95;
+    font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
 .container {
@@ -79,11 +84,12 @@ header p {
     border-radius: 18px;
     padding: 25px 20px;
     margin-bottom: 20px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+    box-shadow: 0 5px 20px rgba(21, 26, 93, 0.06);
+    border: 1px solid #eaedf5;
 }
 
 .section-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: bold;
     color: var(--muted);
     text-align: center;
@@ -111,7 +117,7 @@ header p {
 .waiting-number {
     font-size: 55px;
     font-weight: bold;
-    color: var(--orange);
+    color: var(--yellow-dark);
     margin-top: 10px;
     line-height: 1.1;
 }
@@ -133,16 +139,16 @@ header p {
 }
 
 .status-dot {
-    width: 8px;
-    height: 8px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
-    background: var(--orange);
+    background: var(--yellow);
     display: inline-block;
 }
 
 .status-dot.online { background: var(--green); }
 .status-dot.offline { background: var(--red); }
-.status-dot.warning { background: var(--orange); }
+.status-dot.warning { background: var(--yellow); }
 
 .auth-card { text-align: center; }
 .auth-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 15px; }
@@ -162,6 +168,7 @@ header p {
     border-radius: 50%;
     margin-bottom: 12px;
     object-fit: cover;
+    border: 3px solid var(--yellow);
 }
 
 .user-name { font-size: 17px; font-weight: bold; color: var(--primary); margin-bottom: 6px; }
@@ -184,17 +191,27 @@ button {
 
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.btn-primary { background: var(--primary); color: white; }
-.btn-primary:not(:disabled):hover { background: var(--primary-dark); }
+.btn-primary { 
+    background: var(--primary); 
+    color: white; 
+    box-shadow: 0 4px 12px rgba(21, 26, 93, 0.25);
+}
+.btn-primary:not(:disabled):hover { 
+    background: var(--primary-dark); 
+}
 
-.btn-secondary { background: #e8f0fb; color: var(--primary); margin-top: 15px; }
-.btn-secondary:hover { background: #d6e4f9; }
+.btn-secondary { 
+    background: #eef2f9; 
+    color: var(--primary); 
+    margin-top: 15px; 
+}
+.btn-secondary:hover { background: #e0e7f4; }
 
 .btn-rebook {
     background: var(--primary);
     color: white;
     margin-top: 20px;
-    box-shadow: 0 4px 12px rgba(18, 59, 116, 0.25);
+    box-shadow: 0 4px 12px rgba(21, 26, 93, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -217,7 +234,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     transition: color 0.3s;
 }
 .ticket-title-green  { color: var(--green) !important; }
-.ticket-title-blue   { color: var(--secondary) !important; }
+.ticket-title-blue   { color: var(--primary) !important; }
 .ticket-title-red    { color: var(--red) !important; }
 .ticket-title-dark   { color: var(--primary) !important; }
 
@@ -236,17 +253,19 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     margin: 10px 0 20px;
 }
 
+/* بطاقة كود الحجز المتناسقة مع الأصفر والأزرق */
 .reservation-code {
     display: inline-block;
-    background: #edf5ff;
-    border: 2px solid #c8defa;
+    background: #fffdf5;
+    border: 2px solid var(--yellow);
     padding: 15px 30px;
-    border-radius: 12px;
+    border-radius: 14px;
     color: var(--primary);
     font-size: 42px;
     font-weight: bold;
     letter-spacing: 7px;
     margin: 15px 0;
+    box-shadow: 0 3px 10px rgba(246, 190, 41, 0.15);
 }
 
 .ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; }
@@ -255,18 +274,19 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     margin-top: 15px;
     padding: 12px;
     border-radius: 10px;
-    background: #fff7ed;
-    color: #9a3412;
+    background: #fffdf5;
+    color: #92400e;
     font-weight: bold;
     font-size: 14px;
+    border: 1px solid #fef3c7;
 }
 
-.ticket-status.confirmed { background: #fff7ed; color: #9a3412; }
-.ticket-status.arrived   { background: #dcfce7; color: #166534; }
-.ticket-status.called    { background: #dbeafe; color: #1d4ed8; }
-.ticket-status.skipped   { background: #fee2e2; color: #991b1b; }
-.ticket-status.completed { background: #e2e8f0; color: #334155; }
-.ticket-status.rejected  { background: #fee2e2; color: #991b1b; }
+.ticket-status.confirmed { background: #fffdf5; color: #92400e; }
+.ticket-status.arrived   { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+.ticket-status.called    { background: #eef2fa; color: var(--primary); border-color: #d1dcfa; }
+.ticket-status.skipped   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+.ticket-status.completed { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
+.ticket-status.rejected  { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
 
 /* صندوق التنبيهات */
 .alert-box {
@@ -293,7 +313,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     gap: 8px;
 }
 
-/* زر التبديل العصري (Toggle Switch) */
+/* زر التبديل العصري (Toggle Switch) متناسق مع الأصفر */
 .switch {
     position: relative;
     display: inline-block;
@@ -331,11 +351,12 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 }
 
 input:checked + .slider {
-    background-color: var(--secondary);
+    background-color: var(--yellow);
 }
 
 input:checked + .slider:before {
     transform: translateX(22px);
+    background-color: var(--primary);
 }
 
 .alert-options {
@@ -367,7 +388,7 @@ input:checked + .slider:before {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(12, 15, 56, 0.8);
     z-index: 99999;
     align-items: center;
     justify-content: center;
@@ -441,9 +462,9 @@ input:checked + .slider:before {
 
 .info-banner {
     display: none;
-    background: #eff6ff;
-    border: 1px solid #bfdbfe;
-    color: #1e40af;
+    background: #fffdf5;
+    border: 1px solid var(--yellow);
+    color: #92400e;
     padding: 14px;
     border-radius: 12px;
     margin-bottom: 20px;
@@ -466,8 +487,8 @@ input:checked + .slider:before {
 }
 
 .info-card {
-    background: #eaf2ff;
-    border-left: 4px solid var(--secondary);
+    background: #eef2f9;
+    border-left: 4px solid var(--primary);
     padding: 18px;
     border-radius: 12px;
     font-size: 13px;
@@ -486,7 +507,7 @@ footer {
     .current-number { font-size: 75px; }
     .ticket-number { font-size: 65px; }
     .reservation-code { font-size: 34px; letter-spacing: 5px; padding: 15px 20px; }
-    .header-logo { max-height: 60px; }
+    .header-logo { max-height: 65px; }
 }
 </style>
 </head>
@@ -494,7 +515,6 @@ footer {
 <body>
 
 <header>
-    <!-- تم إضافة الشعار هنا -->
     <img src="logo.png" alt="La Poste Tunisienne" class="header-logo">
     <p>Poste Cité El Amel 6033 Gabès</p>
 </header>
