@@ -136,10 +136,11 @@ header p {
     flex-direction: column;
 }
 
+/* ترتيب العناصر: التعليمات فوق حساب العميل */
 #queueSection { order: 1; }
 #reservationSection, #ticketSection { order: 2; }
-#authSection { order: 3; }
-#infoSection { order: 4; }
+#infoSection { order: 3; }
+#authSection { order: 4; }
 
 .card {
     background: white;
@@ -561,6 +562,7 @@ input:checked + .slider:before {
     font-size: 13px;
     color: #334155;
     line-height: 1.8;
+    margin-bottom: 20px; /* تباعد متناسق مع بطاقة الحساب أسفلها */
 }
 
 body[dir="rtl"] .info-card {
@@ -669,6 +671,15 @@ footer {
         <p class="ticket-message" id="ticketMessage"></p>
     </section>
 
+    <!-- بطاقة التعليمات فوق حساب العميل -->
+    <section class="info-card" id="infoSection">
+        <strong id="lblInfoTitle">Importante</strong><br><br>
+        <span id="lblInfoContent">
+            Vous devez saisir votre numéro et récupérer votre ticket à la borne avant votre tour, sinon il sera dépassé.
+        </span>
+    </section>
+
+    <!-- بطاقة حساب العميل -->
     <section class="card auth-card" id="authSection">
         <h2 id="lblAuthTitle">Compte client</h2>
         <div id="loginSection">
@@ -682,13 +693,6 @@ footer {
             <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
         </div>
         <div class="error-message" id="authError"></div>
-    </section>
-
-    <section class="info-card" id="infoSection">
-        <strong id="lblInfoTitle">Importante</strong><br><br>
-        <span id="lblInfoContent">
-            Vous devez saisir votre numéro et récupérer votre ticket à la borne avant votre tour, sinon il sera dépassé.
-     </span>
     </section>
 
 </main>
@@ -757,7 +761,8 @@ const i18n = {
         btnLoginGoogle: "Se connecter avec Google",
         btnLogout: "Se déconnecter",
         lblInfoTitle: "Importante",
-        lblInfoContent: "Vous devez saisir votre numéro et récupérer votre ticket à la borne avant votre tour, sinon il sera dépassé.",        connReconnecting: "Reconnexion réseau...",
+        lblInfoContent: "Vous devez saisir votre numéro et récupérer votre ticket à la borne avant votre tour, sinon il sera dépassé.",
+        connReconnecting: "Reconnexion réseau...",
         connSysOffline: "Système central déconnecté",
         connBorneOffline: "Borne d'accueil hors ligne",
         connNoPaper: "Borne : Papier épuisé",
@@ -823,7 +828,8 @@ const i18n = {
         btnLoginGoogle: "الدخول بواسطة Google",
         btnLogout: "تسجيل الخروج",
         lblInfoTitle: "هام",
-        lblInfoContent: "يجب إدخال رقمك وسحب التذكرة من الموزع الآلي قبل حلول دورك وإلا سيتم تجاوزه.",        connReconnecting: "جارٍ إعادة الاتصال...",
+        lblInfoContent: "يجب إدخال رقمك وسحب التذكرة من الموزع الآلي قبل حلول دورك وإلا سيتم تجاوزه.",
+        connReconnecting: "جارٍ إعادة الاتصال...",
         connSysOffline: "النظام غير متصل",
         connBorneOffline: "الموزع الآلي غير متصل",
         connNoPaper: "الموزع الآلي: الورق نافد",
