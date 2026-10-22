@@ -7,7 +7,7 @@
 
 <title id="pageTitle">POSTE EL AMAL | Réservation de ticket</title>
 
-<!-- استيراد خط Cairo بأقصى درجات الخشونة (800 و 900 Black) -->
+<!-- استيراد خط Cairo للواجهة العربية فقط بأقصى درجات الخشونة -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@700;800;900&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
     --red: #dc2626;
     --background: #f4f6fa;
     --white: #ffffff;
-    --text: #13173d;
+    --text: #1e293b;
     --muted: #64748b;
     --border: #e2e8f0;
 }
@@ -34,8 +34,11 @@
     padding: 0;
 }
 
+/* ========================================================
+   الخط الفرنسي الافتراضي (طبيعي مثل النموذج المقدم)
+======================================================== */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, Arial, sans-serif;
+    font-family: Arial, Helvetica, sans-serif;
     background: var(--background);
     color: var(--text);
     min-height: 100vh;
@@ -43,10 +46,10 @@ body {
 }
 
 /* ========================================================
-   تطبيق الخط العربي الخشن جداً (Ultra Bold)
+   تطبيق الخط العربي الخشن جداً (فقط عند اختيار اللغة العربية)
 ======================================================== */
 body[dir="rtl"] {
-    font-family: 'Cairo', 'Segoe UI', Tahoma, Arial, sans-serif;
+    font-family: 'Cairo', Arial, sans-serif;
     font-weight: 800;
     text-align: right;
 }
@@ -67,10 +70,16 @@ body[dir="rtl"] p,
 body[dir="rtl"] span,
 body[dir="rtl"] .info-card,
 body[dir="rtl"] .ticket-status,
-body[dir="rtl"] .alert-title {
+body[dir="rtl"] .alert-title,
+body[dir="rtl"] .queue-footer,
+body[dir="rtl"] .alert-options,
+body[dir="rtl"] footer {
     font-weight: 800;
 }
 
+/* ========================================================
+   تثبيت خط وشكل الأرقام لتكون واضحة ومتطابقة
+======================================================== */
 .current-number,
 .waiting-number,
 .ticket-number,
@@ -79,7 +88,7 @@ body[dir="rtl"] .current-number,
 body[dir="rtl"] .waiting-number,
 body[dir="rtl"] .ticket-number,
 body[dir="rtl"] .reservation-code {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Tahoma, Arial, sans-serif !important;
+    font-family: Arial, Helvetica, sans-serif !important;
     direction: ltr !important;
     unicode-bidi: isolate;
     font-variant-numeric: tabular-nums;
@@ -115,7 +124,7 @@ header {
     border: none;
     color: rgba(255, 255, 255, 0.82);
     font-size: 12px;
-    font-weight: 800;
+    font-weight: bold;
     padding: 5px 12px;
     border-radius: 18px;
     cursor: pointer;
@@ -146,8 +155,7 @@ header {
 
 header p {
     font-size: 14px;
-    opacity: 0.95;
-    font-weight: 700;
+    opacity: 0.9;
     letter-spacing: 0.5px;
 }
 
@@ -169,13 +177,13 @@ header p {
     border-radius: 18px;
     padding: 25px 20px;
     margin-bottom: 20px;
-    box-shadow: 0 5px 20px rgba(21, 26, 93, 0.06);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
     border: 1px solid #eaedf5;
 }
 
 .section-title {
-    font-size: 14px;
-    font-weight: 900;
+    font-size: 15px;
+    font-weight: bold;
     color: var(--muted);
     text-align: center;
     text-transform: uppercase;
@@ -184,7 +192,7 @@ header p {
 
 .current-number {
     text-align: center;
-    font-size: 92px;
+    font-size: 90px;
     font-weight: 800;
     color: var(--primary);
     margin: 15px 0 5px;
@@ -200,8 +208,8 @@ header p {
 .waiting-box { text-align: center; }
 
 .waiting-number {
-    font-size: 58px;
-    font-weight: 800;
+    font-size: 55px;
+    font-weight: bold;
     color: var(--yellow-dark);
     margin-top: 10px;
     line-height: 1.1;
@@ -219,13 +227,13 @@ header p {
     justify-content: center;
     gap: 8px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 500;
     color: var(--muted);
 }
 
 .status-dot {
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     background: var(--yellow);
     display: inline-block;
@@ -256,8 +264,8 @@ header p {
     border: 3px solid var(--yellow);
 }
 
-.user-name { font-size: 18px; font-weight: 900; color: var(--primary); margin-bottom: 6px; }
-.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; direction: ltr; font-weight: 600; }
+.user-name { font-size: 17px; font-weight: bold; color: var(--primary); margin-bottom: 6px; }
+.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; direction: ltr; }
 
 .reservation-card { text-align: center; }
 .reservation-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 12px; }
@@ -269,7 +277,7 @@ button {
     border-radius: 12px;
     padding: 17px;
     font-size: 16px;
-    font-weight: 900;
+    font-weight: bold;
     cursor: pointer;
     transition: 0.2s;
 }
@@ -326,13 +334,13 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .ticket-label {
     color: var(--muted);
     font-size: 13px;
-    font-weight: 900;
+    font-weight: bold;
     letter-spacing: 1px;
     margin-top: 15px;
 }
 
 .ticket-number {
-    font-size: 78px;
+    font-size: 75px;
     font-weight: 800;
     color: var(--primary);
     margin: 10px 0 20px;
@@ -344,13 +352,12 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     background: #fffdf5;
     border: 2px solid var(--yellow);
     padding: 15px 30px;
-    border-radius: 14px;
+    border-radius: 12px;
     color: var(--primary);
     font-size: 42px;
-    font-weight: 800;
+    font-weight: bold;
     letter-spacing: 7px;
     margin: 15px 0;
-    box-shadow: 0 3px 10px rgba(246, 190, 41, 0.15);
 }
 
 .ticket-message { font-size: 14px; line-height: 1.8; color: var(--muted); margin-top: 20px; }
@@ -361,7 +368,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     border-radius: 10px;
     background: #fffdf5;
     color: #92400e;
-    font-weight: 900;
+    font-weight: bold;
     font-size: 14px;
     border: 1px solid #fef3c7;
 }
@@ -394,7 +401,7 @@ body[dir="rtl"] .alert-box {
 
 .alert-title {
     font-size: 15px;
-    font-weight: 900;
+    font-weight: bold;
     color: var(--primary);
     display: flex;
     align-items: center;
@@ -453,7 +460,7 @@ input:checked + .slider:before {
     align-items: center;
     font-size: 13px;
     color: #334155;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .alert-select {
@@ -462,11 +469,10 @@ input:checked + .slider:before {
     border: 1px solid #cbd5e1;
     background: white;
     color: var(--primary);
-    font-weight: 900;
+    font-weight: bold;
     font-size: 13px;
     outline: none;
     cursor: pointer;
-    font-family: inherit;
 }
 
 .modal-overlay {
@@ -518,7 +524,7 @@ input:checked + .slider:before {
     border-radius: 12px;
     padding: 14px;
     font-size: 15px;
-    font-weight: 900;
+    font-weight: bold;
 }
 .modal-btn:hover { background: var(--primary-dark); }
 
@@ -534,7 +540,6 @@ input:checked + .slider:before {
     margin-top: 15px;
     font-size: 14px;
     line-height: 1.6;
-    font-weight: 800;
 }
 
 .info-banner {
@@ -546,7 +551,7 @@ input:checked + .slider:before {
     border-radius: 12px;
     margin-bottom: 20px;
     font-size: 14px;
-    font-weight: 800;
+    font-weight: 500;
     line-height: 1.5;
 }
 
@@ -561,7 +566,6 @@ input:checked + .slider:before {
     font-size: 14px;
     line-height: 1.5;
     text-align: center;
-    font-weight: 800;
 }
 
 .info-card {
@@ -585,7 +589,6 @@ footer {
     font-size: 12px;
     color: var(--muted);
     padding: 10px 15px 30px;
-    font-weight: 700;
 }
 
 @media(max-width: 400px) {
@@ -768,7 +771,7 @@ const i18n = {
         lblInfoTitle: "Importante",
         lblInfoContent: "Vous devez saisir votre numéro et récupérer votre ticket à la borne avant votre tour, sinon il sera dépassé.",
         connReconnecting: "Reconnexion réseau...",
-        connSysOffline: "Système déconnecté",
+        connSysOffline: "Système central déconnecté",
         connBorneOffline: "Borne d'accueil hors ligne",
         connNoPaper: "Borne : Papier épuisé",
         connAvailable: "Service disponible",
@@ -1024,9 +1027,7 @@ let lastAlertTimestamp = 0;
 let wakeLock = null;
 
 /* ========================================================
-   
-      تحديد مدة بقاء التذكرة المنتهية أو الفائتة: 1 ساعة كاملة
-تحديد مدة بقاء التذكرة المنتهية أو الفائتة: 1 ساعة كاملة
+   تحديد مدة بقاء التذكرة المنتهية أو الفائتة: 1 ساعة كاملة
 ======================================================== */
 const EXPIRED_RETENTION_MS =  60 * 1000; // 1 ساعة (3600000 ميلي ثانية)
 let autoClearTimer = null;
