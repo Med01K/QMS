@@ -68,7 +68,6 @@ body[dir="rtl"] strong {
 
 body[dir="rtl"] p:not(#headerSubtitle),
 body[dir="rtl"] span,
-body[dir="rtl"] .info-card,
 body[dir="rtl"] .ticket-status,
 body[dir="rtl"] .alert-title,
 body[dir="rtl"] .queue-footer,
@@ -98,7 +97,7 @@ header {
     background: linear-gradient(135deg, var(--primary-dark), var(--primary));
     color: white;
     text-align: center;
-    padding: 20px 15px 18px; /* ضبط الحاشية السفلية لتحقيق التوازن التام مع الخط الأصفر */
+    padding: 20px 15px 18px;
     box-shadow: 0 4px 15px rgba(21, 26, 93, 0.25);
     border-bottom: 3px solid var(--yellow);
     position: relative;
@@ -151,7 +150,6 @@ body[dir="rtl"] .lang-btn.active {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-/* تكبير المسافة أسفل الشعار لتتناسق بجمالية مع الخط الأصفر الفاصل */
 .header-logo {
     max-height: 80px;
     width: auto;
@@ -159,7 +157,7 @@ body[dir="rtl"] .lang-btn.active {
     padding: 8px 18px;
     border-radius: 14px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-    margin: 0 auto 15px auto; /* زيادة التباعد بين الشعار والنص */
+    margin: 0 auto 15px auto;
     display: block;
     object-fit: contain;
 }
@@ -173,7 +171,7 @@ header p {
     margin: 0;
 }
 
-/* العنوان في النسخة العربية (متوازن ومتناسق) */
+/* العنوان في النسخة العربية */
 body[dir="rtl"] #headerSubtitle {
     font-size: 13px !important;
     font-weight: 600 !important;
@@ -193,8 +191,7 @@ body[dir="rtl"] #headerSubtitle {
 
 #queueSection { order: 1; }
 #reservationSection, #ticketSection { order: 2; }
-#infoSection { order: 3; }
-#authSection { order: 4; }
+#authSection { order: 3; }
 
 .card {
     background: white;
@@ -346,10 +343,13 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 }
 
 .ticket-card h2 { 
-    font-size: 22px; 
+    font-size: 21px; 
     margin-bottom: 20px; 
     transition: color 0.3s;
+    line-height: 1.4;
 }
+/* ألوان حالات التذكرة */
+.ticket-title-yellow { color: #d97706 !important; } /* لون أصفر/كهرماني واضح ومريح للنظر */
 .ticket-title-green  { color: var(--green) !important; }
 .ticket-title-blue   { color: var(--primary) !important; }
 .ticket-title-red    { color: var(--red) !important; }
@@ -592,22 +592,6 @@ input:checked + .slider:before {
     text-align: center;
 }
 
-.info-card {
-    background: #eef2f9;
-    border-right: 4px solid var(--primary);
-    padding: 18px;
-    border-radius: 12px;
-    font-size: 13px;
-    color: #334155;
-    line-height: 1.8;
-    margin-bottom: 20px;
-}
-
-body[dir="ltr"] .info-card {
-    border-right: none;
-    border-left: 4px solid var(--primary);
-}
-
 footer {
     text-align: center;
     font-size: 12px;
@@ -668,7 +652,7 @@ footer {
     <section class="card ticket-card" id="ticketSection">
         <div class="info-banner" id="duplicateNotice"></div>
 
-        <h2 id="ticketTitle" class="ticket-title-green">تم تأكيد الحجز</h2>
+        <h2 id="ticketTitle" class="ticket-title-yellow">تم تأكيد الحجز - في انتظار طباعة التذكرة</h2>
 
         <div class="ticket-label" id="lblYourNumber">رقم تذكرتك</div>
         <div class="ticket-number" id="myTicket">---</div>
@@ -706,14 +690,6 @@ footer {
         <div class="error-message" id="ticketError"></div>
 
         <p class="ticket-message" id="ticketMessage"></p>
-    </section>
-
-    <!-- بطاقة التعليمات -->
-    <section class="info-card" id="infoSection">
-        <strong id="lblInfoTitle">هام</strong><br><br>
-        <span id="lblInfoContent">
-            يجب إدخال رقمك وسحب التذكرة من الموزع الآلي قبل حلول دورك وإلا سيتم تجاوزه.
-        </span>
     </section>
 
     <!-- بطاقة حساب العميل -->
@@ -792,8 +768,6 @@ const i18n = {
         lblAuthDesc: "Connectez-vous avec votre compte Google pour réserver un ticket.",
         btnLoginGoogle: "Se connecter avec Google",
         btnLogout: "Se déconnecter",
-        lblInfoTitle: "Importante",
-        lblInfoContent: "Vous devez saisir votre numéro et récupérer votre ticket à la borne avant votre tour, sinon il sera dépassé.",
         connReconnecting: "Reconnexion réseau...",
         connSysOffline: "Système central déconnecté",
         connBorneOffline: "Borne d'accueil hors ligne",
@@ -809,7 +783,7 @@ const i18n = {
         errLogout: "Impossible de se déconnecter.",
         statusPendingTitle: "RÉSERVATION EN COURS",
         statusPendingMsg: "Votre réservation est en cours de traitement...",
-        statusConfirmedTitle: "RÉSERVATION CONFIRMÉE",
+        statusConfirmedTitle: "RÉSERVATION CONFIRMÉE (EN ATTENTE D'IMPRESSION)",
         statusConfirmedMsg: "Présentez votre code à la borne pour imprimer votre ticket.",
         statusArrivedTitle: "ARRIVÉE CONFIRMÉE",
         statusArrivedMsg: "Ticket récupéré ! Veuillez attendre votre appel.",
@@ -859,8 +833,6 @@ const i18n = {
         lblAuthDesc: "سجّل دخولك بحساب Google لتأكيد حجز التذكرة.",
         btnLoginGoogle: "الدخول بواسطة Google",
         btnLogout: "تسجيل الخروج",
-        lblInfoTitle: "هام",
-        lblInfoContent: "يجب إدخال رقمك وسحب التذكرة من الموزع الآلي قبل حلول دورك وإلا سيتم تجاوزه.",
         connReconnecting: "جارٍ إعادة الاتصال...",
         connSysOffline: "النظام غير متصل",
         connBorneOffline: "الموزع الآلي غير متصل",
@@ -876,7 +848,7 @@ const i18n = {
         errLogout: "فشل تسجيل الخروج.",
         statusPendingTitle: "معالجة الحجز",
         statusPendingMsg: "جارٍ تأكيد الحجز مع الموزع الآلي...",
-        statusConfirmedTitle: "تم تأكيد الحجز",
+        statusConfirmedTitle: "تم تأكيد الحجز - في انتظار طباعة التذكرة",
         statusConfirmedMsg: "أدخل رمز الاستلام في الموزع الآلي فور وصولك لسحب تذكرتك.",
         statusArrivedTitle: "تم تأكيد الحضور",
         statusArrivedMsg: "تم سحب التذكرة بنجاح! يرجى انتظار المناداة في القاعة.",
@@ -931,8 +903,6 @@ function applyLanguage(lang) {
     document.getElementById("lblAuthDesc").textContent = t.lblAuthDesc;
     document.getElementById("googleLoginButton").textContent = t.btnLoginGoogle;
     document.getElementById("logoutButton").textContent = t.btnLogout;
-    document.getElementById("lblInfoTitle").textContent = t.lblInfoTitle;
-    document.getElementById("lblInfoContent").innerHTML = t.lblInfoContent;
     document.getElementById("duplicateNotice").innerHTML = t.duplicateNotice;
     document.getElementById("inAppModalCloseBtn").textContent = t.modalCloseBtn;
     document.getElementById("permModalCloseBtn").textContent = t.modalCloseBtn;
@@ -1638,7 +1608,7 @@ function updateReservationStatus(status) {
         case "confirmed":
         case "reserved":
             ticketTitleEl.textContent = t.statusConfirmedTitle;
-            ticketTitleEl.classList.add("ticket-title-green");
+            ticketTitleEl.classList.add("ticket-title-yellow"); /* تطبيق اللون الكهرماني/الأصفر */
             myStatusEl.textContent = t.statusConfirmedMsg;
             myStatusEl.classList.add("confirmed");
             ticketMessageEl.innerHTML = t.ticketInstructionConfirmed;
