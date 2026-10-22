@@ -158,8 +158,8 @@ body[dir="rtl"] .lang-btn.active {
     padding: 8px 18px;
     border-radius: 14px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-    margin-bottom: 12px;
-    display: inline-block;
+    margin: 0 auto 10px auto; /* مسافة ثابتة تحت الشعار بدقة */
+    display: block;            /* إلغاء المسافات غير المرئية */
     object-fit: contain;
 }
 
@@ -170,13 +170,14 @@ header p {
     letter-spacing: 0.3px;
 }
 
-/* ضبط العنوان الفرعي في العربية ليكون هادئاً وصغيراً ومتناسقاً */
+/* العنوان في النسخة العربية (معادلة المسافة لخط Cairo) */
 body[dir="rtl"] #headerSubtitle {
-    font-size: 12.5px !important;
-    font-weight: 600 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.2 !important;
+    margin-top: -2px !important; /* يمتص الفراغ الداخلي لخط Cairo لتتطابق المسافة تماماً */
     opacity: 0.85;
-    letter-spacing: 0;
-    margin-top: 3px;
 }
 
 .container {
@@ -1047,9 +1048,9 @@ let lastAlertTimestamp = 0;
 let wakeLock = null;
 
 /* ========================================================
-   تحديد مدة بقاء التذكرة المنتهية أو الفائتة: 1 ساعة كاملة
+   تحديد مدة بقاء التذكرة المنتهية أو الفائتة:20دق
 ======================================================== */
-const EXPIRED_RETENTION_MS = 60 * 60 * 1000; 
+const EXPIRED_RETENTION_MS = 20 * 60 * 1000; 
 let autoClearTimer = null;
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
