@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#151A5D">
 
-<title id="pageTitle">POSTE EL AMAL | Réservation de ticket</title>
+<title id="pageTitle">بريد حي الأمل | حجز التذاكر</title>
 
 <!-- استيراد خط Cairo بأوزان متعددة لضمان التدرج السليم بين العناوين والنصوص الثانوية -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -35,7 +35,7 @@
 }
 
 /* ========================================================
-   الخط الفرنسي الافتراضي
+   الخط الافتراضي العام
 ======================================================== */
 body {
     font-family: Arial, Helvetica, sans-serif;
@@ -158,8 +158,8 @@ body[dir="rtl"] .lang-btn.active {
     padding: 8px 18px;
     border-radius: 14px;
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-    margin: 0 auto 10px auto; /* مسافة ثابتة تحت الشعار بدقة */
-    display: block;            /* إلغاء المسافات غير المرئية */
+    margin: 0 auto 10px auto;
+    display: block;
     object-fit: contain;
 }
 
@@ -168,16 +168,16 @@ header p {
     font-size: 13.5px;
     opacity: 0.85;
     letter-spacing: 0.3px;
-    line-height: 1.2; /* يُفضّل إضافة هذا السطر ليتطابق ارتفاع السطر الفرنسي مع العربي تماماً */
+    line-height: 1.2;
 }
 
 /* العنوان في النسخة العربية (معادلة المسافة لخط Cairo) */
 body[dir="rtl"] #headerSubtitle {
     font-size: 13px !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     letter-spacing: 0 !important;
     line-height: 1.2 !important;
-    margin-top: -2px !important; /* يمتص الفراغ الداخلي لخط Cairo لتتطابق المسافة تماماً */
+    margin-top: -2px !important;
     opacity: 0.85;
 }
 
@@ -408,11 +408,11 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     border: 1px solid #e2e8f0;
     border-radius: 14px;
     padding: 16px 18px;
-    text-align: left;
+    text-align: right;
 }
 
-body[dir="rtl"] .alert-box {
-    text-align: right;
+body[dir="ltr"] .alert-box {
+    text-align: left;
 }
 
 .alert-header {
@@ -592,7 +592,7 @@ input:checked + .slider:before {
 
 .info-card {
     background: #eef2f9;
-    border-left: 4px solid var(--primary);
+    border-right: 4px solid var(--primary);
     padding: 18px;
     border-radius: 12px;
     font-size: 13px;
@@ -601,9 +601,9 @@ input:checked + .slider:before {
     margin-bottom: 20px;
 }
 
-body[dir="rtl"] .info-card {
-    border-left: none;
-    border-right: 4px solid var(--primary);
+body[dir="ltr"] .info-card {
+    border-right: none;
+    border-left: 4px solid var(--primary);
 }
 
 footer {
@@ -622,42 +622,42 @@ footer {
 </style>
 </head>
 
-<body>
+<body dir="rtl">
 
 <header>
     <div class="lang-switcher">
-        <button type="button" class="lang-btn" id="langArBtn">عربي</button>
-        <button type="button" class="lang-btn active" id="langFrBtn">FR</button>
+        <button type="button" class="lang-btn active" id="langArBtn">عربي</button>
+        <button type="button" class="lang-btn" id="langFrBtn">FR</button>
     </div>
 
     <img src="logo.png" alt="البريد التونسي | La Poste Tunisienne" class="header-logo">
-    <p id="headerSubtitle">Poste Cité El Amel 6033 Gabès</p>
+    <p id="headerSubtitle">مكتب بريد حي الأمل 6033 قابس</p>
 </header>
 
 <main class="container">
 
     <section class="card" id="queueSection">
-        <div class="section-title" id="lblCurrentNumber">Numéro en cours</div>
+        <div class="section-title" id="lblCurrentNumber">الرقم الحالي</div>
         <div class="current-number" id="currentTicket">---</div>
         
         <div class="divider"></div>
         
         <div class="waiting-box">
-            <div class="section-title" id="lblWaitingCount">Personnes en attente</div>
+            <div class="section-title" id="lblWaitingCount">عدد المنتظرين</div>
             <div class="waiting-number" id="waitingCount">--</div>
         </div>
 
         <div class="queue-footer">
             <span class="status-dot" id="statusDot"></span>
-            <span id="connectionStatus">Connexion...</span>
+            <span id="connectionStatus">جارٍ الاتصال...</span>
         </div>
     </section>
 
     <section class="card reservation-card" id="reservationSection">
-        <h2 id="lblReservationTitle">Réservation en ligne</h2>
-        <p id="lblReservationDesc">Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.</p>
+        <h2 id="lblReservationTitle">حجز تذكرة عن بُعد</h2>
+        <p id="lblReservationDesc">احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.</p>
         
-        <button class="btn-primary" id="reserveButton" disabled>RÉSERVER UN TICKET</button>
+        <button class="btn-primary" id="reserveButton" disabled>حجز تذكرة</button>
         
         <div class="warning-banner" id="printerOfflineBanner"></div>
         <div class="error-message" id="reservationError"></div>
@@ -666,40 +666,40 @@ footer {
     <section class="card ticket-card" id="ticketSection">
         <div class="info-banner" id="duplicateNotice"></div>
 
-        <h2 id="ticketTitle" class="ticket-title-green">RÉSERVATION CONFIRMÉE</h2>
+        <h2 id="ticketTitle" class="ticket-title-green">تم تأكيد الحجز</h2>
 
-        <div class="ticket-label" id="lblYourNumber">VOTRE NUMÉRO</div>
+        <div class="ticket-label" id="lblYourNumber">رقم تذكرتك</div>
         <div class="ticket-number" id="myTicket">---</div>
 
-        <div class="ticket-label" id="lblPickupCode">CODE DE RETRAIT</div>
+        <div class="ticket-label" id="lblPickupCode">رمز الاستلام</div>
         <div class="reservation-code" id="myCode">----</div>
 
-        <div class="ticket-status" id="myStatus">En attente de confirmation</div>
+        <div class="ticket-status" id="myStatus">في انتظار التأكيد</div>
 
         <!-- صندوق التنبيهات -->
         <div class="alert-box" id="alertBox">
             <div class="alert-header">
-                <span class="alert-title" id="lblAlertTitle">🔔 Activer les notifications</span>
-                <label class="switch" title="Activer / Désactiver">
+                <span class="alert-title" id="lblAlertTitle">🔔 تفعيل التنبيهات</span>
+                <label class="switch" title="تفعيل / تعطيل">
                     <input type="checkbox" id="alertToggle">
                     <span class="slider"></span>
                 </label>
             </div>
             <div class="alert-options" id="alertOptionsArea">
-                <span id="lblAlertMargin">M'avertir à l'avance :</span>
+                <span id="lblAlertMargin">تنبيهي مسبقاً قبل:</span>
                 <select id="alertMarginSelect" class="alert-select">
-                    <option value="2">2 pers. avant</option>
-                    <option value="5">5 pers. avant</option>
-                    <option value="10" selected>10 pers. avant</option>
-                    <option value="15">15 pers. avant</option>
-                    <option value="30">30 pers. avant</option>
+                    <option value="2">2 منتظرين</option>
+                    <option value="5">5 منتظرين</option>
+                    <option value="10" selected>10 منتظرين</option>
+                    <option value="15">15 منتظرين</option>
+                    <option value="30">30 منتظرين</option>
                 </select>
             </div>
         </div>
 
         <!-- زر الحجز المباشر -->
         <button class="btn-rebook" id="newReservationButton" style="display:none;">
-            RÉSERVER UN NOUVEAU TICKET
+            حجز تذكرة جديدة
         </button>
         <div class="error-message" id="ticketError"></div>
 
@@ -708,24 +708,24 @@ footer {
 
     <!-- بطاقة التعليمات -->
     <section class="info-card" id="infoSection">
-        <strong id="lblInfoTitle">Importante</strong><br><br>
+        <strong id="lblInfoTitle">هام</strong><br><br>
         <span id="lblInfoContent">
-            Vous devez saisir votre numéro et récupérer votre ticket à la borne avant votre tour, sinon il sera dépassé.
+            يجب إدخال رقمك وسحب التذكرة من الموزع الآلي قبل حلول دورك وإلا سيتم تجاوزه.
         </span>
     </section>
 
     <!-- بطاقة حساب العميل -->
     <section class="card auth-card" id="authSection">
-        <h2 id="lblAuthTitle">Compte client</h2>
+        <h2 id="lblAuthTitle">حساب المستخدم</h2>
         <div id="loginSection">
-            <p id="lblAuthDesc">Connectez-vous avec votre compte Google pour réserver un ticket.</p>
-            <button class="btn-google" id="googleLoginButton">Se connecter avec Google</button>
+            <p id="lblAuthDesc">سجّل دخولك بحساب Google لتأكيد حجز التذكرة.</p>
+            <button class="btn-google" id="googleLoginButton">الدخول بواسطة Google</button>
         </div>
         <div id="userSection" style="display:none;">
-            <img id="userPhoto" class="user-photo" alt="Photo du profil">
+            <img id="userPhoto" class="user-photo" alt="صورة الحساب">
             <div class="user-name" id="userName"></div>
             <div class="user-email" id="userEmail"></div>
-            <button class="btn-secondary" id="logoutButton">Se déconnecter</button>
+            <button class="btn-secondary" id="logoutButton">تسجيل الخروج</button>
         </div>
         <div class="error-message" id="authError"></div>
     </section>
@@ -735,24 +735,24 @@ footer {
 <div class="modal-overlay" id="inAppModalOverlay">
     <div class="modal-card">
         <div class="modal-icon" id="inAppModalIcon">🔔</div>
-        <h3 id="inAppModalTitle">Rappel de votre tour</h3>
-        <p id="inAppModalMsg">Votre numéro approche de son passage au guichet.</p>
-        <button type="button" class="modal-btn" id="inAppModalCloseBtn">J'AI COMPRIS</button>
+        <h3 id="inAppModalTitle">تذكير باقتراب دورك</h3>
+        <p id="inAppModalMsg">اقترب موعد تقدمك إلى الشباك.</p>
+        <button type="button" class="modal-btn" id="inAppModalCloseBtn">حسناً</button>
     </div>
 </div>
 
 <div class="modal-overlay" id="permModalOverlay">
     <div class="modal-card">
         <div class="modal-icon" style="color: var(--red);">🔕</div>
-        <h3 style="color: var(--red); margin-bottom: 12px;" id="lblPermDeniedTitle">Notifications bloquées</h3>
+        <h3 style="color: var(--red); margin-bottom: 12px;" id="lblPermDeniedTitle">الإشعارات محجوبة</h3>
         <p style="text-align: inherit; font-size: 14px; line-height: 1.7; color: #475569; margin-bottom: 22px;" id="lblPermDeniedMsg">
-            L'activation des notifications est <strong>indispensable</strong> pour être averti à l'avance de votre tour lorsque votre écran est verrouillé ou que vous quittez la page.<br><br>
-            <strong>Comment les autoriser ?</strong><br>
-            1. Cliquez sur l'icône de cadenas ou de réglages (🔒) à gauche de l'adresse du site.<br>
-            2. Activez l'option <strong>Notifications</strong>.<br>
-            3. Rechargez ensuite la page pour appliquer.
+            تفعيل الإشعارات ضروري لتنبيهك باقتراب دورك أثناء قفل الهاتف أو مغادرة الصفحة.<br><br>
+            <strong>طريقة التفعيل:</strong><br>
+            1. اضغط على رمز القفل أو الإعدادات (🔒) بجانب عنوان الموقع.<br>
+            2. فعّل خيار <strong>الإشعارات (Notifications)</strong>.<br>
+            3. أعد تحميل الصفحة.
         </p>
-        <button type="button" class="modal-btn" id="permModalCloseBtn">J'AI COMPRIS</button>
+        <button type="button" class="modal-btn" id="permModalCloseBtn">حسناً</button>
     </div>
 </div>
 
@@ -899,7 +899,10 @@ const i18n = {
     }
 };
 
-let currentLang = localStorage.getItem("poste_elamal_lang") || "fr";
+/* ========================================================
+   تحديد اللغة العربية كخيار افتراضي أولي
+======================================================== */
+let currentLang = localStorage.getItem("poste_elamal_lang") || "ar";
 
 function applyLanguage(lang) {
     currentLang = lang;
@@ -1049,7 +1052,7 @@ let lastAlertTimestamp = 0;
 let wakeLock = null;
 
 /* ========================================================
-   تحديد مدة بقاء التذكرة المنتهية أو الفائتة:20دق
+   تحديد مدة بقاء التذكرة المنتهية أو الفائتة: 20 دقيقة
 ======================================================== */
 const EXPIRED_RETENTION_MS = 20 * 60 * 1000; 
 let autoClearTimer = null;
