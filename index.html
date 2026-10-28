@@ -7,10 +7,10 @@
 
 <title id="pageTitle">بريد حي الأمل | حجز التذاكر</title>
 
-<!-- استيراد خط Cairo بأوزان متعددة لضمان التدرج السليم بين العناوين والنصوص الثانوية -->
+<!-- استيراد خط Cairo بأوزان متعددة لضبط التناسق التام بين النصوص -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <style>
 :root {
@@ -19,7 +19,7 @@
     --secondary: #252d87;
     --yellow: #F6BE29;
     --yellow-dark: #cf9a11;
-    --personal-crimson: #b91c1c; /* اللون القرمزي لعدد الأشخاص قبلك */
+    --personal-crimson: #b91c1c; /* لون مميز وواضح لعدد الأشخاص قبلك بعد الحجز */
     --personal-label: #991b1b;
     --green: #16a34a;
     --red: #dc2626;
@@ -37,7 +37,7 @@
 }
 
 /* ========================================================
-   الخط الافتراضي العام
+   الخط العام للغة الفرنسية والافتراضية
 ======================================================== */
 body {
     font-family: Arial, Helvetica, sans-serif;
@@ -48,34 +48,61 @@ body {
 }
 
 /* ========================================================
-   تطبيق الخط العربي الخشن (مع استثناء العناصر الدقيقة)
+   تطبيق الخط العربي الخشن مع استثناء العناصر المحددة
 ======================================================== */
 body[dir="rtl"] {
     font-family: 'Cairo', Arial, sans-serif;
-    font-weight: 800;
+    font-weight: 700;
     text-align: right;
 }
 
-body[dir="rtl"] button:not(.lang-btn),
+/* العناوين والأزرار الرئيسية فقط تكون عريضة وواضحة */
 body[dir="rtl"] h2,
 body[dir="rtl"] h3,
 body[dir="rtl"] .section-title,
 body[dir="rtl"] .ticket-label,
-body[dir="rtl"] .user-badge-name,
+body[dir="rtl"] .btn-primary,
+body[dir="rtl"] .btn-google-reserve,
+body[dir="rtl"] .btn-rebook,
 body[dir="rtl"] strong {
     font-family: 'Cairo', sans-serif;
-    font-weight: 600 !important;
+    font-weight: 800;
     letter-spacing: -0.3px;
 }
 
 body[dir="rtl"] p:not(#headerSubtitle),
-body[dir="rtl"] span,
+body[dir="rtl"] span:not(.user-badge-name):not(#lblLogout),
 body[dir="rtl"] .ticket-status,
 body[dir="rtl"] .alert-title,
 body[dir="rtl"] .queue-footer,
 body[dir="rtl"] .alert-options,
 body[dir="rtl"] footer {
-    font-weight: 800;
+    font-weight: 700;
+}
+
+/* ========================================================
+   جعل اسم المستخدم وزر الخروج غير خشن (خط معتدل ومريح)
+======================================================== */
+.user-badge-name,
+body[dir="rtl"] .user-badge-name {
+    font-family: 'Cairo', Arial, sans-serif !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important; /* ليس خشناً */
+    color: var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0 !important;
+}
+
+.btn-logout,
+body[dir="rtl"] .btn-logout,
+.btn-logout span,
+body[dir="rtl"] .btn-logout span {
+    font-family: 'Cairo', Arial, sans-serif !important;
+    font-size: 12px !important;
+    font-weight: 600 !important; /* ليس خشناً */
+    letter-spacing: 0 !important;
 }
 
 /* ========================================================
@@ -165,7 +192,6 @@ body[dir="rtl"] .lang-btn.active {
     object-fit: contain;
 }
 
-/* ضبط العنوان الفرعي */
 header p {
     font-size: 13.5px;
     opacity: 0.85;
@@ -196,7 +222,7 @@ body[dir="rtl"] #headerSubtitle {
 #reservationSection, #ticketSection { order: 2; }
 
 /* ========================================================
-   شريط حساب المستخدم المدمج والأنيق (User Badge)
+   شريط حساب العميل المدمج (User Badge)
 ======================================================== */
 .user-badge {
     display: flex;
@@ -233,21 +259,10 @@ body[dir="ltr"] .user-badge {
     background: #f1f5f9;
 }
 
-.user-badge-name {
-    font-size: 13.5px;
-    font-weight: 700;
-    color: var(--primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
 .btn-logout {
     width: auto !important;
     padding: 6px 12px !important;
     border-radius: 20px !important;
-    font-size: 12px !important;
-    font-weight: 750 !important;
     background: #fee2e2 !important;
     color: #991b1b !important;
     display: inline-flex !important;
@@ -304,7 +319,7 @@ body[dir="ltr"] .user-badge {
     transition: all 0.3s ease;
 }
 
-/* تنسيق عدد المنتظرين العام قبل الحجز */
+/* تنسيق عدد المنتظرين العام قبل الحجز (باللون الذهبي) */
 .waiting-number {
     font-size: 55px;
     font-weight: bold;
@@ -314,13 +329,13 @@ body[dir="ltr"] .user-badge {
     transition: color 0.3s ease;
 }
 
-/* تنسيق خاص بعد الحجز: عدد الأشخاص قبلك باللون القرمزي الهادئ */
+/* تنسيق خاص بعد الحجز: عدد الأشخاص قبلك باللون القرمزي الواضح والجميل */
 .waiting-box.is-personal .section-title {
-    color: var(--muted) !important;
+    color: var(--personal-label) !important;
 }
 
 .waiting-number.personal-count {
-    color: var(--personal-label) !important; 
+    color: var(--personal-crimson) !important; 
     text-shadow: none !important;
 }
 
@@ -382,9 +397,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     background: var(--primary-dark); 
 }
 
-/* ========================================================
-   زر الحجز المباشر عبر Google (الذكي والأنيق)
-======================================================== */
+/* زر الحجز المباشر عبر Google */
 .btn-google-reserve {
     background: #ffffff !important;
     color: #1e293b !important;
@@ -394,7 +407,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     align-items: center;
     justify-content: center;
     gap: 12px;
-    font-weight: 900 !important;
+    font-weight: 800 !important;
 }
 
 .btn-google-reserve:hover:not(:disabled) {
@@ -687,7 +700,6 @@ footer {
 <body dir="rtl">
 
 <header>
-    <!-- مبدل اللغة: FR على اليسار وعربي على اليمين دائماً -->
     <div class="lang-switcher">
         <button type="button" class="lang-btn" id="langFrBtn">FR</button>
         <button type="button" class="lang-btn active" id="langArBtn">عربي</button>
@@ -699,7 +711,7 @@ footer {
 
 <main class="container">
 
-    <!-- شريحة حساب المستخدم المصغرة والأنيقة (تظهر فقط عند تسجيل الدخول) -->
+    <!-- شريحة حساب العميل المصغرة بالأعلى -->
     <div id="userBadgeSection">
         <div class="user-badge" id="userBadge" style="display: none;">
             <div class="user-badge-info">
@@ -707,7 +719,7 @@ footer {
                 <span class="user-badge-name" id="userName"></span>
             </div>
             <button type="button" class="btn-logout" id="logoutButton" title="تسجيل الخروج">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
                     <line x1="21" y1="12" x2="9" y2="12"></line>
@@ -723,6 +735,7 @@ footer {
         
         <div class="divider"></div>
         
+        <!-- صندوق الانتظار: يتغير لونه ونصّه تلقائياً بعد الحجز -->
         <div class="waiting-box" id="waitingBox">
             <div class="section-title" id="lblWaitingCount">عدد المنتظرين</div>
             <div class="waiting-number" id="waitingCount">--</div>
@@ -738,7 +751,6 @@ footer {
         <h2 id="lblReservationTitle">حجز تذكرة عن بُعد</h2>
         <p id="lblReservationDesc">احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.</p>
         
-        <!-- زر الحجز المباشر (يتحول تلقائياً إلى زر Google عند عدم تسجيل الدخول) -->
         <button class="btn-primary" id="reserveButton" disabled>حجز تذكرة</button>
         
         <div class="warning-banner" id="printerOfflineBanner"></div>
@@ -756,7 +768,6 @@ footer {
 
         <div class="ticket-status" id="myStatus">في انتظار التأكيد</div>
 
-        <!-- صندوق التنبيهات -->
         <div class="alert-box" id="alertBox">
             <div class="alert-header">
                 <span class="alert-title" id="lblAlertTitle">🔔 تفعيل التنبيهات</span>
@@ -777,7 +788,6 @@ footer {
             </div>
         </div>
 
-        <!-- زر الحجز بعد انتهاء أو فوات التذكرة -->
         <button class="btn-rebook" id="newReservationButton" style="display:none;">
             حجز تذكرة جديدة
         </button>
@@ -949,9 +959,6 @@ const i18n = {
     }
 };
 
-/* ========================================================
-   تحديد اللغة الافتراضية
-======================================================== */
 let currentLang = localStorage.getItem("poste_elamal_lang") || "ar";
 
 function applyLanguage(lang) {
@@ -1107,7 +1114,7 @@ function formatNumber(number) {
 }
 
 /* ========================================================
-   تحديث عرض عدد المنتظرين / عدد الأشخاص قبلك ديناميكياً
+   تحديث عرض عدد المنتظرين / الأشخاص قبلك ديناميكياً
 ======================================================== */
 function updateWaitingDisplay() {
     const t = i18n[currentLang];
@@ -1128,7 +1135,7 @@ function updateWaitingDisplay() {
     if (isUserActive) {
         const remainingDistance = calculateDistanceToTurn(activeUserTicketData.ticket, currentTicket);
         if (remainingDistance !== null) {
-            // بعد الحجز: إظهار عدد الأشخاص قبلك باللون القرمزي الهادئ
+            // بعد الحجز: إظهار عدد الأشخاص قبلك باللون القرمزي الواضح
             lblWaitingCountEl.textContent = t.lblWaitingBeforeYou;
             waitingCountEl.textContent = remainingDistance;
             waitingCountEl.classList.add("personal-count");
@@ -1137,7 +1144,7 @@ function updateWaitingDisplay() {
         }
     }
 
-    // قبل الحجز أو بعد انتهاء التذكرة: إظهار عدد المنتظرين العام باللون الذهبي
+    // قبل الحجز أو بعد انتهاء التذكرة: إظهار عدد المنتظرين الكلي باللون الأصفر/الذهبي
     lblWaitingCountEl.textContent = t.lblWaitingCount;
     waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
     waitingCountEl.classList.remove("personal-count");
@@ -1595,9 +1602,6 @@ onValue(queueRef, (snapshot) => {
     checkMasterStatus();
 });
 
-/* ========================================================
-   تحديث مظهر وحالة زر الحجز الرئيسي ديناميكياً
-======================================================== */
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
@@ -1616,7 +1620,6 @@ function updateReserveButton() {
         printerOfflineBanner.style.display = "none";
     }
 
-    // الزر يكون نشطاً إذا كانت الأجهزة جاهزة، سواء كان المستخدم مسجلاً أم لا
     reserveButton.disabled = !isHardwareReady || reservationInProgress || loginInProgress || hasActiveReservation;
     newReservationButton.disabled = !isHardwareReady || reservationInProgress;
 
@@ -1639,7 +1642,6 @@ function updateReserveButton() {
     } else if (!serviceAvailable) {
         reserveButton.textContent = t.btnServiceSuspended;
     } else {
-        // إذا كان النظام جاهزاً والمستخدم غير مسجل: يظهر زر الدخول والحجز المباشر
         if (!userLoggedIn) {
             reserveButton.classList.remove("btn-primary");
             reserveButton.classList.add("btn-google-reserve");
@@ -1665,9 +1667,6 @@ function clearError() {
     ticketError.textContent = "";
 }
 
-/* ========================================================
-   عرض بطاقة التذكرة مباشرة وبشكل اعتيادي دائم
-======================================================== */
 function showReservation(reservation) {
     activeUserTicketData = reservation;
     reservationSection.style.display = "none";
@@ -1950,9 +1949,6 @@ async function createReservation() {
     }
 }
 
-/* ========================================================
-   الدخول بواسطة Google ثم الحجز المباشر فوراً وبنقرة واحدة
-======================================================== */
 async function loginAndReserve() {
     const t = i18n[currentLang];
     if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
@@ -1969,7 +1965,6 @@ async function loginAndReserve() {
         if (result && result.user) {
             currentUser = result.user;
 
-            // التحقق مما إذا كان لدى المستخدم تذكرة نشطة مسبقاً
             const localSaved = loadReservation();
             const isOvertaken = localSaved && isTicketOvertaken(localSaved.ticket, currentTicket);
             const hasActiveReservation = localSaved && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status) && !isOvertaken;
@@ -1977,7 +1972,6 @@ async function loginAndReserve() {
             if (hasActiveReservation) {
                 showReservation(localSaved);
             } else {
-                // إذا لم يكن لديه حجز، يتم إطلاق طلب الحجز فوراً وتلقائياً
                 await createReservation();
             }
         }
@@ -1991,7 +1985,6 @@ async function loginAndReserve() {
     }
 }
 
-/* التوجيه الذكي عند الضغط على زر الحجز الرئيسي */
 reserveButton.addEventListener("click", () => {
     if (!currentUser) {
         loginAndReserve();
@@ -2021,7 +2014,6 @@ newReservationButton.addEventListener("click", async () => {
     await createReservation();
 });
 
-/* متابعة حالة الحساب وتسجيل الدخول */
 onAuthStateChanged(auth, (user) => {
     if (unsubscribeReservation) {
         unsubscribeReservation();
@@ -2065,7 +2057,6 @@ onAuthStateChanged(auth, (user) => {
     updateWaitingDisplay();
 });
 
-/* زر تسجيل الخروج المصغر في الـ Badge */
 logoutButton.addEventListener("click", async () => {
     try {
         clearAutoClearTimer();
