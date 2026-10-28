@@ -19,7 +19,8 @@
     --secondary: #252d87;
     --yellow: #F6BE29;
     --yellow-dark: #cf9a11;
-    --personal-blue: #2563eb; /* لون مميز ومريح لعدد الأشخاص قبلك */
+    --personal-crimson: #b91c1c; /* اللون القرمزي لعدد الأشخاص قبلك */
+    --personal-label: #991b1b;
     --green: #16a34a;
     --red: #dc2626;
     --background: #f4f6fa;
@@ -60,7 +61,7 @@ body[dir="rtl"] h2,
 body[dir="rtl"] h3,
 body[dir="rtl"] .section-title,
 body[dir="rtl"] .ticket-label,
-body[dir="rtl"] .user-name,
+body[dir="rtl"] .user-badge-name,
 body[dir="rtl"] strong {
     font-family: 'Cairo', sans-serif;
     font-weight: 900 !important;
@@ -164,7 +165,7 @@ body[dir="rtl"] .lang-btn.active {
     object-fit: contain;
 }
 
-/* ضبط العنوان الفرعي في الفرنسية */
+/* ضبط العنوان الفرعي */
 header p {
     font-size: 13.5px;
     opacity: 0.85;
@@ -173,7 +174,6 @@ header p {
     margin: 0;
 }
 
-/* العنوان في النسخة العربية */
 body[dir="rtl"] #headerSubtitle {
     font-size: 13px !important;
     font-weight: 600 !important;
@@ -186,14 +186,84 @@ body[dir="rtl"] #headerSubtitle {
 .container {
     max-width: 520px;
     margin: auto;
-    padding: 20px 15px 40px;
+    padding: 16px 15px 40px;
     display: flex;
     flex-direction: column;
 }
 
+#userBadgeSection { order: 0; }
 #queueSection { order: 1; }
 #reservationSection, #ticketSection { order: 2; }
-#authSection { order: 3; }
+
+/* ========================================================
+   شريط حساب المستخدم المدمج والأنيق (User Badge)
+======================================================== */
+.user-badge {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 5px 14px 5px 6px;
+    margin-bottom: 14px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    animation: fadeIn 0.25s ease-out;
+}
+
+body[dir="ltr"] .user-badge {
+    padding: 5px 6px 5px 14px;
+}
+
+.user-badge-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.user-badge-photo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--yellow);
+    flex-shrink: 0;
+    background: #f1f5f9;
+}
+
+.user-badge-name {
+    font-size: 13.5px;
+    font-weight: 800;
+    color: var(--primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-logout {
+    width: auto !important;
+    padding: 6px 12px !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex-shrink: 0;
+    border: 1px solid #fecaca !important;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-logout:hover {
+    background: #fecaca !important;
+    color: #7f1d1d !important;
+}
 
 .card {
     background: white;
@@ -244,10 +314,13 @@ body[dir="rtl"] #headerSubtitle {
     transition: color 0.3s ease;
 }
 
- 
+/* تنسيق خاص بعد الحجز: عدد الأشخاص قبلك باللون القرمزي الهادئ */
+.waiting-box.is-personal .section-title {
+    color: var(--personal-label) !important;
+}
 
 .waiting-number.personal-count {
-    color: #b91c1c !important; 
+    color: var(--personal-crimson) !important; 
     text-shadow: none !important;
 }
 
@@ -279,30 +352,6 @@ body[dir="rtl"] #headerSubtitle {
 .status-dot.offline { background: var(--red); }
 .status-dot.warning { background: var(--yellow); }
 
-.auth-card { text-align: center; }
-.auth-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 15px; }
-.auth-card p { font-size: 14px; color: var(--muted); line-height: 1.7; margin-bottom: 20px; }
-
-.btn-google {
-    background: white;
-    color: #334155;
-    border: 1px solid #cbd5e1;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
-}
-.btn-google:hover { background: #f8fafc; }
-
-.user-photo {
-    width: 75px;
-    height: 75px;
-    border-radius: 50%;
-    margin-bottom: 12px;
-    object-fit: cover;
-    border: 3px solid var(--yellow);
-}
-
-.user-name { font-size: 17px; font-weight: bold; color: var(--primary); margin-bottom: 6px; }
-.user-email { font-size: 13px; color: var(--muted); margin-bottom: 15px; overflow-wrap: anywhere; direction: ltr; }
-
 .reservation-card { text-align: center; }
 .reservation-card h2 { font-size: 21px; color: var(--primary); margin-bottom: 12px; }
 .reservation-card p { color: var(--muted); font-size: 14px; line-height: 1.7; margin-bottom: 20px; }
@@ -324,17 +373,42 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     background: var(--primary); 
     color: white; 
     box-shadow: 0 4px 12px rgba(21, 26, 93, 0.25);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 .btn-primary:not(:disabled):hover { 
     background: var(--primary-dark); 
 }
 
-.btn-secondary { 
-    background: #eef2f9; 
-    color: var(--primary); 
-    margin-top: 15px; 
+/* ========================================================
+   زر الحجز المباشر عبر Google (الذكي والأنيق)
+======================================================== */
+.btn-google-reserve {
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 1.5px solid #cbd5e1 !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-weight: 900 !important;
 }
-.btn-secondary:hover { background: #e0e7f4; }
+
+.btn-google-reserve:hover:not(:disabled) {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+}
+
+.google-icon {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    display: block;
+}
 
 .btn-rebook {
     background: var(--primary);
@@ -363,7 +437,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     transition: color 0.3s;
     line-height: 1.4;
 }
-/* ألوان حالات التذكرة */
+
 .ticket-title-yellow { color: #d97706 !important; }
 .ticket-title-green  { color: var(--green) !important; }
 .ticket-title-blue   { color: var(--primary) !important; }
@@ -626,7 +700,7 @@ footer {
 <body dir="rtl">
 
 <header>
-    <!-- تم ضبط الترتيب: FR على اليسار وعربي على اليمين -->
+    <!-- مبدل اللغة: FR على اليسار وعربي على اليمين دائماً -->
     <div class="lang-switcher">
         <button type="button" class="lang-btn" id="langFrBtn">FR</button>
         <button type="button" class="lang-btn active" id="langArBtn">عربي</button>
@@ -637,6 +711,24 @@ footer {
 </header>
 
 <main class="container">
+
+    <!-- شريحة حساب المستخدم المصغرة والأنيقة (تظهر فقط عند تسجيل الدخول) -->
+    <div id="userBadgeSection">
+        <div class="user-badge" id="userBadge" style="display: none;">
+            <div class="user-badge-info">
+                <img id="userPhoto" class="user-badge-photo" alt="">
+                <span class="user-badge-name" id="userName"></span>
+            </div>
+            <button type="button" class="btn-logout" id="logoutButton" title="تسجيل الخروج">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span id="lblLogout">خروج</span>
+            </button>
+        </div>
+    </div>
 
     <section class="card" id="queueSection">
         <div class="section-title" id="lblCurrentNumber">الرقم الحالي</div>
@@ -659,6 +751,7 @@ footer {
         <h2 id="lblReservationTitle">حجز تذكرة عن بُعد</h2>
         <p id="lblReservationDesc">احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.</p>
         
+        <!-- زر الحجز المباشر (يتحول تلقائياً إلى زر Google عند عدم تسجيل الدخول) -->
         <button class="btn-primary" id="reserveButton" disabled>حجز تذكرة</button>
         
         <div class="warning-banner" id="printerOfflineBanner"></div>
@@ -699,29 +792,13 @@ footer {
             </div>
         </div>
 
-        <!-- زر الحجز المباشر -->
+        <!-- زر الحجز بعد انتهاء أو فوات التذكرة -->
         <button class="btn-rebook" id="newReservationButton" style="display:none;">
             حجز تذكرة جديدة
         </button>
         <div class="error-message" id="ticketError"></div>
 
         <p class="ticket-message" id="ticketMessage"></p>
-    </section>
-
-    <!-- بطاقة حساب العميل -->
-    <section class="card auth-card" id="authSection">
-        <h2 id="lblAuthTitle">حساب المستخدم</h2>
-        <div id="loginSection">
-            <p id="lblAuthDesc">سجّل دخولك بحساب Google لتأكيد حجز التذكرة.</p>
-            <button class="btn-google" id="googleLoginButton">الدخول بواسطة Google</button>
-        </div>
-        <div id="userSection" style="display:none;">
-            <img id="userPhoto" class="user-photo" alt="صورة الحساب">
-            <div class="user-name" id="userName"></div>
-            <div class="user-email" id="userEmail"></div>
-            <button class="btn-secondary" id="logoutButton">تسجيل الخروج</button>
-        </div>
-        <div class="error-message" id="authError"></div>
     </section>
 
 </main>
@@ -756,6 +833,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChang
 import { getDatabase, ref, onValue, push, set, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
+const GOOGLE_ICON_SVG = `<svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>`;
+
 const i18n = {
     fr: {
         pageTitle: "POSTE EL AMAL | Réservation de ticket",
@@ -766,8 +845,9 @@ const i18n = {
         lblReservationTitle: "Réservation en ligne",
         lblReservationDesc: "Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.",
         btnReserve: "RÉSERVER UN TICKET",
+        btnGoogleReserve: "Se connecter avec Google et réserver",
         btnReserving: "RÉSERVATION EN COURS...",
-        btnNeedLogin: "CONNECTEZ-VOUS POUR RÉSERVER",
+        btnLoggingIn: "Connexion en cours...",
         btnAlreadyActive: "VOUS AVEZ DÉJÀ UNE RÉSERVATION",
         btnSysOffline: "SYSTÈME HORS LIGNE",
         btnBorneOffline: "BORNE HORS LIGNE (RÉSERVATION FERMÉE)",
@@ -781,10 +861,7 @@ const i18n = {
         lblAlertTitle: "🔔 Activer les notifications",
         lblAlertMargin: "M'avertir à l'avance :",
         marginOption: (n) => `${n} pers. avant`,
-        lblAuthTitle: "Compte client",
-        lblAuthDesc: "Connectez-vous avec votre compte Google pour réserver un ticket.",
-        btnLoginGoogle: "Se connecter avec Google",
-        btnLogout: "Se déconnecter",
+        btnLogout: "Déconnexion",
         connReconnecting: "Reconnexion réseau...",
         connSysOffline: "Système central déconnecté",
         connBorneOffline: "Borne d'accueil hors ligne",
@@ -832,8 +909,9 @@ const i18n = {
         lblReservationTitle: "حجز تذكرة عن بُعد",
         lblReservationDesc: "احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.",
         btnReserve: "حجز تذكرة",
+        btnGoogleReserve: "الدخول بواسطة Google وحجز التذكرة",
         btnReserving: "جارٍ الحجز...",
-        btnNeedLogin: "سجّل الدخول للحجز",
+        btnLoggingIn: "جارٍ تسجيل الدخول...",
         btnAlreadyActive: "لديك حجز نشط حالياً",
         btnSysOffline: "النظام غير متصل",
         btnBorneOffline: "الموزع الآلي معطل (الحجز متوقف)",
@@ -847,10 +925,7 @@ const i18n = {
         lblAlertTitle: "🔔 تفعيل التنبيهات",
         lblAlertMargin: "تنبيهي مسبقاً قبل:",
         marginOption: (n) => `${n} منتظرين`,
-        lblAuthTitle: "حساب المستخدم",
-        lblAuthDesc: "سجّل دخولك بحساب Google لتأكيد حجز التذكرة.",
-        btnLoginGoogle: "الدخول بواسطة Google",
-        btnLogout: "تسجيل الخروج",
+        btnLogout: "خروج",
         connReconnecting: "جارٍ إعادة الاتصال...",
         connSysOffline: "النظام غير متصل",
         connBorneOffline: "الموزع الآلي غير متصل",
@@ -892,7 +967,7 @@ const i18n = {
 };
 
 /* ========================================================
-   تحديد اللغة العربية كخيار افتراضي أولي
+   تحديد اللغة الافتراضية
 ======================================================== */
 let currentLang = localStorage.getItem("poste_elamal_lang") || "ar";
 
@@ -916,10 +991,7 @@ function applyLanguage(lang) {
     document.getElementById("lblPickupCode").textContent = t.lblPickupCode;
     document.getElementById("lblAlertTitle").textContent = t.lblAlertTitle;
     document.getElementById("lblAlertMargin").textContent = t.lblAlertMargin;
-    document.getElementById("lblAuthTitle").textContent = t.lblAuthTitle;
-    document.getElementById("lblAuthDesc").textContent = t.lblAuthDesc;
-    document.getElementById("googleLoginButton").textContent = t.btnLoginGoogle;
-    document.getElementById("logoutButton").textContent = t.btnLogout;
+    document.getElementById("lblLogout").textContent = t.btnLogout;
     document.getElementById("duplicateNotice").innerHTML = t.duplicateNotice;
     document.getElementById("inAppModalCloseBtn").textContent = t.modalCloseBtn;
     document.getElementById("permModalCloseBtn").textContent = t.modalCloseBtn;
@@ -970,14 +1042,11 @@ const VAPID_KEY = "BHVKczf-qi6Dcun5s4GdvMoBnRDUe5vOTsKg5seNNgvgMBodd_fwlMaVNOROw
 let messaging = null;
 let swRegistration = null;
 
-const googleLoginButton    = document.getElementById("googleLoginButton");
-const logoutButton         = document.getElementById("logoutButton");
-const loginSection         = document.getElementById("loginSection");
-const userSection          = document.getElementById("userSection");
+const userBadge            = document.getElementById("userBadge");
 const userPhoto            = document.getElementById("userPhoto");
 const userName             = document.getElementById("userName");
-const userEmail            = document.getElementById("userEmail");
-const authError            = document.getElementById("authError");
+const logoutButton         = document.getElementById("logoutButton");
+
 const currentTicketEl      = document.getElementById("currentTicket");
 const waitingBoxEl         = document.getElementById("waitingBox");
 const lblWaitingCountEl    = document.getElementById("lblWaitingCount");
@@ -1013,6 +1082,7 @@ const permModalOverlay     = document.getElementById("permModalOverlay");
 const permModalCloseBtn    = document.getElementById("permModalCloseBtn");
 
 let reservationInProgress = false;
+let loginInProgress = false;
 let currentTicket = 0;
 let currentConsole = 0;
 let lastIssuedTicket = 0;
@@ -1043,9 +1113,6 @@ let alertedExactTurnForTicket = null;
 let lastAlertTimestamp = 0;          
 let wakeLock = null;
 
-/* ========================================================
-   تحديد مدة بقاء التذكرة المنتهية أو الفائتة: 20 دقيقة
-======================================================== */
 const EXPIRED_RETENTION_MS = 20 * 60 * 1000; 
 let autoClearTimer = null;
 
@@ -1072,7 +1139,6 @@ function updateWaitingDisplay() {
         return;
     }
 
-    // التحقق مما إذا كان المستخدم يملك حجزاً نشطاً سارياً
     const isUserActive = activeUserTicketData && 
                          activeUserTicketData.ticket > 0 && 
                          ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) &&
@@ -1081,7 +1147,7 @@ function updateWaitingDisplay() {
     if (isUserActive) {
         const remainingDistance = calculateDistanceToTurn(activeUserTicketData.ticket, currentTicket);
         if (remainingDistance !== null) {
-            // بعد الحجز: إظهار عدد الأشخاص قبلك بلون أزرق مميز
+            // بعد الحجز: إظهار عدد الأشخاص قبلك باللون القرمزي الهادئ
             lblWaitingCountEl.textContent = t.lblWaitingBeforeYou;
             waitingCountEl.textContent = remainingDistance;
             waitingCountEl.classList.add("personal-count");
@@ -1090,7 +1156,7 @@ function updateWaitingDisplay() {
         }
     }
 
-    // قبل الحجز أو بعد انتهاء التذكرة: إظهار عدد المنتظرين الإجمالي بلونه الأصلي
+    // قبل الحجز أو بعد انتهاء التذكرة: إظهار عدد المنتظرين العام باللون الذهبي
     lblWaitingCountEl.textContent = t.lblWaitingCount;
     waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
     waitingCountEl.classList.remove("personal-count");
@@ -1548,6 +1614,9 @@ onValue(queueRef, (snapshot) => {
     checkMasterStatus();
 });
 
+/* ========================================================
+   تحديث مظهر وحالة زر الحجز الرئيسي ديناميكياً
+======================================================== */
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
@@ -1566,14 +1635,19 @@ function updateReserveButton() {
         printerOfflineBanner.style.display = "none";
     }
 
-    reserveButton.disabled = !isHardwareReady || reservationInProgress || !userLoggedIn || hasActiveReservation;
+    // الزر يكون نشطاً إذا كانت الأجهزة جاهزة، سواء كان المستخدم مسجلاً أم لا!
+    reserveButton.disabled = !isHardwareReady || reservationInProgress || loginInProgress || hasActiveReservation;
     newReservationButton.disabled = !isHardwareReady || reservationInProgress;
+
+    // إعادة ضبط كلاسات الزر الأساسية
+    reserveButton.classList.remove("btn-google-reserve");
+    reserveButton.classList.add("btn-primary");
 
     if (reservationInProgress) {
         reserveButton.textContent = t.btnReserving;
         newReservationButton.textContent = t.btnReserving;
-    } else if (!userLoggedIn) {
-        reserveButton.textContent = t.btnNeedLogin;
+    } else if (loginInProgress) {
+        reserveButton.textContent = t.btnLoggingIn;
     } else if (hasActiveReservation) {
         reserveButton.textContent = t.btnAlreadyActive;
     } else if (!queueConnected) {
@@ -1585,7 +1659,15 @@ function updateReserveButton() {
     } else if (!serviceAvailable) {
         reserveButton.textContent = t.btnServiceSuspended;
     } else {
-        reserveButton.textContent = t.btnReserve;
+        // إذا كان النظام جاهزاً والمستخدم غير مسجل: يظهر زر الدخول والحجز المباشر
+        if (!userLoggedIn) {
+            reserveButton.classList.remove("btn-primary");
+            reserveButton.classList.add("btn-google-reserve");
+            reserveButton.innerHTML = `${GOOGLE_ICON_SVG}<span>${t.btnGoogleReserve}</span>`;
+        } else {
+            // المستخدم مسجل وجاهز للحجز
+            reserveButton.textContent = t.btnReserve;
+        }
         newReservationButton.textContent = t.btnNewTicket;
     }
 }
@@ -1737,6 +1819,7 @@ function resetUserReservationUI() {
     myTicketEl.textContent = "---";
     myCodeEl.textContent = "----";
     reservationInProgress = false;
+    loginInProgress = false;
     clearError();
     updateReserveButton();
     updateWaitingDisplay();
@@ -1836,7 +1919,7 @@ async function createReservation() {
         return;
     }
 
-    if (!authReady || !currentUser || reservationInProgress) return;
+    if (!currentUser || reservationInProgress) return;
 
     clearError();
     clearPendingTimer();
@@ -1888,6 +1971,56 @@ async function createReservation() {
     }
 }
 
+/* ========================================================
+   الدخول بواسطة Google ثم الحجز المباشر فوراً وبنقرة واحدة
+======================================================== */
+async function loginAndReserve() {
+    const t = i18n[currentLang];
+    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+        showError(t.errBorneOffline);
+        return;
+    }
+
+    clearError();
+    loginInProgress = true;
+    updateReserveButton();
+
+    try {
+        const result = await signInWithPopup(auth, googleProvider);
+        if (result && result.user) {
+            currentUser = result.user;
+
+            // التحقق مما إذا كان لدى المستخدم تذكرة نشطة مسبقاً
+            const localSaved = loadReservation();
+            const isOvertaken = localSaved && isTicketOvertaken(localSaved.ticket, currentTicket);
+            const hasActiveReservation = localSaved && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status) && !isOvertaken;
+
+            if (hasActiveReservation) {
+                showReservation(localSaved, true);
+            } else {
+                // إذا لم يكن لديه حجز، يتم إطلاق طلب الحجز فوراً وتلقائياً!
+                await createReservation();
+            }
+        }
+    } catch (error) {
+        if (error.code !== "auth/popup-closed-by-user" && error.code !== "auth/cancelled-popup-request") {
+            showError(t.errAuth);
+        }
+    } finally {
+        loginInProgress = false;
+        updateReserveButton();
+    }
+}
+
+/* التوجيه الذكي عند الضغط على زر الحجز الرئيسي */
+reserveButton.addEventListener("click", () => {
+    if (!currentUser) {
+        loginAndReserve();
+    } else {
+        createReservation();
+    }
+});
+
 newReservationButton.addEventListener("click", async () => {
     if (!currentUser || reservationInProgress) return;
     clearError();
@@ -1909,25 +2042,7 @@ newReservationButton.addEventListener("click", async () => {
     await createReservation();
 });
 
-reserveButton.addEventListener("click", createReservation);
-
-async function loginWithGoogle() {
-    authError.style.display = "none";
-    googleLoginButton.disabled = true;
-    try {
-        await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-        if (error.code !== "auth/popup-closed-by-user") {
-            authError.textContent = i18n[currentLang].errAuth;
-            authError.style.display = "block";
-        }
-    } finally {
-        googleLoginButton.disabled = false;
-    }
-}
-
-googleLoginButton.addEventListener("click", loginWithGoogle);
-
+/* متابعة حالة الحساب وتسجيل الدخول */
 onAuthStateChanged(auth, (user) => {
     if (unsubscribeReservation) {
         unsubscribeReservation();
@@ -1942,10 +2057,9 @@ onAuthStateChanged(auth, (user) => {
     authReady = true;
 
     if (user) {
-        loginSection.style.display = "none";
-        userSection.style.display = "block";
+        // إظهار شريط المستخدم المصغر
+        userBadge.style.display = "flex";
         userName.textContent = user.displayName || ((currentLang === "ar") ? "مستخدم" : "Utilisateur");
-        userEmail.textContent = user.email || "";
         if (user.photoURL) {
             userPhoto.src = user.photoURL;
             userPhoto.style.display = "inline-block";
@@ -1965,22 +2079,23 @@ onAuthStateChanged(auth, (user) => {
         watchUserActiveTicket(user.uid);
         if (alertToggle.checked) syncFCMTokenWithDatabase();
     } else {
-        loginSection.style.display = "block";
-        userSection.style.display = "none";
+        // إخفاء شريط المستخدم المصغر
+        userBadge.style.display = "none";
         resetUserReservationUI();
     }
+
     updateReserveButton();
     updateWaitingDisplay();
 });
 
+/* زر تسجيل الخروج المصغر في الـ Badge */
 logoutButton.addEventListener("click", async () => {
     try {
         clearAutoClearTimer();
         await removeFCMTokenFromDatabase();
         await signOut(auth);
     } catch (error) {
-        authError.textContent = i18n[currentLang].errLogout;
-        authError.style.display = "block";
+        showError(i18n[currentLang].errLogout);
     }
 });
 
