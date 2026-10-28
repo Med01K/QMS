@@ -316,11 +316,11 @@ body[dir="ltr"] .user-badge {
 
 /* تنسيق خاص بعد الحجز: عدد الأشخاص قبلك باللون القرمزي الهادئ */
 .waiting-box.is-personal .section-title {
-    color: var(--muted) !important;
+    color: var(--personal-label) !important;
 }
 
 .waiting-number.personal-count {
-    color: var(--personal-label) !important; 
+    color: var(--personal-crimson) !important; 
     text-shadow: none !important;
 }
 
@@ -655,19 +655,6 @@ input:checked + .slider:before {
     line-height: 1.6;
 }
 
-.info-banner {
-    display: none;
-    background: #fffdf5;
-    border: 1px solid var(--yellow);
-    color: #92400e;
-    padding: 14px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.5;
-}
-
 .warning-banner {
     display: none;
     background: #fef2f2;
@@ -759,8 +746,6 @@ footer {
     </section>
 
     <section class="card ticket-card" id="ticketSection">
-        <div class="info-banner" id="duplicateNotice"></div>
-
         <h2 id="ticketTitle" class="ticket-title-yellow">تم تأكيد الحجز (في انتظار طباعة التذكرة)</h2>
 
         <div class="ticket-label" id="lblYourNumber">رقم تذكرتك</div>
@@ -855,7 +840,6 @@ const i18n = {
         btnServiceSuspended: "SERVICE MOMENTANÉMENT SUSPENDU",
         btnNewTicket: "RÉSERVER UN NOUVEAU TICKET",
         btnNewTicketCalled: "FAIRE UNE NOUVELLE RÉSERVATION",
-        duplicateNotice: " <strong>Réservation active :</strong> Vous avez déjà un ticket en cours. Voici les détails de votre réservation originale.",
         lblYourNumber: "VOTRE NUMÉRO",
         lblPickupCode: "CODE DE RETRAIT",
         lblAlertTitle: "🔔 Activer les notifications",
@@ -919,7 +903,6 @@ const i18n = {
         btnServiceSuspended: "الخدمة معلّقة مؤقتاً",
         btnNewTicket: "حجز تذكرة جديدة",
         btnNewTicketCalled: "حجز تذكرة جديدة",
-        duplicateNotice: " <strong>حجز نشط:</strong> لديك تذكرة سارية بالفعل. إليك تفاصيل حجزك.",
         lblYourNumber: "رقم تذكرتك",
         lblPickupCode: "رمز الاستلام",
         lblAlertTitle: "🔔 تفعيل التنبيهات",
@@ -992,7 +975,6 @@ function applyLanguage(lang) {
     document.getElementById("lblAlertTitle").textContent = t.lblAlertTitle;
     document.getElementById("lblAlertMargin").textContent = t.lblAlertMargin;
     document.getElementById("lblLogout").textContent = t.btnLogout;
-    document.getElementById("duplicateNotice").innerHTML = t.duplicateNotice;
     document.getElementById("inAppModalCloseBtn").textContent = t.modalCloseBtn;
     document.getElementById("permModalCloseBtn").textContent = t.modalCloseBtn;
     document.getElementById("lblPermDeniedTitle").textContent = t.permTitle;
@@ -1056,7 +1038,6 @@ const statusDotEl          = document.getElementById("statusDot");
 const reserveButton        = document.getElementById("reserveButton");
 const reservationError     = document.getElementById("reservationError");
 const ticketError          = document.getElementById("ticketError");
-const duplicateNoticeEl    = document.getElementById("duplicateNotice");
 const printerOfflineBanner = document.getElementById("printerOfflineBanner");
 const reservationSection   = document.getElementById("reservationSection");
 const ticketSection        = document.getElementById("ticketSection");
@@ -1635,11 +1616,10 @@ function updateReserveButton() {
         printerOfflineBanner.style.display = "none";
     }
 
-    // الزر يكون نشطاً إذا كانت الأجهزة جاهزة، سواء كان المستخدم مسجلاً أم لا!
+    // الزر يكون نشطاً إذا كانت الأجهزة جاهزة، سواء كان المستخدم مسجلاً أم لا
     reserveButton.disabled = !isHardwareReady || reservationInProgress || loginInProgress || hasActiveReservation;
     newReservationButton.disabled = !isHardwareReady || reservationInProgress;
 
-    // إعادة ضبط كلاسات الزر الأساسية
     reserveButton.classList.remove("btn-google-reserve");
     reserveButton.classList.add("btn-primary");
 
@@ -1665,7 +1645,6 @@ function updateReserveButton() {
             reserveButton.classList.add("btn-google-reserve");
             reserveButton.innerHTML = `${GOOGLE_ICON_SVG}<span>${t.btnGoogleReserve}</span>`;
         } else {
-            // المستخدم مسجل وجاهز للحجز
             reserveButton.textContent = t.btnReserve;
         }
         newReservationButton.textContent = t.btnNewTicket;
@@ -1686,13 +1665,14 @@ function clearError() {
     ticketError.textContent = "";
 }
 
-function showReservation(reservation, isDuplicateNotice = false) {
+/* ========================================================
+   عرض بطاقة التذكرة مباشرة وبشكل اعتيادي دائم
+======================================================== */
+function showReservation(reservation) {
     activeUserTicketData = reservation;
     reservationSection.style.display = "none";
     ticketSection.style.display = "block";
     myTicketEl.textContent = formatNumber(reservation.ticket);
-
-    duplicateNoticeEl.style.display = (isDuplicateNotice || reservation.is_duplicate === true) ? "block" : "none";
 
     let status = reservation.status || "pending";
     if (currentTicket > 0 && reservation.ticket === currentTicket) {
@@ -1815,7 +1795,6 @@ function resetUserReservationUI() {
     permModalOverlay.style.display = "none";
     reservationSection.style.display = "block";
     ticketSection.style.display = "none";
-    duplicateNoticeEl.style.display = "none";
     myTicketEl.textContent = "---";
     myCodeEl.textContent = "----";
     reservationInProgress = false;
@@ -1864,7 +1843,7 @@ function watchReservationKey(key) {
             };
 
             saveReservation(resData);
-            showReservation(resData, data.is_duplicate === true);
+            showReservation(resData);
             if (alertToggle.checked) syncFCMTokenWithDatabase();
         }
     });
@@ -1900,10 +1879,10 @@ function watchUserActiveTicket(uid) {
             saveReservation(resData);
 
             if (isTicketOvertaken(tNum, currentTicket)) {
-                showReservation(resData, false);
+                showReservation(resData);
                 updateReservationStatus("skipped");
             } else {
-                showReservation(resData, data.is_duplicate === true);
+                showReservation(resData);
             }
             if (alertToggle.checked) syncFCMTokenWithDatabase();
         } else if (["called", "skipped", "completed"].includes(status)) {
@@ -1931,7 +1910,7 @@ async function createReservation() {
         const isOver = isTicketOvertaken(localSaved.ticket, currentTicket);
 
         if (!isExpired && !isOver && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
-            showReservation(localSaved, true);
+            showReservation(localSaved);
             updateReserveButton();
             return;
         }
@@ -1996,9 +1975,9 @@ async function loginAndReserve() {
             const hasActiveReservation = localSaved && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status) && !isOvertaken;
 
             if (hasActiveReservation) {
-                showReservation(localSaved, true);
+                showReservation(localSaved);
             } else {
-                // إذا لم يكن لديه حجز، يتم إطلاق طلب الحجز فوراً وتلقائياً!
+                // إذا لم يكن لديه حجز، يتم إطلاق طلب الحجز فوراً وتلقائياً
                 await createReservation();
             }
         }
@@ -2057,7 +2036,6 @@ onAuthStateChanged(auth, (user) => {
     authReady = true;
 
     if (user) {
-        // إظهار شريط المستخدم المصغر
         userBadge.style.display = "flex";
         userName.textContent = user.displayName || ((currentLang === "ar") ? "مستخدم" : "Utilisateur");
         if (user.photoURL) {
@@ -2079,7 +2057,6 @@ onAuthStateChanged(auth, (user) => {
         watchUserActiveTicket(user.uid);
         if (alertToggle.checked) syncFCMTokenWithDatabase();
     } else {
-        // إخفاء شريط المستخدم المصغر
         userBadge.style.display = "none";
         resetUserReservationUI();
     }
