@@ -19,6 +19,7 @@
     --secondary: #252d87;
     --yellow: #F6BE29;
     --yellow-dark: #cf9a11;
+    --personal-blue: #2563eb; /* لون مميز ومريح لعدد الأشخاص قبلك */
     --green: #16a34a;
     --red: #dc2626;
     --background: #f4f6fa;
@@ -104,13 +105,14 @@ header {
 }
 
 /* ========================================================
-   مبدل اللغة: حجم وخط موحد تماماً لـ FR و عربي دون أي قفزات
+   مبدل اللغة: FR على اليسار وعربي على اليمين دائماً
 ======================================================== */
 .lang-switcher {
     position: absolute;
     top: 15px;
     right: 15px;
     display: inline-flex;
+    flex-direction: row !important;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 22px;
@@ -209,6 +211,7 @@ body[dir="rtl"] #headerSubtitle {
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 1px;
+    transition: color 0.3s ease;
 }
 
 .current-number {
@@ -226,14 +229,29 @@ body[dir="rtl"] #headerSubtitle {
     margin: 20px 0;
 }
 
-.waiting-box { text-align: center; }
+.waiting-box { 
+    text-align: center; 
+    transition: all 0.3s ease;
+}
 
+/* تنسيق عدد المنتظرين العام قبل الحجز */
 .waiting-number {
     font-size: 55px;
     font-weight: bold;
     color: var(--yellow-dark);
     margin-top: 10px;
     line-height: 1.1;
+    transition: color 0.3s ease;
+}
+
+/* تنسيق خاص بعد الحجز (عدد الأشخاص قبلك) */
+.waiting-box.is-personal .section-title {
+    color: var(--personal-blue) !important;
+}
+
+.waiting-number.personal-count {
+    color: var(--personal-blue) !important;
+    text-shadow: 0 3px 12px rgba(37, 99, 235, 0.18);
 }
 
 .queue-footer {
@@ -349,7 +367,7 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     line-height: 1.4;
 }
 /* ألوان حالات التذكرة */
-.ticket-title-yellow { color: #d97706 !important; } /* لون أصفر/كهرماني واضح ومريح للنظر */
+.ticket-title-yellow { color: #d97706 !important; }
 .ticket-title-green  { color: var(--green) !important; }
 .ticket-title-blue   { color: var(--primary) !important; }
 .ticket-title-red    { color: var(--red) !important; }
@@ -611,9 +629,10 @@ footer {
 <body dir="rtl">
 
 <header>
+    <!-- تم ضبط الترتيب: FR على اليسار وعربي على اليمين -->
     <div class="lang-switcher">
-        <button type="button" class="lang-btn active" id="langArBtn">عربي</button>
         <button type="button" class="lang-btn" id="langFrBtn">FR</button>
+        <button type="button" class="lang-btn active" id="langArBtn">عربي</button>
     </div>
 
     <img src="logo.png" alt="البريد التونسي | La Poste Tunisienne" class="header-logo">
@@ -628,7 +647,7 @@ footer {
         
         <div class="divider"></div>
         
-        <div class="waiting-box">
+        <div class="waiting-box" id="waitingBox">
             <div class="section-title" id="lblWaitingCount">عدد المنتظرين</div>
             <div class="waiting-number" id="waitingCount">--</div>
         </div>
@@ -746,6 +765,7 @@ const i18n = {
         headerSubtitle: "Poste Cité El Amel 6033 Gabès",
         lblCurrentNumber: "Numéro en cours",
         lblWaitingCount: "Personnes en attente",
+        lblWaitingBeforeYou: "Personnes avant vous",
         lblReservationTitle: "Réservation en ligne",
         lblReservationDesc: "Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.",
         btnReserve: "RÉSERVER UN TICKET",
@@ -811,6 +831,7 @@ const i18n = {
         headerSubtitle: "مكتب بريد حي الأمل 6033 قابس",
         lblCurrentNumber: "الرقم الحالي",
         lblWaitingCount: "عدد المنتظرين",
+        lblWaitingBeforeYou: "عدد الأشخاص قبلك",
         lblReservationTitle: "حجز تذكرة عن بُعد",
         lblReservationDesc: "احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.",
         btnReserve: "حجز تذكرة",
@@ -892,7 +913,6 @@ function applyLanguage(lang) {
     document.getElementById("pageTitle").textContent = t.pageTitle;
     document.getElementById("headerSubtitle").textContent = t.headerSubtitle;
     document.getElementById("lblCurrentNumber").textContent = t.lblCurrentNumber;
-    document.getElementById("lblWaitingCount").textContent = t.lblWaitingCount;
     document.getElementById("lblReservationTitle").textContent = t.lblReservationTitle;
     document.getElementById("lblReservationDesc").textContent = t.lblReservationDesc;
     document.getElementById("lblYourNumber").textContent = t.lblYourNumber;
@@ -925,6 +945,7 @@ function applyLanguage(lang) {
     if (activeUserTicketData) {
         updateReservationStatus(activeUserTicketData.status);
     }
+    updateWaitingDisplay();
     checkMasterStatus();
 }
 
@@ -961,6 +982,8 @@ const userName             = document.getElementById("userName");
 const userEmail            = document.getElementById("userEmail");
 const authError            = document.getElementById("authError");
 const currentTicketEl      = document.getElementById("currentTicket");
+const waitingBoxEl         = document.getElementById("waitingBox");
+const lblWaitingCountEl    = document.getElementById("lblWaitingCount");
 const waitingCountEl       = document.getElementById("waitingCount");
 const connectionStatusEl   = document.getElementById("connectionStatus");
 const statusDotEl          = document.getElementById("statusDot");
@@ -1036,6 +1059,45 @@ function formatNumber(number) {
     const n = Number(number);
     if (!Number.isFinite(n) || n <= 0) return "---";
     return String(Math.trunc(n)).padStart(3, "0");
+}
+
+/* ========================================================
+   تحديث عرض عدد المنتظرين / عدد الأشخاص قبلك ديناميكياً
+======================================================== */
+function updateWaitingDisplay() {
+    const t = i18n[currentLang];
+
+    if (!queueConnected || !isClientInternetConnected) {
+        lblWaitingCountEl.textContent = t.lblWaitingCount;
+        waitingCountEl.textContent = "--";
+        waitingCountEl.classList.remove("personal-count");
+        waitingBoxEl.classList.remove("is-personal");
+        return;
+    }
+
+    // التحقق مما إذا كان المستخدم يملك حجزاً نشطاً سارياً
+    const isUserActive = activeUserTicketData && 
+                         activeUserTicketData.ticket > 0 && 
+                         ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) &&
+                         !isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
+
+    if (isUserActive) {
+        const remainingDistance = calculateDistanceToTurn(activeUserTicketData.ticket, currentTicket);
+        if (remainingDistance !== null) {
+            // بعد الحجز: إظهار عدد الأشخاص قبلك بلون أزرق مميز
+            lblWaitingCountEl.textContent = t.lblWaitingBeforeYou;
+            waitingCountEl.textContent = remainingDistance;
+            waitingCountEl.classList.add("personal-count");
+            waitingBoxEl.classList.add("is-personal");
+            return;
+        }
+    }
+
+    // قبل الحجز أو بعد انتهاء التذكرة: إظهار عدد المنتظرين الإجمالي بلونه الأصلي
+    lblWaitingCountEl.textContent = t.lblWaitingCount;
+    waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
+    waitingCountEl.classList.remove("personal-count");
+    waitingBoxEl.classList.remove("is-personal");
 }
 
 function showPermissionDeniedModal() {
@@ -1392,6 +1454,7 @@ function setConnectionStatus(masterOnline) {
     if (!isClientInternetConnected) {
         connectionStatusEl.textContent = t.connReconnecting;
         statusDotEl.className = "status-dot warning";
+        updateWaitingDisplay();
         return;
     }
 
@@ -1399,10 +1462,10 @@ function setConnectionStatus(masterOnline) {
         connectionStatusEl.textContent = t.connSysOffline;
         statusDotEl.className = "status-dot offline";
         currentTicketEl.textContent = "---";
-        waitingCountEl.textContent = "--";
+        updateWaitingDisplay();
     } else {
         currentTicketEl.textContent = formatNumber(currentTicket);
-        waitingCountEl.textContent = (waitingCount !== null) ? Math.max(0, waitingCount) : "--";
+        updateWaitingDisplay();
 
         if (!printerOnline) {
             connectionStatusEl.textContent = t.connBorneOffline;
@@ -1481,6 +1544,8 @@ onValue(queueRef, (snapshot) => {
             updateReservationStatus("called");
         }
     }
+
+    updateWaitingDisplay();
 }, () => {
     firebaseDataAvailable = false;
     checkMasterStatus();
@@ -1558,6 +1623,7 @@ function showReservation(reservation, isDuplicateNotice = false) {
     }
 
     updateReservationStatus(status);
+    updateWaitingDisplay();
 }
 
 function updateReservationStatus(status) {
@@ -1608,7 +1674,7 @@ function updateReservationStatus(status) {
         case "confirmed":
         case "reserved":
             ticketTitleEl.textContent = t.statusConfirmedTitle;
-            ticketTitleEl.classList.add("ticket-title-yellow"); /* تطبيق اللون الكهرماني/الأصفر */
+            ticketTitleEl.classList.add("ticket-title-yellow");
             myStatusEl.textContent = t.statusConfirmedMsg;
             myStatusEl.classList.add("confirmed");
             ticketMessageEl.innerHTML = t.ticketInstructionConfirmed;
@@ -1654,6 +1720,7 @@ function updateReservationStatus(status) {
     }
 
     updateReserveButton();
+    updateWaitingDisplay();
 }
 
 function resetUserReservationUI() {
@@ -1675,6 +1742,7 @@ function resetUserReservationUI() {
     reservationInProgress = false;
     clearError();
     updateReserveButton();
+    updateWaitingDisplay();
 }
 
 function watchReservationKey(key) {
@@ -1905,6 +1973,7 @@ onAuthStateChanged(auth, (user) => {
         resetUserReservationUI();
     }
     updateReserveButton();
+    updateWaitingDisplay();
 });
 
 logoutButton.addEventListener("click", async () => {
