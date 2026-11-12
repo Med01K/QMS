@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#151A5D">
 
+<!-- [إشعارات] ضروري لـ iPhone: الإشعارات لا تعمل إلا إذا أُضيف الموقع إلى الشاشة الرئيسية كتطبيق ويب -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="بريد حي الأمل">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
 <title id="pageTitle">بريد حي الأمل | حجز التذاكر</title>
 
 <!-- استيراد خط Cairo بأوزان متعددة لضبط التناسق التام بين النصوص -->
@@ -314,8 +322,8 @@ body[dir="ltr"] .user-badge {
     margin: 20px 0;
 }
 
-.waiting-box { 
-    text-align: center; 
+.waiting-box {
+    text-align: center;
     transition: all 0.3s ease;
 }
 
@@ -335,7 +343,7 @@ body[dir="ltr"] .user-badge {
 }
 
 .waiting-number.personal-count {
-    color: var(--personal-crimson) !important; 
+    color: var(--personal-crimson) !important;
     text-shadow: none !important;
 }
 
@@ -384,17 +392,17 @@ button {
 
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.btn-primary { 
-    background: var(--primary); 
-    color: white; 
+.btn-primary {
+    background: var(--primary);
+    color: white;
     box-shadow: 0 4px 12px rgba(21, 26, 93, 0.25);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
 }
-.btn-primary:not(:disabled):hover { 
-    background: var(--primary-dark); 
+.btn-primary:not(:disabled):hover {
+    background: var(--primary-dark);
 }
 
 /* زر الحجز المباشر عبر Google */
@@ -444,9 +452,9 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     transition: border-color 0.3s;
 }
 
-.ticket-card h2 { 
-    font-size: 21px; 
-    margin-bottom: 20px; 
+.ticket-card h2 {
+    font-size: 21px;
+    margin-bottom: 20px;
     transition: color 0.3s;
     line-height: 1.4;
 }
@@ -732,9 +740,9 @@ footer {
     <section class="card" id="queueSection">
         <div class="section-title" id="lblCurrentNumber">الرقم الحالي</div>
         <div class="current-number" id="currentTicket">---</div>
-        
+
         <div class="divider"></div>
-        
+
         <!-- صندوق الانتظار: يتغير لونه ونصّه تلقائياً بعد الحجز -->
         <div class="waiting-box" id="waitingBox">
             <div class="section-title" id="lblWaitingCount">عدد المنتظرين</div>
@@ -750,9 +758,9 @@ footer {
     <section class="card reservation-card" id="reservationSection">
         <h2 id="lblReservationTitle">حجز تذكرة عن بُعد</h2>
         <p id="lblReservationDesc">احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.</p>
-        
+
         <button class="btn-primary" id="reserveButton" disabled>حجز تذكرة</button>
-        
+
         <div class="warning-banner" id="printerOfflineBanner"></div>
         <div class="error-message" id="reservationError"></div>
     </section>
@@ -825,8 +833,9 @@ footer {
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, onValue, push, set, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
-import { getMessaging, getToken, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+import { getDatabase, ref, onValue, push, set, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+// [إشعارات] أُضيف onMessage: استقبال الإشعار والصفحة مفتوحة أمام المستخدم
+import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
 const GOOGLE_ICON_SVG = `<svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>`;
 
@@ -869,6 +878,7 @@ const i18n = {
         errNetwork: "Impossible d'envoyer la réservation. Veuillez réessayer.",
         errAuth: "Impossible de se connecter avec Google.",
         errLogout: "Impossible de se déconnecter.",
+        errPushRegister: "Impossible d'enregistrer ce téléphone pour les notifications. Les alertes fonctionneront seulement tant que la page reste ouverte.",
         statusPendingTitle: "RÉSERVATION EN COURS",
         statusPendingMsg: "Votre réservation est en cours de traitement...",
         statusConfirmedTitle: "RÉSERVATION CONFIRMÉE (EN ATTENTE D'IMPRESSION)",
@@ -879,6 +889,8 @@ const i18n = {
         statusCalledMsg: (t) => `Votre numéro (#${t}) est appelé au guichet !`,
         statusSkippedTitle: "TOUR DÉPASSÉ",
         statusSkippedMsg: "Votre numéro a été dépassé par le guichet.",
+        statusExpiredTitle: "RÉSERVATION EXPIRÉE",
+        statusExpiredMsg: "Le ticket n'a pas été retiré à temps, la réservation a été annulée.",
         statusCompletedTitle: "SERVICE TERMINÉ",
         statusCompletedMsg: "Votre passage est terminé.",
         ticketInstructionConfirmed: "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération, la réservation est annulée.",
@@ -890,7 +902,12 @@ const i18n = {
         alertTurnTitle: "🔔 C'EST VOTRE TOUR !",
         alertTurnMsg: (t, c) => `Votre numéro #${t} est appelé au Guichet ${c} !`,
         alertPrepareTitle: "⚠️ Préparez-vous !",
-        alertPrepareMsg: (rem, t) => `Il ne reste que ${rem} personne(s) avant votre tour (Ticket #${t}). Veuillez vous approcher du guichet.`,
+        alertPrepareMsg: (rem, t) => `Il ne reste que ${rem} personne(s) avant vous (Ticket #${t}). Veuillez vous approcher du guichet.`,
+        alertNextMsg: (t) => `Vous êtes le prochain (Ticket #${t}). Veuillez vous approcher du guichet.`,
+        alertEnabledTitle: "✅ Notifications activées",
+        alertEnabledMsg: "Vous recevrez ici une notification à l'approche de votre tour.",
+        pushUnsupportedTitle: "Notifications limitées",
+        pushUnsupportedMsg: "Ce navigateur ne peut pas recevoir de notifications quand le téléphone est verrouillé. Sur iPhone : ajoutez le site à l'écran d'accueil (Partager ← Sur l'écran d'accueil), ouvrez-le depuis l'icône puis réactivez les notifications. En attendant, l'alerte fonctionne tant que la page reste ouverte.",
         permTitle: "Notifications bloquées",
         permMsg: "L'activation des notifications est <strong>indispensable</strong> pour être averti à l'avance de votre tour lorsque votre écran est verrouillé ou que vous quittez la page.<br><br><strong>Comment les autoriser ?</strong><br>1. Cliquez sur l'icône de cadenas ou de réglages (🔒) à gauche de l'adresse du site.<br>2. Activez l'option <strong>Notifications</strong>.<br>3. Rechargez ensuite la page pour appliquer."
     },
@@ -932,6 +949,7 @@ const i18n = {
         errNetwork: "تعذر إرسال الحجز، يرجى إعادة المحاولة.",
         errAuth: "فشل تسجيل الدخول بواسطة Google.",
         errLogout: "فشل تسجيل الخروج.",
+        errPushRegister: "تعذر تسجيل هذا الهاتف لاستقبال الإشعارات. سيعمل التنبيه فقط ما دامت الصفحة مفتوحة.",
         statusPendingTitle: "معالجة الحجز",
         statusPendingMsg: "جارٍ تأكيد الحجز مع الموزع الآلي...",
         statusConfirmedTitle: "تم تأكيد الحجز (في انتظار طباعة التذكرة)",
@@ -942,6 +960,8 @@ const i18n = {
         statusCalledMsg: (t) => `الرقم (${t}) مدعو للتقدم إلى الشباك الآن!`,
         statusSkippedTitle: "فات دورك",
         statusSkippedMsg: "تم تجاوز رقمك في طابور الانتظار.",
+        statusExpiredTitle: "انتهت صلاحية الحجز",
+        statusExpiredMsg: "لم تُسحب التذكرة في الوقت المحدد، فأُلغي الحجز.",
         statusCompletedTitle: "تمت المعاملة",
         statusCompletedMsg: "انتهت معاملتك بنجاح.",
         ticketInstructionConfirmed: "توجه إلى الموزع الآلي بالمكتب وأدخل رمز الاستلام المكون من 4 أرقام لطباعة تذكرتك.<br><br><strong>تنبيه:</strong> يُلغى الحجز تلقائياً إذا نُودي رقمك قبل سحب التذكرة.",
@@ -953,7 +973,12 @@ const i18n = {
         alertTurnTitle: "🔔 حان دورك الآن!",
         alertTurnMsg: (t, c) => `الرقم ${t} مدعو إلى الشباك ${c}!`,
         alertPrepareTitle: "⚠️ اقترب دورك!",
-        alertPrepareMsg: (rem, t) => `بقي ${rem} فقط قبل دورك (تذكرة ${t}). يرجى الاستعداد.`,
+        alertPrepareMsg: (rem, t) => `بقي ${rem} فقط قبلك (تذكرة ${t}). يرجى الاستعداد.`,
+        alertNextMsg: (t) => `أنت التالي (تذكرة ${t}). يرجى الاستعداد.`,
+        alertEnabledTitle: "✅ تم تفعيل التنبيهات",
+        alertEnabledMsg: "سيصلك هنا إشعار عند اقتراب دورك.",
+        pushUnsupportedTitle: "الإشعارات محدودة",
+        pushUnsupportedMsg: "هذا المتصفح لا يستقبل الإشعارات والهاتف مقفل. على iPhone: أضف الموقع إلى الشاشة الرئيسية (زر المشاركة ← إضافة إلى الشاشة الرئيسية)، ثم افتحه من الأيقونة وفعّل التنبيهات من جديد. إلى ذلك الحين يعمل التنبيه ما دامت الصفحة مفتوحة.",
         permTitle: "الإشعارات محجوبة",
         permMsg: "تفعيل الإشعارات ضروري لتنبيهك باقتراب دورك أثناء قفل الهاتف أو مغادرة الصفحة.<br><br><strong>طريقة التفعيل:</strong><br>1. اضغط على رمز القفل أو الإعدادات (🔒) بجانب عنوان الموقع.<br>2. فعّل خيار <strong>الإشعارات (Notifications)</strong>.<br>3. أعد تحميل الصفحة."
     }
@@ -1005,6 +1030,9 @@ function applyLanguage(lang) {
     }
     updateWaitingDisplay();
     checkMasterStatus();
+
+    // تغيير اللغة يغيّر لغة إشعارات الـ Worker أيضاً
+    if (currentUser && alertToggle.checked) syncFCMTokenWithDatabase();
 }
 
 document.getElementById("langArBtn").addEventListener("click", () => applyLanguage("ar"));
@@ -1028,8 +1056,63 @@ const googleProvider = new GoogleAuthProvider();
 
 const VAPID_KEY = "BHVKczf-qi6Dcun5s4GdvMoBnRDUe5vOTsKg5seNNgvgMBodd_fwlMaVNOROwIWJEZYOzRqXIhLC16Ore-3CDSs";
 
+// حالات الحجز التي يكون فيها صاحبه ما زال في الطابور
+const ACTIVE_STATUSES = ["confirmed", "reserved", "arrived", "waiting"];
+// حالات انتهى فيها الحجز (يُحذف من الهاتف بعد 20 دقيقة)
+const FINISHED_STATUSES = ["skipped", "completed", "rejected", "expired"];
+
 let messaging = null;
 let swRegistration = null;
+let messagingSupported = false;
+
+/* ========================================================
+   [إشعارات] تهيئة الإشعارات تبدأ فوراً (كانت تنتظر حدث load)،
+   وكل من يحتاجها ينتظر messagingReady. في النسخة السابقة كان
+   تسجيل الدخول يسبق التهيئة عند فتح الصفحة، فلا يُحفظ رمز الهاتف (token).
+======================================================== */
+function waitForServiceWorkerActive(reg, timeoutMs = 10000) {
+    if (!reg || reg.active) return Promise.resolve();
+    const sw = reg.installing || reg.waiting;
+    if (!sw) return Promise.resolve();
+    return new Promise((resolve) => {
+        const timer = setTimeout(resolve, timeoutMs);
+        sw.addEventListener("statechange", () => {
+            if (sw.state === "activated") {
+                clearTimeout(timer);
+                resolve();
+            }
+        });
+    });
+}
+
+const messagingReady = (async () => {
+    try {
+        messagingSupported = await isSupported();
+        if (!messagingSupported) {
+            console.warn("[إشعارات] هذا المتصفح لا يدعم Firebase Messaging");
+            return false;
+        }
+
+        messaging = getMessaging(app);
+
+        if ("serviceWorker" in navigator) {
+            try {
+                swRegistration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
+                await waitForServiceWorkerActive(swRegistration);
+            } catch (e) {
+                console.warn("[إشعارات] فشل تسجيل firebase-messaging-sw.js:", e);
+            }
+        }
+
+        // [إشعارات] والصفحة ظاهرة على الشاشة لا يعرض Firebase الإشعار بنفسه، بل يسلّمه
+        // للصفحة هنا. لم يكن في النسخة السابقة onMessage، فكان الإشعار يضيع.
+        onMessage(messaging, handleForegroundPush);
+        return true;
+    } catch (e) {
+        console.warn("[إشعارات] فشل التهيئة:", e);
+        return false;
+    }
+})();
 
 const userBadge            = document.getElementById("userBadge");
 const userPhoto            = document.getElementById("userPhoto");
@@ -1084,7 +1167,7 @@ let serviceAvailable = false;
 let printerOnline = false;
 let printerStatus = 0;
 
-const HEARTBEAT_TIMEOUT_MS = 200 * 1000; 
+const HEARTBEAT_TIMEOUT_MS = 200 * 1000;
 let lastMasterHeartbeat = 0;
 let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
@@ -1094,14 +1177,14 @@ let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
 
-let isInitialTicketLoadDone = false; 
-let lastObservedCurrentTicket = null; 
-let lastAlertedRemaining = null;     
+let isInitialTicketLoadDone = false;
+let lastObservedCurrentTicket = null;
+let lastAlertedRemaining = null;
 let alertedExactTurnForTicket = null;
-let lastAlertTimestamp = 0;          
+let lastAlertTimestamp = 0;
 let wakeLock = null;
 
-const EXPIRED_RETENTION_MS = 20 * 60 * 1000; 
+const EXPIRED_RETENTION_MS = 20 * 60 * 1000;
 let autoClearTimer = null;
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
@@ -1111,6 +1194,27 @@ function formatNumber(number) {
     const n = Number(number);
     if (!Number.isFinite(n) || n <= 0) return "---";
     return String(Math.trunc(n)).padStart(3, "0");
+}
+
+/* ========================================================
+   [عدد من قبلك] عدد الخطوات من الرقم الحالي إلى رقم صاحب التذكرة.
+   0 = رقمه هو المنادى الآن. الأشخاص قبله = الخطوات − 1
+   (مثال: تذكرتك 400 والشاشة 300 => 99 قبلك)، كما تطبع الطابعة.
+   الرقم الحالي 0 (لم يُنادَ أحد بعد) => الخطوات = رقم التذكرة.
+======================================================== */
+function calculateDistanceToTurn(userTicket, curTicket) {
+    const u = Number(userTicket);
+    const c = Number(curTicket);
+    if (!u || u < 1 || u > 999 || !Number.isFinite(c) || c < 0 || c > 999) return null;
+    if (c === 0) return u;
+    if (u === c) return 0;
+    return (u > c) ? (u - c) : ((999 - c) + u);
+}
+
+function calculatePeopleBefore(userTicket, curTicket) {
+    const steps = calculateDistanceToTurn(userTicket, curTicket);
+    if (steps === null) return null;
+    return Math.max(0, steps - 1);
 }
 
 /* ========================================================
@@ -1127,17 +1231,17 @@ function updateWaitingDisplay() {
         return;
     }
 
-    const isUserActive = activeUserTicketData && 
-                         activeUserTicketData.ticket > 0 && 
-                         ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) &&
+    const isUserActive = activeUserTicketData &&
+                         activeUserTicketData.ticket > 0 &&
+                         ACTIVE_STATUSES.includes(activeUserTicketData.status) &&
                          !isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
 
     if (isUserActive) {
-        const remainingDistance = calculateDistanceToTurn(activeUserTicketData.ticket, currentTicket);
-        if (remainingDistance !== null) {
+        const peopleBefore = calculatePeopleBefore(activeUserTicketData.ticket, currentTicket);
+        if (peopleBefore !== null) {
             // بعد الحجز: إظهار عدد الأشخاص قبلك باللون القرمزي الواضح
             lblWaitingCountEl.textContent = t.lblWaitingBeforeYou;
-            waitingCountEl.textContent = remainingDistance;
+            waitingCountEl.textContent = peopleBefore;
             waitingCountEl.classList.add("personal-count");
             waitingBoxEl.classList.add("is-personal");
             return;
@@ -1159,53 +1263,42 @@ permModalCloseBtn.addEventListener("click", () => {
     permModalOverlay.style.display = "none";
 });
 
-async function initFirebaseMessaging() {
-    const supported = await isSupported();
-    if (!supported) return;
-
-    messaging = getMessaging(app);
-
-    if ("serviceWorker" in navigator) {
-        try {
-            swRegistration = await navigator.serviceWorker.register("./firebase-messaging-sw.js");
-        } catch (e) {
-            console.warn("SW Registration:", e);
-        }
-    }
-}
-window.addEventListener("load", initFirebaseMessaging);
-
+/* ========================================================
+   [إشعارات] حفظ رمز الهاتف في users_fcm/<uid> ليرسل إليه الـ Worker.
+   - ينتظر اكتمال التهيئة (كان يخرج بصمت إن لم تكتمل).
+   - لا يطلب الإذن هنا: المتصفح لا يقبل طلب الإذن إلا عند ضغطة من المستخدم
+     (زر التنبيهات)، وكان الطلب من هنا يُظهر رسالة "محجوبة" خطأً.
+   يعيد true إذا حُفظ الرمز.
+======================================================== */
 async function syncFCMTokenWithDatabase() {
-    if (!messaging || !currentUser) return;
+    if (!currentUser) return false;
+    const ready = await messagingReady;
+    if (!ready || !messaging || !currentUser) return false;
+    if (!("Notification" in window) || Notification.permission !== "granted") return false;
+
     try {
-        if (!("Notification" in window)) return;
-        if (Notification.permission === "denied") {
-            showPermissionDeniedModal();
-            return;
+        const tokenOptions = { vapidKey: VAPID_KEY };
+        if (swRegistration) tokenOptions.serviceWorkerRegistration = swRegistration;
+        const token = await getToken(messaging, tokenOptions);
+        if (!token) {
+            console.warn("[إشعارات] لم يُرجع Firebase رمزاً للهاتف");
+            return false;
         }
 
-        const permission = await Notification.requestPermission();
-        if (permission !== "granted") {
-            showPermissionDeniedModal();
-            return;
-        }
-
-        const token = await getToken(messaging, { 
-            vapidKey: VAPID_KEY,
-            serviceWorkerRegistration: swRegistration 
+        // update بدل set: لا تُمسح حالة آخر تنبيه التي يحفظها الـ Worker (alert_*)،
+        // فلا يتكرر التنبيه عند كل فتح للصفحة. lang: لغة الإشعار الذي يرسله الـ Worker.
+        await update(ref(db, `users_fcm/${currentUser.uid}`), {
+            token: token,
+            ticket: activeUserTicketData?.ticket || 0,
+            margin: Number(alertMarginSelect.value) || 10,
+            lang: currentLang,
+            user_email: currentUser.email || "",
+            updated_at: serverTimestamp()
         });
-
-        if (token) {
-            await set(ref(db, `users_fcm/${currentUser.uid}`), {
-                token: token,
-                ticket: activeUserTicketData?.ticket || 0,
-                margin: Number(alertMarginSelect.value) || 10,
-                user_email: currentUser.email || "",
-                updated_at: serverTimestamp()
-            });
-        }
+        return true;
     } catch (err) {
-        console.warn("Token Sync error:", err);
+        console.warn("[إشعارات] فشل حفظ الرمز:", err);
+        return false;
     }
 }
 
@@ -1214,6 +1307,53 @@ async function removeFCMTokenFromDatabase() {
     try {
         await remove(ref(db, `users_fcm/${currentUser.uid}`));
     } catch (e) {}
+}
+
+/* ========================================================
+   [إشعارات] إشعار نظام حقيقي يظهر في شريط الهاتف.
+   في النسخة السابقة كان التنبيه نافذة داخل الصفحة وصوتاً فقط،
+   فلا يظهر شيء في شريط الإشعارات. الوسم (tag) يمنع تكرار الإشعار نفسه.
+======================================================== */
+async function showSystemNotification(title, body, tag, isTurn = false) {
+    try {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        const options = {
+            body: body,
+            tag: tag,
+            renotify: true,
+            icon: "logo.png",
+            badge: "logo.png",
+            lang: currentLang,
+            dir: (currentLang === "ar") ? "rtl" : "ltr",
+            vibrate: isTurn ? [400, 150, 400, 150, 600] : [300, 150, 300],
+            requireInteraction: isTurn
+        };
+
+        let reg = swRegistration;
+        if (!reg && "serviceWorker" in navigator) {
+            reg = await navigator.serviceWorker.getRegistration();
+        }
+        if (reg && typeof reg.showNotification === "function") {
+            await reg.showNotification(title, options);
+            return;
+        }
+        new Notification(title, options);
+    } catch (e) {
+        console.warn("[إشعارات] تعذر عرض الإشعار:", e);
+    }
+}
+
+// إشعار وصل من الـ Worker والصفحة مفتوحة أمام المستخدم
+function handleForegroundPush(payload) {
+    const n = payload?.notification || {};
+    const d = payload?.data || {};
+    const t = i18n[currentLang];
+    const type = String(d.type || "").toLowerCase();
+    const isTurn = (type === "turn" || type === "called");
+    const title = n.title || d.title || (isTurn ? t.alertTurnTitle : t.alertPrepareTitle);
+    const body = n.body || d.body || "";
+    const tag = d.tag || n.tag || `qms-push-${activeUserTicketData?.ticket || 0}-${isTurn ? "turn" : "prep"}`;
+    triggerTurnAlert(title, body, isTurn, tag);
 }
 
 function playTone(freq, type, startTime, duration, gainLevel) {
@@ -1265,10 +1405,13 @@ function releaseScreenWakeLock() {
     }
 }
 
-function triggerTurnAlert(title, message, isTurn = false) {
+function triggerTurnAlert(title, message, isTurn = false, tag = "") {
     const now = Date.now();
     if (now - lastAlertTimestamp < 4000) return;
     lastAlertTimestamp = now;
+
+    // [إشعارات] إشعار في شريط الهاتف أيضاً، لا نافذة داخل الصفحة فقط
+    showSystemNotification(title, message, tag || `qms-${isTurn ? "turn" : "prep"}`, isTurn);
 
     playNotificationChime(isTurn);
 
@@ -1288,61 +1431,66 @@ inAppModalCloseBtn.addEventListener("click", () => {
     inAppModalOverlay.style.display = "none";
 });
 
-function calculateDistanceToTurn(userTicket, curTicket) {
-    const u = Number(userTicket);
-    const c = Number(curTicket);
-    if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return null;
-    if (u === c) return 0;
-    return (u > c) ? (u - c) : ((999 - c) + u);
+function showInfoModal(icon, title, message) {
+    inAppModalIcon.textContent = icon;
+    inAppModalTitle.textContent = title;
+    inAppModalMsg.textContent = message;
+    inAppModalOverlay.style.display = "flex";
 }
 
 function checkAlertsEngine() {
     if (!alertToggle.checked || !activeUserTicketData || activeUserTicketData.ticket <= 0) return;
     const status = activeUserTicketData.status;
 
-    if (!["confirmed", "reserved", "arrived", "waiting"].includes(status)) return;
+    if (!ACTIVE_STATUSES.includes(status)) return;
 
     const ticketNum = activeUserTicketData.ticket;
-    const remaining = calculateDistanceToTurn(ticketNum, currentTicket);
-    if (remaining === null) return;
+    const steps = calculateDistanceToTurn(ticketNum, currentTicket);
+    if (steps === null) return;
+    const peopleBefore = Math.max(0, steps - 1);
 
     const margin = parseInt(alertMarginSelect.value, 10) || 10;
     const t = i18n[currentLang];
 
     if (!isInitialTicketLoadDone) {
-        lastAlertedRemaining = remaining;
+        lastAlertedRemaining = peopleBefore;
         lastObservedCurrentTicket = currentTicket;
-        if (remaining === 0) alertedExactTurnForTicket = ticketNum;
+        if (steps === 0) alertedExactTurnForTicket = ticketNum;
         isInitialTicketLoadDone = true;
-        return; 
+        return;
     }
 
     if (currentTicket === lastObservedCurrentTicket) return;
     lastObservedCurrentTicket = currentTicket;
 
-    if (remaining === 0) {
+    if (steps === 0) {
         if (alertedExactTurnForTicket !== ticketNum) {
             alertedExactTurnForTicket = ticketNum;
             lastAlertedRemaining = 0;
             triggerTurnAlert(
                 t.alertTurnTitle,
                 t.alertTurnMsg(formatNumber(ticketNum), currentConsole || 1),
-                true
+                true,
+                `qms-${ticketNum}-turn`
             );
         }
         return;
     }
 
-    if (remaining > 0 && remaining <= margin) {
+    if (peopleBefore <= margin) {
         const justEnteredMargin = (lastAlertedRemaining === null || lastAlertedRemaining > margin);
-        const threePeoplePassed = (lastAlertedRemaining !== null && (lastAlertedRemaining - remaining) >= 3);
+        const threePeoplePassed = (lastAlertedRemaining !== null && (lastAlertedRemaining - peopleBefore) >= 3);
+        const becameNext = (peopleBefore === 0 && lastAlertedRemaining !== 0);
 
-        if (justEnteredMargin || threePeoplePassed) {
-            lastAlertedRemaining = remaining;
+        if (justEnteredMargin || threePeoplePassed || becameNext) {
+            lastAlertedRemaining = peopleBefore;
             triggerTurnAlert(
                 t.alertPrepareTitle,
-                t.alertPrepareMsg(remaining, formatNumber(ticketNum)),
-                false
+                (peopleBefore === 0)
+                    ? t.alertNextMsg(formatNumber(ticketNum))
+                    : t.alertPrepareMsg(peopleBefore, formatNumber(ticketNum)),
+                false,
+                `qms-${ticketNum}-prep`
             );
         }
     }
@@ -1379,10 +1527,17 @@ function initAlertPreferences() {
 }
 
 alertToggle.addEventListener("change", async () => {
+    const t = i18n[currentLang];
+
     if (alertToggle.checked) {
         if (!("Notification" in window)) {
-            alert("Votre navigateur ne supporte pas les notifications / متصفحكم لا يدعم التنبيهات");
-            alertToggle.checked = false;
+            // [إشعارات] مثل Safari على iPhone قبل إضافة الموقع إلى الشاشة الرئيسية:
+            // يبقى التنبيه داخل الصفحة مفعّلاً، مع شرح سبب غياب إشعارات الهاتف
+            localStorage.setItem("qms_alert_enabled", "true");
+            alertOptionsArea.style.opacity = "1";
+            alertOptionsArea.style.pointerEvents = "auto";
+            requestScreenWakeLock();
+            showInfoModal("📱", t.pushUnsupportedTitle, t.pushUnsupportedMsg);
             return;
         }
 
@@ -1400,7 +1555,7 @@ alertToggle.addEventListener("change", async () => {
             try { perm = await Notification.requestPermission(); } catch (e) {}
         }
 
-        if (perm === "denied" || perm !== "granted") {
+        if (perm !== "granted") {
             alertToggle.checked = false;
             localStorage.setItem("qms_alert_enabled", "false");
             alertOptionsArea.style.opacity = "0.4";
@@ -1414,7 +1569,20 @@ alertToggle.addEventListener("change", async () => {
         alertOptionsArea.style.pointerEvents = "auto";
         requestScreenWakeLock();
         playNotificationChime(false);
-        await syncFCMTokenWithDatabase();
+
+        // [إشعارات] إشعار تجريبي فوري: إن ظهر في شريط الهاتف فالهاتف والمتصفح سليمان
+        showSystemNotification(t.alertEnabledTitle, t.alertEnabledMsg, "qms-enabled-test", false);
+
+        const ready = await messagingReady;
+        if (!ready) {
+            showInfoModal("📱", t.pushUnsupportedTitle, t.pushUnsupportedMsg);
+            return;
+        }
+        const saved = await syncFCMTokenWithDatabase();
+        if (!saved) {
+            ticketError.style.display = "block";
+            ticketError.textContent = t.errPushRegister;
+        }
     } else {
         localStorage.setItem("qms_alert_enabled", "false");
         alertOptionsArea.style.opacity = "0.4";
@@ -1426,25 +1594,26 @@ alertToggle.addEventListener("change", async () => {
 
 alertMarginSelect.addEventListener("change", async () => {
     localStorage.setItem("qms_alert_margin", alertMarginSelect.value);
-    lastAlertedRemaining = calculateDistanceToTurn(activeUserTicketData?.ticket, currentTicket);
+    lastAlertedRemaining = calculatePeopleBefore(activeUserTicketData?.ticket, currentTicket);
     if (currentUser && alertToggle.checked) {
         await syncFCMTokenWithDatabase();
     }
 });
 
+// نفس قاعدة الجهاز الرئيسي: الرقم تجاوزه الطابور إذا كان خلفه بمسافة 1..499
 function isTicketOvertaken(userTicket, curTicket) {
     const u = Number(userTicket);
     const c = Number(curTicket);
     if (!u || !c || u < 1 || u > 999 || c < 1 || c > 999) return false;
-    if (u === c) return false; 
+    if (u === c) return false;
     const passedDistance = (c >= u) ? (c - u) : (999 - u + c);
-    return (passedDistance > 0 && passedDistance <= 450);
+    return (passedDistance > 0 && passedDistance <= 499);
 }
 
 function saveReservation(reservation) {
     if (!currentUser) return;
-    const data = { 
-        ...reservation, 
+    const data = {
+        ...reservation,
         user_id: currentUser.uid,
         saved_at: reservation.saved_at || Date.now()
     };
@@ -1459,8 +1628,7 @@ function loadReservation() {
         const res = JSON.parse(saved);
         if (res.user_id !== currentUser.uid) return null;
 
-        const expiredStatuses = ["skipped", "completed", "rejected"];
-        if (expiredStatuses.includes(res.status)) {
+        if (FINISHED_STATUSES.includes(res.status)) {
             const timePassed = Date.now() - (res.expired_at || res.saved_at || 0);
             if (timePassed > EXPIRED_RETENTION_MS) {
                 localStorage.removeItem(getReservationKey(currentUser.uid));
@@ -1605,7 +1773,7 @@ onValue(queueRef, (snapshot) => {
 function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
-    const hasActiveReservation = activeUserTicketData && ["confirmed", "reserved", "arrived", "waiting"].includes(activeUserTicketData.status) && !isCurrentTicketOvertaken;
+    const hasActiveReservation = activeUserTicketData && ACTIVE_STATUSES.includes(activeUserTicketData.status) && !isCurrentTicketOvertaken;
     const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
     const t = i18n[currentLang];
 
@@ -1687,7 +1855,7 @@ function showReservation(reservation) {
 function updateReservationStatus(status) {
     if (activeUserTicketData) {
         activeUserTicketData.status = status;
-        if (["skipped", "completed", "rejected"].includes(status) && !activeUserTicketData.expired_at) {
+        if (FINISHED_STATUSES.includes(status) && !activeUserTicketData.expired_at) {
             activeUserTicketData.expired_at = Date.now();
         }
         saveReservation(activeUserTicketData);
@@ -1697,7 +1865,7 @@ function updateReservationStatus(status) {
     ticketTitleEl.className = "";
     const t = i18n[currentLang];
 
-    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled"];
+    const expiredStatuses = ["skipped", "called", "completed", "rejected", "cancelled", "expired"];
 
     if (expiredStatuses.includes(status)) {
         myCodeEl.textContent = "----";
@@ -1706,14 +1874,14 @@ function updateReservationStatus(status) {
         alertBox.style.display = "none";
         releaseScreenWakeLock();
 
-        if (["skipped", "completed", "rejected"].includes(status)) {
+        if (FINISHED_STATUSES.includes(status)) {
             const timePassed = Date.now() - (activeUserTicketData?.expired_at || Date.now());
             const remainingTime = Math.max(1000, EXPIRED_RETENTION_MS - timePassed);
             scheduleAutoClearTicket(remainingTime);
         }
     } else {
         clearAutoClearTimer();
-        const codeVal = (activeUserTicketData && activeUserTicketData.code !== undefined && activeUserTicketData.code !== null) 
+        const codeVal = (activeUserTicketData && activeUserTicketData.code !== undefined && activeUserTicketData.code !== null)
                         ? String(activeUserTicketData.code) : "";
         myCodeEl.textContent = codeVal ? codeVal.padStart(4, "0") : "----";
         newReservationButton.style.display = "none";
@@ -1759,6 +1927,15 @@ function updateReservationStatus(status) {
             ticketTitleEl.textContent = t.statusSkippedTitle;
             ticketTitleEl.classList.add("ticket-title-red");
             myStatusEl.textContent = t.statusSkippedMsg;
+            myStatusEl.classList.add("skipped");
+            ticketMessageEl.innerHTML = t.ticketInstructionSkipped;
+            break;
+
+        // [حالة expired] يكتبها الجهاز الرئيسي إذا لم تُسحب التذكرة خلال ساعتين، ولم تكن معروفة للموقع
+        case "expired":
+            ticketTitleEl.textContent = t.statusExpiredTitle;
+            ticketTitleEl.classList.add("ticket-title-red");
+            myStatusEl.textContent = t.statusExpiredMsg;
             myStatusEl.classList.add("skipped");
             ticketMessageEl.innerHTML = t.ticketInstructionSkipped;
             break;
@@ -1863,7 +2040,7 @@ function watchUserActiveTicket(uid) {
         const status = String(data.status || "").toLowerCase();
         const tNum = Number(data.ticket || 0);
 
-        if (["confirmed", "reserved", "arrived", "waiting"].includes(status) && tNum > 0) {
+        if (ACTIVE_STATUSES.includes(status) && tNum > 0) {
             clearPendingTimer();
             clearAutoClearTimer();
             reservationInProgress = false;
@@ -1884,8 +2061,8 @@ function watchUserActiveTicket(uid) {
                 showReservation(resData);
             }
             if (alertToggle.checked) syncFCMTokenWithDatabase();
-        } else if (["called", "skipped", "completed"].includes(status)) {
-            updateReservationStatus(status);
+        } else if (["called", "skipped", "completed", "expired"].includes(status)) {
+            if (activeUserTicketData) updateReservationStatus(status);
         }
     });
 }
@@ -1905,10 +2082,10 @@ async function createReservation() {
 
     const localSaved = loadReservation();
     if (localSaved && localSaved.user_id === currentUser.uid && localSaved.ticket > 0) {
-        const isExpired = ["skipped", "called", "completed", "rejected"].includes(localSaved.status);
+        const isExpired = ["skipped", "called", "completed", "rejected", "expired"].includes(localSaved.status);
         const isOver = isTicketOvertaken(localSaved.ticket, currentTicket);
 
-        if (!isExpired && !isOver && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status)) {
+        if (!isExpired && !isOver && ACTIVE_STATUSES.includes(localSaved.status)) {
             showReservation(localSaved);
             updateReserveButton();
             return;
@@ -1967,7 +2144,7 @@ async function loginAndReserve() {
 
             const localSaved = loadReservation();
             const isOvertaken = localSaved && isTicketOvertaken(localSaved.ticket, currentTicket);
-            const hasActiveReservation = localSaved && ["confirmed", "reserved", "arrived", "waiting"].includes(localSaved.status) && !isOvertaken;
+            const hasActiveReservation = localSaved && ACTIVE_STATUSES.includes(localSaved.status) && !isOvertaken;
 
             if (hasActiveReservation) {
                 showReservation(localSaved);
@@ -2047,6 +2224,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
         watchUserActiveTicket(user.uid);
+        // [إشعارات] ينتظر الآن اكتمال التهيئة، فيُحدَّث رمز الهاتف عند كل فتح للصفحة
         if (alertToggle.checked) syncFCMTokenWithDatabase();
     } else {
         userBadge.style.display = "none";
