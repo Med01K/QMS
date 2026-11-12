@@ -1176,6 +1176,8 @@ let pendingTimeoutTimer = null;
 let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
+let userTicketSeenInDb = false;      // رأينا سجل الحجز في user_active_tickets (لتمييز حذفه)
+let userTicketGoneTimer = null;
 
 let isInitialTicketLoadDone = false;
 let lastObservedCurrentTicket = null;
@@ -1291,7 +1293,7 @@ async function syncFCMTokenWithDatabase() {
             token: token,
             ticket: activeUserTicketData?.ticket || 0,
             margin: Number(alertMarginSelect.value) || 10,
-            lang: currentLang,
+            lang: (currentLang === "fr") ? "fr" : "ar",   // القواعد لا تقبل إلا ar أو fr
             user_email: currentUser.email || "",
             updated_at: serverTimestamp()
         });
@@ -1961,6 +1963,8 @@ function updateReservationStatus(status) {
 function resetUserReservationUI() {
     clearPendingTimer();
     clearAutoClearTimer();
+    if (userTicketGoneTimer) { clearTimeout(userTicketGoneTimer); userTicketGoneTimer = null; }
+    userTicketSeenInDb = false;
     activeUserTicketData = null;
     isInitialTicketLoadDone = false;
     lastObservedCurrentTicket = null;
@@ -2033,14 +2037,38 @@ function watchUserActiveTicket(uid) {
     }
 
     const userTicketRef = ref(db, `user_active_tickets/${uid}`);
+    userTicketSeenInDb = false;
     unsubscribeUserActiveTicket = onValue(userTicketRef, (snapshot) => {
-        if (!snapshot.exists()) return;
+        if (!snapshot.exists()) {
+            /* [توافق مع الجهاز الرئيسي] عند called / skipped / expired لا يكتب الجهاز الرئيسي
+               الحالة، بل يحذف السجل. كانت الصفحة تتجاهل الحذف، فيبقى الحجز المنتهي بعد ساعتين
+               ظاهراً "مؤكداً". ننتظر 3 ثوانٍ حتى يصل تحديث الرقم الحالي، ثم نحدد السبب. */
+            if (userTicketSeenInDb && activeUserTicketData && activeUserTicketData.ticket > 0 &&
+                ACTIVE_STATUSES.includes(activeUserTicketData.status)) {
+                userTicketSeenInDb = false;
+                const goneTicket = activeUserTicketData.ticket;
+                if (userTicketGoneTimer) clearTimeout(userTicketGoneTimer);
+                userTicketGoneTimer = setTimeout(() => {
+                    userTicketGoneTimer = null;
+                    if (!activeUserTicketData || activeUserTicketData.ticket !== goneTicket ||
+                        !ACTIVE_STATUSES.includes(activeUserTicketData.status)) return;
+                    let st = "expired";
+                    if (currentTicket === goneTicket) st = "called";
+                    else if (isTicketOvertaken(goneTicket, currentTicket)) st = "skipped";
+                    updateReservationStatus(st);
+                    if (st !== "called") removeFCMTokenFromDatabase();
+                }, 3000);
+            }
+            return;
+        }
 
         const data = snapshot.val();
         const status = String(data.status || "").toLowerCase();
         const tNum = Number(data.ticket || 0);
 
         if (ACTIVE_STATUSES.includes(status) && tNum > 0) {
+            userTicketSeenInDb = true;
+            if (userTicketGoneTimer) { clearTimeout(userTicketGoneTimer); userTicketGoneTimer = null; }
             clearPendingTimer();
             clearAutoClearTimer();
             reservationInProgress = false;
@@ -2096,9 +2124,10 @@ async function createReservation() {
     updateReserveButton();
 
     try {
-        const requestsRef = ref(db, "reservation_requests");
-        const newRequestRef = push(requestsRef);
-        const newReqKey = newRequestRef.key;
+        // [RES_PER_UID] طلب واحد لكل حساب: المفتاح هو uid نفسه، والقواعد ترفض طلباً ثانياً
+        // للحساب قبل 30 ثانية. (كان push يسمح بعدد غير محدود من الطلبات.)
+        const newReqKey = currentUser.uid;
+        const newRequestRef = ref(db, `reservation_requests/${newReqKey}`);
 
         await set(newRequestRef, {
             status: "pending",
