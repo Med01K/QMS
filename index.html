@@ -1187,10 +1187,45 @@ let lastAlertTimestamp = 0;
 let wakeLock = null;
 
 const EXPIRED_RETENTION_MS = 20 * 60 * 1000;
+// [مهلة الإخفاء] رسالة "فات دورك" / "انتهت صلاحية الحجز" تختفي بعد 5 دقائق ثم تعود صفحة الحجز
+const SKIPPED_RETENTION_MS = 5 * 60 * 1000;
+function getRetentionMs(status) {
+    return (status === "skipped" || status === "expired") ? SKIPPED_RETENTION_MS : EXPIRED_RETENTION_MS;
+}
 let autoClearTimer = null;
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
 function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
+
+// [منع عودة الرسالة] تذكرة arrived التي تجاوزها الطابور يبقى سجلها في user_active_tickets
+// (يضعها الجهاز الرئيسي في قائمة reclaimed ولا يحذفها)، فكانت الرسالة تعود عند كل فتح للصفحة.
+// نحفظ التذكرة التي أُخفيت ونتجاهل سجلها حتى يُنشأ حجز جديد.
+const DISMISSED_PREFIX = "poste_elamal_dismissed_";
+function getDismissedKey(uid) { return DISMISSED_PREFIX + uid; }
+function markTicketDismissed(res) {
+    if (!currentUser || !res || !(Number(res.ticket) > 0)) return;
+    try {
+        localStorage.setItem(getDismissedKey(currentUser.uid), JSON.stringify({
+            ticket: Number(res.ticket),
+            booked_at: Number(res.booked_at || 0)
+        }));
+    } catch (e) {}
+}
+function isTicketDismissed(ticket, bookedAt) {
+    if (!currentUser) return false;
+    try {
+        const m = JSON.parse(localStorage.getItem(getDismissedKey(currentUser.uid)) || "null");
+        if (!m || Number(m.ticket) !== Number(ticket)) return false;
+        const b = Number(bookedAt || 0);
+        return (!m.booked_at || !b || Number(m.booked_at) === b);
+    } catch (e) {
+        return false;
+    }
+}
+function clearDismissedTicket() {
+    if (!currentUser) return;
+    try { localStorage.removeItem(getDismissedKey(currentUser.uid)); } catch (e) {}
+}
 
 function formatNumber(number) {
     const n = Number(number);
@@ -1632,7 +1667,8 @@ function loadReservation() {
 
         if (FINISHED_STATUSES.includes(res.status)) {
             const timePassed = Date.now() - (res.expired_at || res.saved_at || 0);
-            if (timePassed > EXPIRED_RETENTION_MS) {
+            if (timePassed > getRetentionMs(res.status)) {
+                markTicketDismissed(res);
                 localStorage.removeItem(getReservationKey(currentUser.uid));
                 return null;
             }
@@ -1662,6 +1698,7 @@ function scheduleAutoClearTicket(delayMs = EXPIRED_RETENTION_MS) {
     clearAutoClearTimer();
     autoClearTimer = setTimeout(async () => {
         if (!currentUser) return;
+        markTicketDismissed(activeUserTicketData);
         localStorage.removeItem(getReservationKey(currentUser.uid));
         await removeFCMTokenFromDatabase();
         resetUserReservationUI();
@@ -1878,7 +1915,7 @@ function updateReservationStatus(status) {
 
         if (FINISHED_STATUSES.includes(status)) {
             const timePassed = Date.now() - (activeUserTicketData?.expired_at || Date.now());
-            const remainingTime = Math.max(1000, EXPIRED_RETENTION_MS - timePassed);
+            const remainingTime = Math.max(1000, getRetentionMs(status) - timePassed);
             scheduleAutoClearTicket(remainingTime);
         }
     } else {
@@ -2067,6 +2104,9 @@ function watchUserActiveTicket(uid) {
         const tNum = Number(data.ticket || 0);
 
         if (ACTIVE_STATUSES.includes(status) && tNum > 0) {
+            // [منع عودة الرسالة] تذكرة أُخفيت رسالتها سابقاً: لا نعرضها من جديد
+            const prevSaved = loadReservation();
+            if (isTicketDismissed(tNum, data.booked_at)) return;
             userTicketSeenInDb = true;
             if (userTicketGoneTimer) { clearTimeout(userTicketGoneTimer); userTicketGoneTimer = null; }
             clearPendingTimer();
@@ -2078,8 +2118,14 @@ function watchUserActiveTicket(uid) {
                 ticket: tNum,
                 code: data.code || "",
                 status: status,
-                user_id: uid
+                user_id: uid,
+                booked_at: Number(data.booked_at || 0)
             };
+            // [مهلة الإخفاء] نحتفظ بلحظة رصد التجاوز حتى لا يبدأ العدّاد من الصفر عند كل تحديث أو فتح للصفحة
+            if (prevSaved && Number(prevSaved.ticket) === tNum && prevSaved.expired_at &&
+                (!prevSaved.booked_at || !resData.booked_at || Number(prevSaved.booked_at) === resData.booked_at)) {
+                resData.expired_at = prevSaved.expired_at;
+            }
             saveReservation(resData);
 
             if (isTicketOvertaken(tNum, currentTicket)) {
@@ -2122,6 +2168,7 @@ async function createReservation() {
 
     reservationInProgress = true;
     updateReserveButton();
+    clearDismissedTicket();
 
     try {
         // [RES_PER_UID] طلب واحد لكل حساب: المفتاح هو uid نفسه، والقواعد ترفض طلباً ثانياً
