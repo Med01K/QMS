@@ -872,7 +872,7 @@ const i18n = {
         connAvailable: "Service disponible",
         bannerBorneOffline: "⚠️ <strong>Borne d'impression hors ligne :</strong><br>Le guichet physique n'est pas connecté. Les réservations en ligne sont suspendues.",
         bannerNoPaper: "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.",
-        errBorneOffline: "La borne d'accueil est déconnectée ou indisponible. Impossible de réserver pour le moment.",
+        errBorneOffline: "Le système est hors ligne. Impossible de réserver pour le moment.",
         errRejected: "Votre demande n'a pas pu être validée par le système.",
         errTimeout: "Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.",
         errNetwork: "Impossible d'envoyer la réservation. Veuillez réessayer.",
@@ -943,7 +943,7 @@ const i18n = {
         connAvailable: "الخدمة متاحة",
         bannerBorneOffline: "⚠️ <strong>الموزع الآلي غير متصل:</strong><br>جهاز الطباعة بالمكتب متوقف حالياً. الحجز معلّق.",
         bannerNoPaper: "⚠️ <strong>نفاد ورق الطباعة:</strong><br>الموزع الآلي خالٍ من الورق. الحجز معلّق مؤقتاً.",
-        errBorneOffline: "الموزع الآلي غير متاح حالياً. يتعذر إتمام الحجز.",
+        errBorneOffline: "النظام غير متصل حالياً. يتعذر إتمام الحجز.",
         errRejected: "تعذر قبول طلب الحجز.",
         errTimeout: "انتهت مهلة استجابة الموزع. يرجى سحب تذكرتك مباشرة بالمكتب.",
         errNetwork: "تعذر إرسال الحجز، يرجى إعادة المحاولة.",
@@ -1187,45 +1187,10 @@ let lastAlertTimestamp = 0;
 let wakeLock = null;
 
 const EXPIRED_RETENTION_MS = 20 * 60 * 1000;
-// [مهلة الإخفاء] رسالة "فات دورك" / "انتهت صلاحية الحجز" تختفي بعد 5 دقائق ثم تعود صفحة الحجز
-const SKIPPED_RETENTION_MS = 5 * 60 * 1000;
-function getRetentionMs(status) {
-    return (status === "skipped" || status === "expired") ? SKIPPED_RETENTION_MS : EXPIRED_RETENTION_MS;
-}
 let autoClearTimer = null;
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
 function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
-
-// [منع عودة الرسالة] تذكرة arrived التي تجاوزها الطابور يبقى سجلها في user_active_tickets
-// (يضعها الجهاز الرئيسي في قائمة reclaimed ولا يحذفها)، فكانت الرسالة تعود عند كل فتح للصفحة.
-// نحفظ التذكرة التي أُخفيت ونتجاهل سجلها حتى يُنشأ حجز جديد.
-const DISMISSED_PREFIX = "poste_elamal_dismissed_";
-function getDismissedKey(uid) { return DISMISSED_PREFIX + uid; }
-function markTicketDismissed(res) {
-    if (!currentUser || !res || !(Number(res.ticket) > 0)) return;
-    try {
-        localStorage.setItem(getDismissedKey(currentUser.uid), JSON.stringify({
-            ticket: Number(res.ticket),
-            booked_at: Number(res.booked_at || 0)
-        }));
-    } catch (e) {}
-}
-function isTicketDismissed(ticket, bookedAt) {
-    if (!currentUser) return false;
-    try {
-        const m = JSON.parse(localStorage.getItem(getDismissedKey(currentUser.uid)) || "null");
-        if (!m || Number(m.ticket) !== Number(ticket)) return false;
-        const b = Number(bookedAt || 0);
-        return (!m.booked_at || !b || Number(m.booked_at) === b);
-    } catch (e) {
-        return false;
-    }
-}
-function clearDismissedTicket() {
-    if (!currentUser) return;
-    try { localStorage.removeItem(getDismissedKey(currentUser.uid)); } catch (e) {}
-}
 
 function formatNumber(number) {
     const n = Number(number);
@@ -1667,8 +1632,7 @@ function loadReservation() {
 
         if (FINISHED_STATUSES.includes(res.status)) {
             const timePassed = Date.now() - (res.expired_at || res.saved_at || 0);
-            if (timePassed > getRetentionMs(res.status)) {
-                markTicketDismissed(res);
+            if (timePassed > EXPIRED_RETENTION_MS) {
                 localStorage.removeItem(getReservationKey(currentUser.uid));
                 return null;
             }
@@ -1698,7 +1662,6 @@ function scheduleAutoClearTicket(delayMs = EXPIRED_RETENTION_MS) {
     clearAutoClearTimer();
     autoClearTimer = setTimeout(async () => {
         if (!currentUser) return;
-        markTicketDismissed(activeUserTicketData);
         localStorage.removeItem(getReservationKey(currentUser.uid));
         await removeFCMTokenFromDatabase();
         resetUserReservationUI();
@@ -1725,16 +1688,9 @@ function setConnectionStatus(masterOnline) {
         currentTicketEl.textContent = formatNumber(currentTicket);
         updateWaitingDisplay();
 
-        if (!printerOnline) {
-            connectionStatusEl.textContent = t.connBorneOffline;
-            statusDotEl.className = "status-dot warning";
-        } else if (printerStatus !== 0) {
-            connectionStatusEl.textContent = t.connNoPaper;
-            statusDotEl.className = "status-dot warning";
-        } else {
-            connectionStatusEl.textContent = t.connAvailable;
-            statusDotEl.className = "status-dot online";
-        }
+        // [2026-11-20] حالتان فقط للزبون: الخدمة متاحة / النظام غير متصل (لا تفاصيل عن الطابعة)
+        connectionStatusEl.textContent = t.connAvailable;
+        statusDotEl.className = "status-dot online";
     }
     updateReserveButton();
 }
@@ -1813,19 +1769,11 @@ function updateReserveButton() {
     const userLoggedIn = authReady && currentUser !== null;
     const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
     const hasActiveReservation = activeUserTicketData && ACTIVE_STATUSES.includes(activeUserTicketData.status) && !isCurrentTicketOvertaken;
-    const isHardwareReady = queueConnected && serviceAvailable && printerOnline && (printerStatus === 0);
+    // [2026-11-20] الحجز ممكن ما دام الجهاز الرئيسي متصلاً بالإنترنت (حالة الطابعة لا تؤثر ولا تُعرض)
+    const isHardwareReady = queueConnected && serviceAvailable;
     const t = i18n[currentLang];
 
-    if (queueConnected && (!printerOnline || printerStatus !== 0 || !serviceAvailable)) {
-        printerOfflineBanner.style.display = "block";
-        if (!printerOnline) {
-            printerOfflineBanner.innerHTML = t.bannerBorneOffline;
-        } else if (printerStatus !== 0) {
-            printerOfflineBanner.innerHTML = t.bannerNoPaper;
-        }
-    } else {
-        printerOfflineBanner.style.display = "none";
-    }
+    printerOfflineBanner.style.display = "none";
 
     reserveButton.disabled = !isHardwareReady || reservationInProgress || loginInProgress || hasActiveReservation;
     newReservationButton.disabled = !isHardwareReady || reservationInProgress;
@@ -1840,14 +1788,8 @@ function updateReserveButton() {
         reserveButton.textContent = t.btnLoggingIn;
     } else if (hasActiveReservation) {
         reserveButton.textContent = t.btnAlreadyActive;
-    } else if (!queueConnected) {
+    } else if (!queueConnected || !serviceAvailable) {
         reserveButton.textContent = t.btnSysOffline;
-    } else if (!printerOnline) {
-        reserveButton.textContent = t.btnBorneOffline;
-    } else if (printerStatus !== 0) {
-        reserveButton.textContent = t.btnNoPaper;
-    } else if (!serviceAvailable) {
-        reserveButton.textContent = t.btnServiceSuspended;
     } else {
         if (!userLoggedIn) {
             reserveButton.classList.remove("btn-primary");
@@ -1915,7 +1857,7 @@ function updateReservationStatus(status) {
 
         if (FINISHED_STATUSES.includes(status)) {
             const timePassed = Date.now() - (activeUserTicketData?.expired_at || Date.now());
-            const remainingTime = Math.max(1000, getRetentionMs(status) - timePassed);
+            const remainingTime = Math.max(1000, EXPIRED_RETENTION_MS - timePassed);
             scheduleAutoClearTicket(remainingTime);
         }
     } else {
@@ -2104,9 +2046,6 @@ function watchUserActiveTicket(uid) {
         const tNum = Number(data.ticket || 0);
 
         if (ACTIVE_STATUSES.includes(status) && tNum > 0) {
-            // [منع عودة الرسالة] تذكرة أُخفيت رسالتها سابقاً: لا نعرضها من جديد
-            const prevSaved = loadReservation();
-            if (isTicketDismissed(tNum, data.booked_at)) return;
             userTicketSeenInDb = true;
             if (userTicketGoneTimer) { clearTimeout(userTicketGoneTimer); userTicketGoneTimer = null; }
             clearPendingTimer();
@@ -2118,14 +2057,8 @@ function watchUserActiveTicket(uid) {
                 ticket: tNum,
                 code: data.code || "",
                 status: status,
-                user_id: uid,
-                booked_at: Number(data.booked_at || 0)
+                user_id: uid
             };
-            // [مهلة الإخفاء] نحتفظ بلحظة رصد التجاوز حتى لا يبدأ العدّاد من الصفر عند كل تحديث أو فتح للصفحة
-            if (prevSaved && Number(prevSaved.ticket) === tNum && prevSaved.expired_at &&
-                (!prevSaved.booked_at || !resData.booked_at || Number(prevSaved.booked_at) === resData.booked_at)) {
-                resData.expired_at = prevSaved.expired_at;
-            }
             saveReservation(resData);
 
             if (isTicketOvertaken(tNum, currentTicket)) {
@@ -2143,7 +2076,7 @@ function watchUserActiveTicket(uid) {
 
 async function createReservation() {
     const t = i18n[currentLang];
-    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+    if (!queueConnected || !serviceAvailable) {
         showError(t.errBorneOffline);
         return;
     }
@@ -2168,7 +2101,6 @@ async function createReservation() {
 
     reservationInProgress = true;
     updateReserveButton();
-    clearDismissedTicket();
 
     try {
         // [RES_PER_UID] طلب واحد لكل حساب: المفتاح هو uid نفسه، والقواعد ترفض طلباً ثانياً
@@ -2204,7 +2136,7 @@ async function createReservation() {
 
 async function loginAndReserve() {
     const t = i18n[currentLang];
-    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+    if (!queueConnected || !serviceAvailable) {
         showError(t.errBorneOffline);
         return;
     }
@@ -2251,7 +2183,7 @@ newReservationButton.addEventListener("click", async () => {
     clearError();
     clearAutoClearTimer();
 
-    if (!queueConnected || !serviceAvailable || !printerOnline || printerStatus !== 0) {
+    if (!queueConnected || !serviceAvailable) {
         showError(i18n[currentLang].errBorneOffline);
         return;
     }
