@@ -874,13 +874,15 @@ const i18n = {
         bannerNoPaper: "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.",
         errBorneOffline: "Le système est hors ligne. Impossible de réserver pour le moment.",
         errRejected: "Votre demande n'a pas pu être validée par le système.",
-        errTimeout: "Le guichet n'a pas répondu à temps. Veuillez vérifier la connexion ou prendre votre ticket sur place.",
+        errTimeout: "La confirmation n'est pas encore arrivée. Si elle arrive plus tard, elle s'affichera ici automatiquement ; sinon, prenez votre ticket à la borne.",
+        errStillProcessing: "Votre demande précédente est encore en cours de traitement, patientez quelques instants.",
         errNetwork: "Impossible d'envoyer la réservation. Veuillez réessayer.",
         errAuth: "Impossible de se connecter avec Google.",
         errLogout: "Impossible de se déconnecter.",
         errPushRegister: "Impossible d'enregistrer ce téléphone pour les notifications. Les alertes fonctionneront seulement tant que la page reste ouverte.",
         statusPendingTitle: "RÉSERVATION EN COURS",
-        statusPendingMsg: "Votre réservation est en cours de traitement...",
+        statusPendingMsg: "Votre demande est en cours de traitement, dans l'ordre d'arrivée. Ne cliquez pas à nouveau et ne fermez pas la page.",
+        pendingElapsed: (s) => `depuis ${s} s`,
         statusConfirmedTitle: "RÉSERVATION CONFIRMÉE (EN ATTENTE D'IMPRESSION)",
         statusConfirmedMsg: "Présentez votre code à la borne pour imprimer votre ticket.",
         statusArrivedTitle: "ARRIVÉE CONFIRMÉE",
@@ -945,13 +947,15 @@ const i18n = {
         bannerNoPaper: "⚠️ <strong>نفاد ورق الطباعة:</strong><br>الموزع الآلي خالٍ من الورق. الحجز معلّق مؤقتاً.",
         errBorneOffline: "النظام غير متصل حالياً. يتعذر إتمام الحجز.",
         errRejected: "تعذر قبول طلب الحجز.",
-        errTimeout: "انتهت مهلة استجابة الموزع. يرجى سحب تذكرتك مباشرة بالمكتب.",
+        errTimeout: "لم يصل تأكيد الحجز بعد. إن تأكد لاحقاً سيظهر هنا تلقائياً، وإلا اسحب تذكرتك مباشرة من الموزع بالمكتب.",
+        errStillProcessing: "طلبك السابق ما يزال قيد المعالجة، انتظر لحظات.",
         errNetwork: "تعذر إرسال الحجز، يرجى إعادة المحاولة.",
         errAuth: "فشل تسجيل الدخول بواسطة Google.",
         errLogout: "فشل تسجيل الخروج.",
         errPushRegister: "تعذر تسجيل هذا الهاتف لاستقبال الإشعارات. سيعمل التنبيه فقط ما دامت الصفحة مفتوحة.",
         statusPendingTitle: "معالجة الحجز",
-        statusPendingMsg: "جارٍ تأكيد الحجز مع الموزع الآلي...",
+        statusPendingMsg: "طلبك قيد المعالجة ويُعالَج بالترتيب. لا تُعِد الضغط ولا تغلق الصفحة.",
+        pendingElapsed: (s) => `منذ ${s} ثانية`,
         statusConfirmedTitle: "تم تأكيد الحجز (في انتظار طباعة التذكرة)",
         statusConfirmedMsg: "أدخل رمز الاستلام في الموزع الآلي فور وصولك لسحب تذكرتك.",
         statusArrivedTitle: "تم تأكيد الحضور",
@@ -1174,6 +1178,10 @@ let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
 
 let pendingTimeoutTimer = null;
+// [V5.33.0] انتظار أطول: الجهاز يعالج الطلبات بالترتيب، وفي الذروة قد يتأخر التأكيد (كانت المهلة 15 ثانية)
+const PENDING_TIMEOUT_MS = 3 * 60 * 1000;
+let pendingTickTimer = null;
+let pendingStartedAt = 0;
 let unsubscribeReservation = null;
 let unsubscribeUserActiveTicket = null;
 let activeUserTicketData = null;
@@ -1650,6 +1658,39 @@ function clearPendingTimer() {
         clearTimeout(pendingTimeoutTimer);
         pendingTimeoutTimer = null;
     }
+    if (pendingTickTimer) {
+        clearInterval(pendingTickTimer);
+        pendingTickTimer = null;
+    }
+}
+
+// [V5.33.0] عدّاد «منذ N ثانية» تحت رسالة «قيد المعالجة»، ومهلة تبدأ من وقت كتابة الطلب
+function renderPendingElapsed() {
+    if (!activeUserTicketData || activeUserTicketData.status !== "pending") return;
+    const t = i18n[currentLang];
+    const secs = Math.max(0, Math.round((Date.now() - pendingStartedAt) / 1000));
+    myStatusEl.textContent = t.statusPendingMsg + (secs >= 3 ? " (" + t.pendingElapsed(secs) + ")" : "");
+}
+
+function startPendingTimer(startedAtMs) {
+    clearPendingTimer();
+    pendingStartedAt = startedAtMs || Date.now();
+    const remaining = Math.max(1000, PENDING_TIMEOUT_MS - (Date.now() - pendingStartedAt));
+    pendingTimeoutTimer = setTimeout(() => {
+        if (reservationInProgress) {
+            reservationInProgress = false;
+            showError(i18n[currentLang].errTimeout);
+            resetUserReservationUI();
+        }
+    }, remaining);
+    pendingTickTimer = setInterval(renderPendingElapsed, 1000);
+    renderPendingElapsed();
+}
+
+function isMasterOnlineNow() {
+    if (!firebaseDataAvailable || !lastMasterHeartbeat) return false;
+    const heartbeatAge = (Date.now() + serverTimeOffset) - lastMasterHeartbeat;
+    return (heartbeatAge > -60000) && (heartbeatAge < HEARTBEAT_TIMEOUT_MS);
 }
 
 function clearAutoClearTimer() {
@@ -1982,7 +2023,21 @@ function watchReservationKey(key) {
         if (!data) return;
 
         const status = String(data.status || "pending").toLowerCase();
-        if (status === "pending") return;
+        if (status === "pending") {
+            // [V5.33.0] بعد إعادة تحميل الصفحة: طلب ما زال ينتظر => نعرض «قيد المعالجة» بدل زر الحجز
+            const createdAt = Number(data.created_at || 0);
+            const age = (Date.now() + serverTimeOffset) - createdAt;
+            if (!reservationInProgress && !activeUserTicketData && createdAt > 0 && age >= 0 && age < PENDING_TIMEOUT_MS) {
+                reservationInProgress = true;
+                showReservation({ status: "pending", ticket: 0, code: "" });
+                startPendingTimer(Date.now() - age);
+                updateReserveButton();
+            }
+            return;
+        }
+
+        // نتيجة قديمة (مثل رفض سابق لم يُحذف بعد) لا تُعرض إن لم نكن ننتظر طلباً
+        if (!reservationInProgress) return;
 
         clearPendingTimer();
         reservationInProgress = false;
@@ -2123,18 +2178,15 @@ async function createReservation() {
         isInitialTicketLoadDone = false;
         showReservation({ status: "pending", ticket: 0, code: "" });
         watchReservationKey(newReqKey);
-
-        pendingTimeoutTimer = setTimeout(() => {
-            if (reservationInProgress) {
-                reservationInProgress = false;
-                showError(t.errTimeout);
-                resetUserReservationUI();
-            }
-        }, 15000);
+        startPendingTimer(Date.now());
 
     } catch (error) {
         reservationInProgress = false;
-        showError(t.errNetwork);
+        // [V5.33.0] القواعد ترفض الكتابة (PERMISSION_DENIED) إن كان الجهاز غير متصل،
+        // أو إن كان للحساب طلب عمره أقل من 30 ثانية
+        const denied = String((error && (error.code || error.message)) || "").toUpperCase().includes("PERMISSION_DENIED");
+        if (denied) showError(isMasterOnlineNow() ? t.errStillProcessing : t.errBorneOffline);
+        else showError(t.errNetwork);
         updateReserveButton();
     }
 }
@@ -2237,6 +2289,7 @@ onAuthStateChanged(auth, (user) => {
         }
 
         watchUserActiveTicket(user.uid);
+        watchReservationKey(user.uid);   // [V5.33.0] يستأنف «قيد المعالجة» إن وُجد طلب ينتظر
         // [إشعارات] ينتظر الآن اكتمال التهيئة، فيُحدَّث رمز الهاتف عند كل فتح للصفحة
         if (alertToggle.checked) syncFCMTokenWithDatabase();
     } else {
