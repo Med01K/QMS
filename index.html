@@ -513,6 +513,23 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
 .ticket-status.skipped   { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
 .ticket-status.completed { background: #e2e8f0; color: #334155; border-color: #cbd5e1; }
 .ticket-status.rejected  { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+/* [V5.33.3] مؤشّر «قيد المعالجة»: يطمئن المواطن أن الحجز جارٍ، بلا أرقام */
+.ticket-status.pending::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-inline-end: 8px;
+    vertical-align: -2px;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: qms-spin 0.8s linear infinite;
+}
+@keyframes qms-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+    .ticket-status.pending::before { animation-duration: 2.4s; }
+}
 
 .alert-box {
     margin-top: 22px;
@@ -885,9 +902,7 @@ const i18n = {
         errPushRegister: "Impossible d'enregistrer ce téléphone pour les notifications. Les alertes fonctionneront seulement tant que la page reste ouverte.",
         statusPendingTitle: "RÉSERVATION EN COURS",
         statusPendingMsg: "Votre demande est en cours de traitement, dans l'ordre d'arrivée. Ne cliquez pas à nouveau et ne fermez pas la page.",
-        pendingElapsed: (s) => `depuis ${s} s`,
         statusPendingLong: "Beaucoup de réservations en ce moment : votre demande est enregistrée et sera traitée dans l'ordre dès qu'une place se libère. Ne cliquez pas à nouveau.",
-        pendingElapsedMin: (m, s) => `depuis ${m} min ${s} s`,
         statusConfirmedTitle: "NUMÉRO RÉSERVÉ (TICKET PAS ENCORE IMPRIMÉ)",
         statusConfirmedMsg: "Présentez votre code à la borne pour imprimer votre ticket.",
         statusArrivedTitle: "ARRIVÉE CONFIRMÉE",
@@ -963,9 +978,7 @@ const i18n = {
         errPushRegister: "تعذر تسجيل هذا الهاتف لاستقبال الإشعارات. سيعمل التنبيه فقط ما دامت الصفحة مفتوحة.",
         statusPendingTitle: "معالجة الحجز",
         statusPendingMsg: "طلبك قيد المعالجة ويُعالَج بالترتيب. لا تُعِد الضغط ولا تغلق الصفحة.",
-        pendingElapsed: (s) => `منذ ${s} ثانية`,
         statusPendingLong: "الحجوزات كثيرة الآن: طلبك محفوظ وسيُعالَج بالترتيب فور توفر مكان. لا تُعِد الضغط.",
-        pendingElapsedMin: (m, s) => `منذ ${m} د ${s} ث`,
         statusConfirmedTitle: "رقمك محجوز (لم تُسحب التذكرة بعد)",
         statusConfirmedMsg: "أدخل رمز الاستلام في الموزع الآلي فور وصولك لسحب تذكرتك.",
         statusArrivedTitle: "تم تأكيد الحضور",
@@ -1194,7 +1207,7 @@ let pendingTimeoutTimer = null;
 // [V5.33.1] الطلب ينتظر حتى يتوفر مكان. الجهاز يرفضه بعد 30 دقيقة على الأكثر، فهذه المهلة (32 دقيقة)
 // احتياط فقط إن لم يصل أي رد (كانت 3 دقائق، وقبلها 15 ثانية)
 const PENDING_TIMEOUT_MS = 32 * 60 * 1000;
-const PENDING_LONG_MS = 60 * 1000;   // بعد دقيقة: رسالة تشرح سبب الانتظار
+const PENDING_LONG_MS = 20 * 1000;   // [V5.33.3] بعد 20 ثانية: رسالة تشرح سبب الانتظار (بلا عدّاد)
 let pendingTickTimer = null;
 let pendingStartedAt = 0;
 let unsubscribeReservation = null;
@@ -1680,14 +1693,15 @@ function clearPendingTimer() {
 }
 
 // [V5.33.0] عدّاد «منذ N ثانية» تحت رسالة «قيد المعالجة»، ومهلة تبدأ من وقت كتابة الطلب
+// [V5.33.3] بلا عدّاد: المؤشّر المتحرك (.ticket-status.pending) يطمئن المواطن، والرسالة تشرح
+// سبب الانتظار إن تجاوز PENDING_LONG_MS. تُستدعى كل ثانية، ولا تغيّر النص إلا عند الحاجة.
 function renderPendingElapsed() {
     if (!activeUserTicketData || activeUserTicketData.status !== "pending") return;
     const t = i18n[currentLang];
     const elapsedMs = Math.max(0, Date.now() - pendingStartedAt);
-    const secs = Math.round(elapsedMs / 1000);
-    const base = elapsedMs >= PENDING_LONG_MS ? t.statusPendingLong : t.statusPendingMsg;
-    const elapsed = secs >= 60 ? t.pendingElapsedMin(Math.floor(secs / 60), secs % 60) : t.pendingElapsed(secs);
-    myStatusEl.textContent = base + (secs >= 3 ? " (" + elapsed + ")" : "");
+    const text = elapsedMs >= PENDING_LONG_MS ? t.statusPendingLong : t.statusPendingMsg;
+    if (myStatusEl.textContent !== text) myStatusEl.textContent = text;
+    myStatusEl.classList.add("pending");
 }
 
 function startPendingTimer(startedAtMs) {
@@ -1939,6 +1953,7 @@ function updateReservationStatus(status) {
             ticketTitleEl.textContent = t.statusPendingTitle;
             ticketTitleEl.classList.add("ticket-title-dark");
             myStatusEl.textContent = t.statusPendingMsg;
+            myStatusEl.classList.add("pending");   // [V5.33.3] المؤشّر المتحرك
             ticketMessageEl.innerHTML = t.ticketInstructionConfirmed;
             break;
 
