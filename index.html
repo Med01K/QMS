@@ -875,6 +875,9 @@ const i18n = {
         errBorneOffline: "Le système est hors ligne. Impossible de réserver pour le moment.",
         errRejected: "Votre demande n'a pas pu être validée par le système.",
         errTimeout: "La confirmation n'est pas encore arrivée. Si elle arrive plus tard, elle s'affichera ici automatiquement ; sinon, prenez votre ticket à la borne.",
+        errRejectedOffline: "La borne a perdu la connexion pendant votre demande. Veuillez réserver à nouveau.",
+        errRejectedReset: "La file a été réinitialisée avant le traitement de votre demande. Vous pouvez réserver à nouveau.",
+        errRejectedOld: "Votre demande a attendu plus de 30 minutes sans place disponible. Réessayez ou prenez un ticket à la borne.",
         errStillProcessing: "Votre demande précédente est encore en cours de traitement, patientez quelques instants.",
         errNetwork: "Impossible d'envoyer la réservation. Veuillez réessayer.",
         errAuth: "Impossible de se connecter avec Google.",
@@ -883,7 +886,9 @@ const i18n = {
         statusPendingTitle: "RÉSERVATION EN COURS",
         statusPendingMsg: "Votre demande est en cours de traitement, dans l'ordre d'arrivée. Ne cliquez pas à nouveau et ne fermez pas la page.",
         pendingElapsed: (s) => `depuis ${s} s`,
-        statusConfirmedTitle: "RÉSERVATION CONFIRMÉE (EN ATTENTE D'IMPRESSION)",
+        statusPendingLong: "Beaucoup de réservations en ce moment : votre demande est enregistrée et sera traitée dans l'ordre dès qu'une place se libère. Ne cliquez pas à nouveau.",
+        pendingElapsedMin: (m, s) => `depuis ${m} min ${s} s`,
+        statusConfirmedTitle: "NUMÉRO RÉSERVÉ (TICKET PAS ENCORE IMPRIMÉ)",
         statusConfirmedMsg: "Présentez votre code à la borne pour imprimer votre ticket.",
         statusArrivedTitle: "ARRIVÉE CONFIRMÉE",
         statusArrivedMsg: "Ticket récupéré ! Veuillez attendre votre appel.",
@@ -895,7 +900,7 @@ const i18n = {
         statusExpiredMsg: "Le ticket n'a pas été retiré à temps, la réservation a été annulée.",
         statusCompletedTitle: "SERVICE TERMINÉ",
         statusCompletedMsg: "Votre passage est terminé.",
-        ticketInstructionConfirmed: "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si votre numéro est appelé ou dépassé avant la récupération, la réservation est annulée.",
+        ticketInstructionConfirmed: "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si la file dépasse votre numéro avant que vous ne saisissiez votre code, la réservation est annulée.",
         ticketInstructionArrived: "Votre ticket physique a été imprimé avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.",
         ticketInstructionCalled: "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.",
         ticketInstructionSkipped: "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.",
@@ -948,6 +953,9 @@ const i18n = {
         errBorneOffline: "النظام غير متصل حالياً. يتعذر إتمام الحجز.",
         errRejected: "تعذر قبول طلب الحجز.",
         errTimeout: "لم يصل تأكيد الحجز بعد. إن تأكد لاحقاً سيظهر هنا تلقائياً، وإلا اسحب تذكرتك مباشرة من الموزع بالمكتب.",
+        errRejectedOffline: "انقطع اتصال الموزع أثناء طلبك. يرجى الحجز من جديد.",
+        errRejectedReset: "بدأ دور جديد للطابور قبل معالجة طلبك. يمكنك الحجز من جديد.",
+        errRejectedOld: "انتظر طلبك أكثر من 30 دقيقة دون أن يتوفر مكان. أعد المحاولة أو اسحب تذكرة من الموزع.",
         errStillProcessing: "طلبك السابق ما يزال قيد المعالجة، انتظر لحظات.",
         errNetwork: "تعذر إرسال الحجز، يرجى إعادة المحاولة.",
         errAuth: "فشل تسجيل الدخول بواسطة Google.",
@@ -956,7 +964,9 @@ const i18n = {
         statusPendingTitle: "معالجة الحجز",
         statusPendingMsg: "طلبك قيد المعالجة ويُعالَج بالترتيب. لا تُعِد الضغط ولا تغلق الصفحة.",
         pendingElapsed: (s) => `منذ ${s} ثانية`,
-        statusConfirmedTitle: "تم تأكيد الحجز (في انتظار طباعة التذكرة)",
+        statusPendingLong: "الحجوزات كثيرة الآن: طلبك محفوظ وسيُعالَج بالترتيب فور توفر مكان. لا تُعِد الضغط.",
+        pendingElapsedMin: (m, s) => `منذ ${m} د ${s} ث`,
+        statusConfirmedTitle: "رقمك محجوز (لم تُسحب التذكرة بعد)",
         statusConfirmedMsg: "أدخل رمز الاستلام في الموزع الآلي فور وصولك لسحب تذكرتك.",
         statusArrivedTitle: "تم تأكيد الحضور",
         statusArrivedMsg: "تم سحب التذكرة بنجاح! يرجى انتظار المناداة في القاعة.",
@@ -968,7 +978,7 @@ const i18n = {
         statusExpiredMsg: "لم تُسحب التذكرة في الوقت المحدد، فأُلغي الحجز.",
         statusCompletedTitle: "تمت المعاملة",
         statusCompletedMsg: "انتهت معاملتك بنجاح.",
-        ticketInstructionConfirmed: "توجه إلى الموزع الآلي بالمكتب وأدخل رمز الاستلام المكون من 4 أرقام لطباعة تذكرتك.<br><br><strong>تنبيه:</strong> يُلغى الحجز تلقائياً إذا نُودي رقمك قبل سحب التذكرة.",
+        ticketInstructionConfirmed: "توجه إلى الموزع الآلي بالمكتب وأدخل رمز الاستلام المكون من 4 أرقام لطباعة تذكرتك.<br><br><strong>تنبيه:</strong> يُلغى الحجز تلقائياً إذا تجاوز الطابور رقمك قبل أن تُدخل الرمز.",
         ticketInstructionArrived: "تمت طباعة تذكرتك الورقية. تفضل بمتابعة شاشات العرض بالقاعة.",
         ticketInstructionCalled: "تفضل بالتوجه فوراً إلى الشباك المحدد على الشاشة.",
         ticketInstructionSkipped: "فات موعد دورك. يمكنك حجز تذكرة جديدة مباشرة بالضغط على الزر أعلاه.",
@@ -1061,6 +1071,9 @@ const googleProvider = new GoogleAuthProvider();
 const VAPID_KEY = "BHVKczf-qi6Dcun5s4GdvMoBnRDUe5vOTsKg5seNNgvgMBodd_fwlMaVNOROwIWJEZYOzRqXIhLC16Ore-3CDSs";
 
 // حالات الحجز التي يكون فيها صاحبه ما زال في الطابور
+// [V5.33.2] "reserved" = رقم محجوز لم يُدخل صاحبه رمزه بعد (MasterV2.6 وما بعده)،
+// و"confirmed" اسمها القديم: ما زالت تكتبها الماسترات الأخرى، فتبقى مقبولة دائماً ويُعرضان بالطريقة نفسها.
+// "arrived" = أدخل الرمز وطُبعت التذكرة.
 const ACTIVE_STATUSES = ["confirmed", "reserved", "arrived", "waiting"];
 // حالات انتهى فيها الحجز (يُحذف من الهاتف بعد 20 دقيقة)
 // [2026-11-20] "called" صار منتهياً أيضاً: يُمسح بعد EXPIRED_RETENTION_MS مثل غيره
@@ -1178,8 +1191,10 @@ let firebaseDataAvailable = false;
 let serverTimeOffset = 0;
 
 let pendingTimeoutTimer = null;
-// [V5.33.0] انتظار أطول: الجهاز يعالج الطلبات بالترتيب، وفي الذروة قد يتأخر التأكيد (كانت المهلة 15 ثانية)
-const PENDING_TIMEOUT_MS = 3 * 60 * 1000;
+// [V5.33.1] الطلب ينتظر حتى يتوفر مكان. الجهاز يرفضه بعد 30 دقيقة على الأكثر، فهذه المهلة (32 دقيقة)
+// احتياط فقط إن لم يصل أي رد (كانت 3 دقائق، وقبلها 15 ثانية)
+const PENDING_TIMEOUT_MS = 32 * 60 * 1000;
+const PENDING_LONG_MS = 60 * 1000;   // بعد دقيقة: رسالة تشرح سبب الانتظار
 let pendingTickTimer = null;
 let pendingStartedAt = 0;
 let unsubscribeReservation = null;
@@ -1668,8 +1683,11 @@ function clearPendingTimer() {
 function renderPendingElapsed() {
     if (!activeUserTicketData || activeUserTicketData.status !== "pending") return;
     const t = i18n[currentLang];
-    const secs = Math.max(0, Math.round((Date.now() - pendingStartedAt) / 1000));
-    myStatusEl.textContent = t.statusPendingMsg + (secs >= 3 ? " (" + t.pendingElapsed(secs) + ")" : "");
+    const elapsedMs = Math.max(0, Date.now() - pendingStartedAt);
+    const secs = Math.round(elapsedMs / 1000);
+    const base = elapsedMs >= PENDING_LONG_MS ? t.statusPendingLong : t.statusPendingMsg;
+    const elapsed = secs >= 60 ? t.pendingElapsedMin(Math.floor(secs / 60), secs % 60) : t.pendingElapsed(secs);
+    myStatusEl.textContent = base + (secs >= 3 ? " (" + elapsed + ")" : "");
 }
 
 function startPendingTimer(startedAtMs) {
@@ -1679,8 +1697,8 @@ function startPendingTimer(startedAtMs) {
     pendingTimeoutTimer = setTimeout(() => {
         if (reservationInProgress) {
             reservationInProgress = false;
+            resetUserReservationUI();   // [V5.33.1] قبل الرسالة، وإلا مُسحت فوراً
             showError(i18n[currentLang].errTimeout);
-            resetUserReservationUI();
         }
     }, remaining);
     pendingTickTimer = setInterval(renderPendingElapsed, 1000);
@@ -2043,8 +2061,15 @@ function watchReservationKey(key) {
         reservationInProgress = false;
 
         if (status === "rejected") {
-            showError(i18n[currentLang].errRejected);
-            resetUserReservationUI();
+            // [V5.33.1] سبب الرفض من الجهاز الرئيسي
+            const tr = i18n[currentLang];
+            const reason = String(data.reason || "");
+            const msg = reason === "offline" ? tr.errRejectedOffline
+                      : reason === "queue_reset" ? tr.errRejectedReset
+                      : reason === "too_old" ? tr.errRejectedOld
+                      : tr.errRejected;
+            resetUserReservationUI();   // [V5.33.1] قبل الرسالة: هذه الدالة تمسح الأخطاء (clearError)
+            showError(msg);
             return;
         }
 
