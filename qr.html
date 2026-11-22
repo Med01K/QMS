@@ -726,9 +726,14 @@ footer {
    أسود على أبيض، هامش أبيض، مربعات حادة لتسهيل قراءته بالكاميرا
 ======================================================== */
 .qr-wrap { display: none; margin: 4px auto 6px; text-align: center; }
+/* [تمرير تلقائي] مسافة صغيرة فوق العنصر حين تُحرَّك الصفحة إليه */
+#ticketSection, #reservationSection, #qrWrap, .error-message { scroll-margin-top: 12px; scroll-margin-bottom: 12px; }
 .qr-wrap.show { display: block; }
 .qr-box {
-    display: inline-block;
+    display: block;
+    width: min(320px, 100%);      /* [QR كبير] يملأ عرض البطاقة على الهواتف الصغيرة، وحتى 320px */
+    margin: 0 auto;
+    box-sizing: border-box;
     background: #ffffff;
     border: 2px solid var(--yellow);
     border-radius: 12px;
@@ -743,7 +748,7 @@ footer {
     image-rendering: crisp-edges;
     background: #ffffff;
 }
-.qr-box canvas { width: 232px; height: 232px; border-radius: 10px; }
+.qr-box canvas { width: 100%; height: auto; aspect-ratio: 1 / 1; border-radius: 10px; }
 .qr-hint { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.7; }
 .qr-full {
     position: fixed; inset: 0; z-index: 10000;
@@ -760,7 +765,6 @@ footer {
 }
 .qr-full-hint { font-size: 15px; color: #334155; text-align: center; line-height: 1.7; max-width: 420px; }
 .qr-full-close { font-size: 13px; color: #64748b; }
-@media(max-width: 400px) { .qr-box canvas { width: 203px; height: 203px; } }
 </style>
 </head>
 
@@ -1266,6 +1270,9 @@ let userTicketSeenInDb = false;      // رأينا سجل الحجز في user_a
 let userTicketGoneTimer = null;
 
 let isInitialTicketLoadDone = false;
+// [تمرير تلقائي] آخر حالة حُرّكت الصفحة لأجلها، وآخر ضغطة على زر الحجز
+let scrollLastTicket = undefined, scrollLastStatus = null, lastUserReserveActionMs = 0;
+const SCROLL_TO_TICKET_STATUSES = ["pending", "arrived", "waiting", "called", "skipped", "expired", "completed"];
 let lastObservedCurrentTicket = null;
 let lastAlertedRemaining = null;
 let alertedExactTurnForTicket = null;
@@ -1930,6 +1937,10 @@ function showError(message) {
     reservationError.textContent = message;
     ticketError.style.display = "block";
     ticketError.textContent = message;
+    // [تمرير تلقائي] رسالة الخطأ الظاهرة (في بطاقة الحجز أو بطاقة التذكرة)
+    if (window.qmsAutoScroll) {
+        window.qmsAutoScroll(ticketSection.style.display === "block" ? ticketError : reservationError, "center");
+    }
 }
 
 function clearError() {
@@ -2061,6 +2072,20 @@ function updateReservationStatus(status) {
             ticketTitleEl.textContent = (currentLang === "ar") ? "حالة التذكرة" : "STATUT DE RÉSERVATION";
             ticketTitleEl.classList.add("ticket-title-dark");
             myStatusEl.textContent = (currentLang === "ar") ? "في انتظار التحديث" : "En attente de mise à jour";
+    }
+
+    // [تمرير تلقائي] عند تغيّر الحالة: إظهار أعلى بطاقة التذكرة (العنوان والحالة) على الهاتف.
+    // حالتا reserved/confirmed لا تُحرّكان هنا: ظهور QR يتكفّل بذلك (يوضع في وسط الشاشة).
+    // عند فتح الصفحة لا تتحرك إلا إن ضغط الزبون زر الحجز للتو.
+    const scrollTk = activeUserTicketData ? activeUserTicketData.ticket : null;
+    if (scrollTk !== scrollLastTicket) { scrollLastTicket = scrollTk; scrollLastStatus = null; }
+    if (status !== scrollLastStatus) {
+        const wasKnown = scrollLastStatus !== null;
+        scrollLastStatus = status;
+        const userJustActed = Date.now() - lastUserReserveActionMs < 60000;
+        if ((wasKnown || userJustActed) && SCROLL_TO_TICKET_STATUSES.includes(status) && window.qmsAutoScroll) {
+            window.qmsAutoScroll(ticketSection, "start");
+        }
     }
 
     updateReserveButton();
@@ -2317,6 +2342,7 @@ async function loginAndReserve() {
 }
 
 reserveButton.addEventListener("click", () => {
+    lastUserReserveActionMs = Date.now();   // [تمرير تلقائي]
     if (!currentUser) {
         loginAndReserve();
     } else {
@@ -2325,6 +2351,7 @@ reserveButton.addEventListener("click", () => {
 });
 
 newReservationButton.addEventListener("click", async () => {
+    lastUserReserveActionMs = Date.now();   // [تمرير تلقائي]
     if (!currentUser || reservationInProgress) return;
     clearError();
     clearAutoClearTimer();
@@ -2459,6 +2486,30 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 
     var lastCode = null;
 
+    /* ----------------------------------------------------------------
+       [تمرير تلقائي] تحريك الصفحة إلى عنصر مهم (للهاتف):
+       - لا تتحرك والزبون يحرّك الشاشة بإصبعه (حتى لا نعانده).
+       - لا تتحرك إن كان العنصر ظاهراً كاملاً أصلاً.
+       - حركة ناعمة، إلا إن طلب الهاتف تقليل الحركة.
+       تستعملها أيضاً الصفحة الأصلية (تغيّر حالة التذكرة، رسائل الخطأ).
+       ---------------------------------------------------------------- */
+    var lastUserScrollMs = 0;
+    ["touchstart", "touchmove", "wheel"].forEach(function (ev) {
+        window.addEventListener(ev, function () { lastUserScrollMs = Date.now(); }, { passive: true });
+    });
+    window.qmsAutoScroll = function (el, block) {
+        if (!el) return;
+        setTimeout(function () {                      // بعد أن يأخذ العنصر مكانه
+            if (Date.now() - lastUserScrollMs < 1200) return;
+            if (!el.offsetParent) return;             // مخفي
+            var r = el.getBoundingClientRect(), vh = window.innerHeight || document.documentElement.clientHeight;
+            if (block === "center" && r.top >= 0 && r.bottom <= vh) return;          // ظاهر كاملاً
+            if (block !== "center" && r.top >= 0 && r.top <= vh * 0.25) return;      // أعلاه ظاهر في أعلى الشاشة
+            var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: block === "center" ? "center" : "start" });
+        }, 150);
+    };
+
     function lang() { return (document.documentElement.lang === "fr") ? "fr" : "ar"; }
 
     function applyTexts() {
@@ -2504,10 +2555,11 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
         if (code === lastCode) return;
         lastCode = code;
         try {
-            draw(canvas, code, 8);
+            draw(canvas, code, 12);
             draw(fCanvas, code, 16);
             fCode.textContent = code;
             wrap.classList.add("show");
+            window.qmsAutoScroll(wrap, "center");   // [تمرير تلقائي] الـ QR في وسط الشاشة
         } catch (e) {
             console.warn("[QR] تعذّر رسم الرمز:", e);
             wrap.classList.remove("show");
