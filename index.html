@@ -1425,7 +1425,7 @@ const i18n = {
         alertPrepareTitle: "Poste El Amal : votre tour approche",
         alertPrepareMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}.`,
         alertFinalTitle: "Poste El Amal : préparez-vous",
-        alertFinalMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}. Approchez-vous des guichets.`,
+        alertFinalMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}, votre tour est tout proche.`,
         alertNextMsg: (t) => `Ticket ${t} : vous êtes le prochain.`,
         alertEnabledTitle: "✅ Notifications activées",
         alertEnabledMsg: "Vous recevrez ici une notification à l'approche de votre tour.",
@@ -1541,7 +1541,7 @@ const i18n = {
         alertPrepareTitle: "بريد حي الأمل: اقترب دورك",
         alertPrepareMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}.`,
         alertFinalTitle: "بريد حي الأمل: استعدّ",
-        alertFinalMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}، تفضّل بالاقتراب من الشبابيك.`,
+        alertFinalMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}، ودورك قريبٌ جداً.`,
         alertNextMsg: (t) => `تذكرتك ${t}: أنت التالي.`,
         alertEnabledTitle: "✅ تم تفعيل التنبيهات",
         alertEnabledMsg: "سيصلك هنا إشعار عند اقتراب دورك.",
@@ -2101,10 +2101,13 @@ function triggerTurnAlert(title, message, isTurn = false, tag = "", pushWorks = 
     const now = Date.now();
     // [TRACK] التنبيه نفسه (نفس الوسم ونفس النص) لا يتكرر خلال 90 ثانية: الصفحة تنبّه بنفسها،
     // وإشعار الـ Worker يصل أيضاً والصفحة مفتوحة، ونصّاهما متطابقان.
-    // يعيد true إذا ظهر التنبيه. تنبيه «حان دورك» لا يمنعه فاصل الثواني الأربع.
+    // يعيد true إذا ظهر التنبيه أو كان قد ظهر، وfalse إذا أخّره فاصل الثواني الأربع (يُعاد في التحديث التالي).
+    // تنبيه «حان دورك» لا يمنعه فاصل الثواني الأربع.
     const dedupeKey = `${tag}|${message}`;
     const prevAt = recentAlerts.get(dedupeKey);
-    if (prevAt && now - prevAt < 90000) return false;
+    // [ALERT-DEDUP] التنبيه نفسه وصل قبل قليل (من الصفحة أو من الـ Worker): يُعدّ مُبلَّغاً (true) فتُحفظ المرحلة.
+    // كان يعيد false فلا يحفظ التتبّع أنه نبّه، فيعيد «دخول الهامش» عند النداء التالي (10 ثم 9).
+    if (prevAt && now - prevAt < 90000) return true;
     if (!isTurn && now - lastAlertTimestamp < 4000) return false;
     lastAlertTimestamp = now;
     recentAlerts.set(dedupeKey, now);
@@ -2205,9 +2208,11 @@ function checkAlertsEngine() {
 
         // [NOTIF-CALM] إشعار عند بلوغ مرحلة جديدة فقط (دخول الهامش، منتصفه، أنت التالي)
         if (alertStage(peopleBefore, margin) > lastStage) {
-            lastAlertedRemaining = peopleBefore;
             const tx = alertTexts(t, peopleBefore, formatNumber(ticketNum));
-            triggerTurnAlert(tx.title, tx.msg, false, `qms-${ticketNum}-prep-${peopleBefore}`, reservationPushOk);   // [19] وسم لكل مرحلة
+            // [ALERT-DEDUP] تُحفظ المرحلة إذا وصل التنبيه، لا قبل (فاصل الثواني الأربع يؤجّله للتحديث التالي)
+            if (triggerTurnAlert(tx.title, tx.msg, false, `qms-${ticketNum}-prep-${peopleBefore}`, reservationPushOk)) {   // [19] وسم لكل مرحلة
+                lastAlertedRemaining = peopleBefore;
+            }
         }
     }
 }
