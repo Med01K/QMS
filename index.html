@@ -1212,7 +1212,7 @@ body[dir="rtl"] .track-card.is-active.ph-done .btn-ghost:hover { background: var
 
     <section class="card reservation-card" id="reservationSection">
         <h2 id="lblReservationTitle">حجز تذكرة عن بُعد</h2>
-        <p id="lblReservationDesc">احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.</p>
+        <p id="lblReservationDesc">احجز دورك من بُعد، ثم اسحب تذكرتك من الموزّع الآلي حين تصل إلى المكتب.</p>
 
         <button class="btn-primary" id="reserveButton" disabled>حجز تذكرة</button>
 
@@ -1221,7 +1221,7 @@ body[dir="rtl"] .track-card.is-active.ph-done .btn-ghost:hover { background: var
     </section>
 
     <section class="card ticket-card" id="ticketSection">
-        <h2 id="ticketTitle" class="ticket-title-yellow">تم تأكيد الحجز (في انتظار طباعة التذكرة)</h2>
+        <h2 id="ticketTitle" class="ticket-title-yellow">رقمك محجوز</h2>
 
         <div class="ticket-label" id="lblYourNumber">رقم تذكرتك</div>
         <div class="ticket-number" id="myTicket">---</div>
@@ -1236,7 +1236,7 @@ body[dir="rtl"] .track-card.is-active.ph-done .btn-ghost:hover { background: var
             <div class="qr-hint" id="qrHint"></div>
         </div>
 
-        <div class="ticket-status" id="myStatus">في انتظار التأكيد</div>
+        <div class="ticket-status" id="myStatus">لم تُطبع تذكرتك بعد.</div>
 
         <div class="alert-box" id="alertBox">
             <div class="alert-header">
@@ -1247,13 +1247,13 @@ body[dir="rtl"] .track-card.is-active.ph-done .btn-ghost:hover { background: var
                 </label>
             </div>
             <div class="alert-options" id="alertOptionsArea">
-                <span id="lblAlertMargin">تنبيهي مسبقاً قبل:</span>
+                <span id="lblAlertMargin">نبّهني حين يبقى قبلي:</span>
                 <select id="alertMarginSelect" class="alert-select">
-                    <option value="2">2 منتظرين</option>
-                    <option value="5">5 منتظرين</option>
-                    <option value="10" selected>10 منتظرين</option>
-                    <option value="15">15 منتظرين</option>
-                    <option value="30">30 منتظرين</option>
+                    <option value="2">شخصان</option>
+                    <option value="5">5 أشخاص</option>
+                    <option value="10" selected>10 أشخاص</option>
+                    <option value="15">15 شخصاً</option>
+                    <option value="30">30 شخصاً</option>
                 </select>
             </div>
         </div>
@@ -1302,13 +1302,17 @@ import { getMessaging, getToken, onMessage, isSupported } from "https://www.gsta
 const GOOGLE_ICON_SVG = `<svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>`;
 
 // [NOTIF-TEXT] صياغة العدد كما يقرؤها الإنسان (يجب أن تطابق الـ Worker [18])
+function arCount(n) {   // [NOTIF-TEXT] العدد ومعدوده: شخص واحد، شخصان، 3–10 أشخاص، 11 فأكثر شخصاً
+    n = Number(n);
+    if (n === 1) return "شخص واحد";
+    if (n === 2) return "شخصان";
+    if (n <= 10) return `${n} أشخاص`;
+    return `${n} شخصاً`;
+}
 function arBefore(n) {
     n = Number(n);
     if (n <= 0) return "أنت التالي";
-    if (n === 1) return "بقي قبلك شخص واحد";
-    if (n === 2) return "بقي قبلك شخصان";
-    if (n <= 10) return `بقي قبلك ${n} أشخاص`;
-    return `بقي قبلك ${n} شخصاً`;
+    return `بقي قبلك ${arCount(n)}`;
 }
 function frBefore(n) {
     n = Number(n);
@@ -1346,14 +1350,14 @@ const i18n = {
         trackPillCalled: "Numéro appelé",
         trackPillPassed: "Numéro dépassé",
         trackPillOffline: "Hors ligne",
-        trackMsgNotStarted: (m) => `Les appels n'ont pas encore commencé. Nous vous avertirons quand il restera ${m} personnes avant vous.`,
-        trackMsgWaiting: (m) => `Nous vous avertirons quand il restera ${m} personnes avant vous.`,
-        trackMsgSoon: (n) => `Votre tour approche : encore ${n} personne(s) avant vous. Approchez-vous des guichets.`,
-        trackMsgNext: "Vous êtes le prochain ! Préparez-vous à vous présenter au guichet.",
-        trackMsgTurn: (c) => `C'est votre tour ! Présentez-vous au guichet ${c}.`,
-        trackMsgCalled: "Votre numéro a été appelé. Le suivi sera retiré automatiquement dans 5 minutes.",
-        trackMsgPassed: "La file a dépassé votre numéro. Le suivi sera retiré automatiquement dans 5 minutes.",
-        trackMsgOffline: "Le système est momentanément hors ligne. Le suivi reprendra automatiquement.",
+        trackMsgNotStarted: (m) => `Les appels n'ont pas encore commencé. Nous vous préviendrons quand il restera ${m} personnes avant vous.`,
+        trackMsgWaiting: (m) => `Nous vous préviendrons quand il restera ${m} personnes avant vous.`,
+        trackMsgSoon: (n) => `Encore ${n} personne${n > 1 ? "s" : ""} avant vous, votre tour approche.`,
+        trackMsgNext: "Vous êtes le prochain : préparez-vous à vous présenter au guichet.",
+        trackMsgTurn: (c) => `C'est votre tour : présentez-vous au guichet ${c}.`,
+        trackMsgCalled: "Votre numéro a été appelé. Le suivi s'arrête dans 5 minutes.",
+        trackMsgPassed: "La file a dépassé votre numéro. Le suivi s'arrête dans 5 minutes.",
+        trackMsgOffline: "Le système est hors ligne ; le suivi reprendra à son retour.",
         trackNotifPush: "Notifications activées : elles vous parviennent même page fermée.",
         trackNotifLocal: "Alerte active tant que cette page reste ouverte.",
         trackNotifOff: "Notifications désactivées.",
@@ -1362,7 +1366,7 @@ const i18n = {
         errTrackPassed: "Ce numéro a déjà été appelé ou dépassé par la file.",
         errTrackPush: "Impossible d'enregistrer les notifications sur le serveur. L'alerte fonctionnera tant que la page reste ouverte.",
         lblReservationTitle: "Réservation en ligne",
-        lblReservationDesc: "Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.",
+        lblReservationDesc: "Réservez votre tour à distance, puis retirez votre ticket au distributeur à votre arrivée.",
         btnReserve: "RÉSERVER UN TICKET",
         btnGoogleReserve: "Réserver avec Google",
         btnReserving: "RÉSERVATION EN COURS...",
@@ -1377,8 +1381,8 @@ const i18n = {
         lblYourNumber: "VOTRE NUMÉRO",
         lblPickupCode: "CODE DE RETRAIT",
         lblAlertTitle: "🔔 Activer les notifications",
-        lblAlertMargin: "M'avertir à l'avance :",
-        marginOption: (n) => `${n} pers. avant`,
+        lblAlertMargin: "Me prévenir quand il reste avant moi :",
+        marginOption: (n) => `${n} personnes`,
         btnLogout: "Déconnexion",
         connReconnecting: "Reconnexion réseau...",
         connSysOffline: "Système central déconnecté",
@@ -1387,45 +1391,45 @@ const i18n = {
         connAvailable: "Service disponible",
         bannerBorneOffline: "⚠️ <strong>Borne d'impression hors ligne :</strong><br>Le guichet physique n'est pas connecté. Les réservations en ligne sont suspendues.",
         bannerNoPaper: "⚠️ <strong>Papier épuisé :</strong><br>La borne n'a plus de papier. Les réservations en ligne sont temporairement suspendues.",
-        errBorneOffline: "Le système est hors ligne. Impossible de réserver pour le moment.",
-        errRejected: "Votre demande n'a pas pu être validée par le système.",
+        errBorneOffline: "Le système est hors ligne : la réservation est impossible pour le moment.",
+        errRejected: "Votre demande n'a pas pu être acceptée. Réessayez, ou retirez un ticket au distributeur du bureau.",
         errTimeout: "La confirmation n'est pas encore arrivée. Si elle arrive plus tard, elle s'affichera ici automatiquement ; sinon, prenez votre ticket à la borne.",
         errRejectedOffline: "La borne a perdu la connexion pendant votre demande. Veuillez réserver à nouveau.",
         errBookingClosed: "La réservation en ligne n'est pas disponible pour le moment.",
-        errRejectedReset: "La file a été réinitialisée avant le traitement de votre demande. Vous pouvez réserver à nouveau.",
-        errRejectedOld: "Votre demande a attendu plus de 30 minutes sans place disponible. Réessayez ou prenez un ticket à la borne.",
+        errRejectedReset: "Une nouvelle journée de file a commencé avant le traitement de votre demande. Réservez à nouveau.",
+        errRejectedOld: "Votre demande a attendu plus d'une demi-heure sans être traitée. Réessayez, ou retirez un ticket au distributeur.",
         errStillProcessing: "Votre demande précédente est encore en cours de traitement, patientez quelques instants.",
-        errNetwork: "Impossible d'envoyer la réservation. Veuillez réessayer.",
+        errNetwork: "Impossible d'envoyer la réservation. Réessayez.",
         errAuth: "Impossible de se connecter avec Google.",
         errLogout: "Impossible de se déconnecter.",
         errPushRegister: "Impossible d'enregistrer ce téléphone pour les notifications. Les alertes fonctionneront seulement tant que la page reste ouverte.",
-        statusPendingTitle: "RÉSERVATION EN COURS",
-        statusPendingMsg: "Votre demande est en cours de traitement, dans l'ordre d'arrivée. Ne cliquez pas à nouveau et ne fermez pas la page.",
-        statusPendingLong: "Beaucoup de réservations en ce moment : votre demande est enregistrée et sera traitée dans l'ordre dès qu'une place se libère. Ne cliquez pas à nouveau.",
-        statusConfirmedTitle: "NUMÉRO RÉSERVÉ (TICKET PAS ENCORE IMPRIMÉ)",
-        statusConfirmedMsg: "Présentez votre code à la borne pour imprimer votre ticket.",
-        statusArrivedTitle: "ARRIVÉE CONFIRMÉE",
-        statusArrivedMsg: "Ticket récupéré ! Veuillez attendre votre appel.",
+        statusPendingTitle: "DEMANDE EN COURS",
+        statusPendingMsg: "Les demandes sont traitées dans leur ordre d'arrivée. Ne cliquez pas à nouveau et ne fermez pas la page.",
+        statusPendingLong: "Beaucoup de demandes en ce moment : la vôtre garde sa place dans la file. Inutile de cliquer à nouveau.",
+        statusConfirmedTitle: "NUMÉRO RÉSERVÉ",
+        statusConfirmedMsg: "Votre ticket n'est pas encore imprimé.",
+        statusArrivedTitle: "TICKET IMPRIMÉ",
+        statusArrivedMsg: "Attendez l'appel de votre numéro dans la salle.",
         statusCalledTitle: "C'EST VOTRE TOUR",
-        statusCalledMsg: (t) => `Votre numéro (#${t}) est appelé au guichet !`,
-        statusSkippedTitle: "TOUR DÉPASSÉ",
-        statusSkippedMsg: "Votre numéro a été dépassé par le guichet.",
-        statusExpiredTitle: "RÉSERVATION EXPIRÉE",
-        statusExpiredMsg: "Le ticket n'a pas été retiré à temps, la réservation a été annulée.",
-        statusCompletedTitle: "SERVICE TERMINÉ",
-        statusCompletedMsg: "Votre passage est terminé.",
-        ticketInstructionConfirmed: "Présentez-vous à la borne et saisissez votre code à 4 chiffres.<br><br>La borne imprimera votre ticket avec le numéro réservé.<br><br><strong>Important :</strong> Si la file dépasse votre numéro avant que vous ne saisissiez votre code, la réservation est annulée.",
-        ticketInstructionArrived: "Votre ticket physique a été imprimé avec succès.<br><br>Surveillez les écrans d'affichage dans la salle d'attente.",
-        ticketInstructionCalled: "Veuillez vous diriger vers le guichet indiqué sur l'afficheur.",
-        ticketInstructionSkipped: "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.",
-        ticketInstructionCompleted: "Merci pour votre visite chez Poste El Amal.",
+        statusCalledMsg: (t) => `Votre numéro ${t} est appelé.`,
+        statusSkippedTitle: "TOUR MANQUÉ",
+        statusSkippedMsg: "La file a dépassé votre numéro avant le retrait de votre ticket.",
+        statusExpiredTitle: "RÉSERVATION TERMINÉE",
+        statusExpiredMsg: "Cette réservation a pris fin sans que le ticket soit retiré.",
+        statusCompletedTitle: "DÉMARCHE TERMINÉE",
+        statusCompletedMsg: "Merci de votre visite.",
+        ticketInstructionConfirmed: "À votre arrivée, saisissez votre code de retrait à 4 chiffres sur le distributeur pour imprimer votre ticket.<br><br><strong>Attention :</strong> si la file dépasse votre numéro avant la saisie du code, la réservation est annulée.",
+        ticketInstructionArrived: "Suivez les écrans d'affichage de la salle.",
+        ticketInstructionCalled: "Présentez-vous au guichet indiqué sur les écrans de la salle.",
+        ticketInstructionSkipped: "Vous pouvez réserver à nouveau avec le bouton ci-dessus.",
+        ticketInstructionCompleted: "Le bureau de poste El Amal est heureux de vous servir.",
         modalCloseBtn: "J'AI COMPRIS",
         alertTurnTitle: "Poste El Amal : c'est votre tour",
-        alertTurnMsg: (t, c) => `Le ticket ${t} est appelé au guichet ${c}.`,
+        alertTurnMsg: (t, c) => `Ticket ${t} : présentez-vous au guichet ${c}.`,
         alertPrepareTitle: "Poste El Amal : votre tour approche",
         alertPrepareMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}.`,
-        alertFinalTitle: "Poste El Amal : préparez-vous",
-        alertFinalMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}, votre tour est tout proche.`,
+        alertFinalTitle: "Poste El Amal : votre tour est imminent",
+        alertFinalMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}, préparez-vous.`,
         alertNextMsg: (t) => `Ticket ${t} : vous êtes le prochain.`,
         alertEnabledTitle: "✅ Notifications activées",
         alertEnabledMsg: "Vous recevrez ici une notification à l'approche de votre tour.",
@@ -1462,28 +1466,28 @@ const i18n = {
         trackPillCalled: "تمت المناداة",
         trackPillPassed: "تم التجاوز",
         trackPillOffline: "غير متصل",
-        trackMsgNotStarted: (m) => `لم تبدأ المناداة بعد. سننبّهك عندما يبقى ${m} قبلك.`,
-        trackMsgWaiting: (m) => `سننبّهك عندما يبقى ${m} قبلك.`,
-        trackMsgSoon: (n) => `اقترب دورك: بقي ${n} قبلك. يرجى الاقتراب من الشبابيك.`,
-        trackMsgNext: "أنت التالي! استعد للتوجه إلى الشباك.",
-        trackMsgTurn: (c) => `حان دورك! تفضّل إلى الشباك ${c}.`,
-        trackMsgCalled: "تمت مناداة رقمك. يُزال التتبع تلقائياً بعد 5 دقائق.",
-        trackMsgPassed: "تجاوز الطابور رقمك. يُزال التتبع تلقائياً بعد 5 دقائق.",
-        trackMsgOffline: "النظام غير متصل حالياً، ويُستأنف التتبع تلقائياً عند عودته.",
-        trackNotifPush: "الإشعارات مفعّلة: تصلك حتى لو أغلقت الصفحة.",
+        trackMsgNotStarted: (m) => `لم تبدأ المناداة بعد. سننبّهك حين يبقى قبلك ${arCount(m)}.`,
+        trackMsgWaiting: (m) => `سننبّهك حين يبقى قبلك ${arCount(m)}.`,
+        trackMsgSoon: (n) => `${arBefore(n)}، ودورك يقترب.`,
+        trackMsgNext: "أنت التالي، فتهيّأ للتوجّه إلى الشباك.",
+        trackMsgTurn: (c) => `حان دورك، فتفضّل إلى الشباك ${c}.`,
+        trackMsgCalled: "نُودي رقمك. يُزال التتبّع بعد خمس دقائق.",
+        trackMsgPassed: "تجاوز الطابور رقمك. يُزال التتبّع بعد خمس دقائق.",
+        trackMsgOffline: "انقطع اتصال النظام، وسيُستأنف التتبّع حين يعود.",
+        trackNotifPush: "الإشعارات مفعّلة، وتصلك ولو أغلقت الصفحة.",
         trackNotifLocal: "التنبيه يعمل ما دامت هذه الصفحة مفتوحة.",
         trackNotifOff: "الإشعارات غير مفعّلة.",
         trackNotifDenied: "الإشعارات محجوبة في المتصفح.",
         errTrackInvalid: "أدخل رقماً صحيحاً بين 1 و999.",
-        errTrackPassed: "هذا الرقم نودي عليه أو تجاوزه الطابور.",
+        errTrackPassed: "هذا الرقم نُودي أو تجاوزه الطابور.",
         errTrackPush: "تعذّر تسجيل الإشعارات على الخادم. سيعمل التنبيه ما دامت الصفحة مفتوحة.",
         lblReservationTitle: "حجز تذكرة عن بُعد",
-        lblReservationDesc: "احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.",
+        lblReservationDesc: "احجز دورك من بُعد، ثم اسحب تذكرتك من الموزّع الآلي حين تصل إلى المكتب.",
         btnReserve: "حجز تذكرة",
         btnGoogleReserve: "احجز تذكرتك بحساب Google",
         btnReserving: "جارٍ الحجز...",
         btnLoggingIn: "جارٍ تسجيل الدخول...",
-        btnAlreadyActive: "لديك حجز نشط حالياً",
+        btnAlreadyActive: "لديك حجزٌ قائم",
         btnSysOffline: "النظام غير متصل",
         btnBorneOffline: "الموزع الآلي معطل (الحجز متوقف)",
         btnNoPaper: "نفاد الورق (الحجز متوقف)",
@@ -1493,8 +1497,8 @@ const i18n = {
         lblYourNumber: "رقم تذكرتك",
         lblPickupCode: "رمز الاستلام",
         lblAlertTitle: "🔔 تفعيل التنبيهات",
-        lblAlertMargin: "تنبيهي مسبقاً قبل:",
-        marginOption: (n) => `${n} منتظرين`,
+        lblAlertMargin: "نبّهني حين يبقى قبلي:",
+        marginOption: (n) => arCount(n),
         btnLogout: "خروج",
         connReconnecting: "جارٍ إعادة الاتصال...",
         connSysOffline: "النظام غير متصل",
@@ -1503,45 +1507,45 @@ const i18n = {
         connAvailable: "الخدمة متاحة",
         bannerBorneOffline: "⚠️ <strong>الموزع الآلي غير متصل:</strong><br>جهاز الطباعة بالمكتب متوقف حالياً. الحجز معلّق.",
         bannerNoPaper: "⚠️ <strong>نفاد ورق الطباعة:</strong><br>الموزع الآلي خالٍ من الورق. الحجز معلّق مؤقتاً.",
-        errBorneOffline: "النظام غير متصل حالياً. يتعذر إتمام الحجز.",
-        errRejected: "تعذر قبول طلب الحجز.",
-        errTimeout: "لم يصل تأكيد الحجز بعد. إن تأكد لاحقاً سيظهر هنا تلقائياً، وإلا اسحب تذكرتك مباشرة من الموزع بالمكتب.",
-        errRejectedOffline: "انقطع اتصال الموزع أثناء طلبك. يرجى الحجز من جديد.",
+        errBorneOffline: "النظام غير متصل الآن، فلا يمكن إتمام الحجز.",
+        errRejected: "تعذّر قبول طلبك. أعد المحاولة، أو اسحب تذكرتك من الموزّع الآلي في المكتب.",
+        errTimeout: "لم يصل تأكيد الحجز بعد. إن تأكّد لاحقاً ظهر هنا، وإلا فاسحب تذكرتك من الموزّع الآلي في المكتب.",
+        errRejectedOffline: "انقطع اتصال النظام أثناء طلبك، فأعد الحجز.",
         errBookingClosed: "الحجز عن بُعد غير متاح حالياً.",
-        errRejectedReset: "بدأ دور جديد للطابور قبل معالجة طلبك. يمكنك الحجز من جديد.",
-        errRejectedOld: "انتظر طلبك أكثر من 30 دقيقة دون أن يتوفر مكان. أعد المحاولة أو اسحب تذكرة من الموزع.",
-        errStillProcessing: "طلبك السابق ما يزال قيد المعالجة، انتظر لحظات.",
-        errNetwork: "تعذر إرسال الحجز، يرجى إعادة المحاولة.",
+        errRejectedReset: "بدأ يومٌ جديد للطابور قبل أن يُعالَج طلبك، فأعد الحجز.",
+        errRejectedOld: "انتظر طلبك أكثر من نصف ساعة دون أن يُعالَج. أعد المحاولة، أو اسحب تذكرتك من الموزّع الآلي.",
+        errStillProcessing: "طلبك السابق ما زال قيد المعالجة، فانتظر لحظات.",
+        errNetwork: "تعذّر إرسال الحجز، فأعد المحاولة.",
         errAuth: "فشل تسجيل الدخول بواسطة Google.",
         errLogout: "فشل تسجيل الخروج.",
-        errPushRegister: "تعذر تسجيل هذا الهاتف لاستقبال الإشعارات. سيعمل التنبيه فقط ما دامت الصفحة مفتوحة.",
-        statusPendingTitle: "معالجة الحجز",
-        statusPendingMsg: "طلبك قيد المعالجة ويُعالَج بالترتيب. لا تُعِد الضغط ولا تغلق الصفحة.",
-        statusPendingLong: "الحجوزات كثيرة الآن: طلبك محفوظ وسيُعالَج بالترتيب فور توفر مكان. لا تُعِد الضغط.",
-        statusConfirmedTitle: "رقمك محجوز (لم تُسحب التذكرة بعد)",
-        statusConfirmedMsg: "أدخل رمز الاستلام في الموزع الآلي فور وصولك لسحب تذكرتك.",
-        statusArrivedTitle: "تم تأكيد الحضور",
-        statusArrivedMsg: "تم سحب التذكرة بنجاح! يرجى انتظار المناداة في القاعة.",
-        statusCalledTitle: "حان دورك الآن",
-        statusCalledMsg: (t) => `الرقم (${t}) مدعو للتقدم إلى الشباك الآن!`,
-        statusSkippedTitle: "فات دورك",
-        statusSkippedMsg: "تم تجاوز رقمك في طابور الانتظار.",
-        statusExpiredTitle: "انتهت صلاحية الحجز",
-        statusExpiredMsg: "لم تُسحب التذكرة في الوقت المحدد، فأُلغي الحجز.",
-        statusCompletedTitle: "تمت المعاملة",
-        statusCompletedMsg: "انتهت معاملتك بنجاح.",
-        ticketInstructionConfirmed: "توجه إلى الموزع الآلي بالمكتب وأدخل رمز الاستلام المكون من 4 أرقام لطباعة تذكرتك.<br><br><strong>تنبيه:</strong> يُلغى الحجز تلقائياً إذا تجاوز الطابور رقمك قبل أن تُدخل الرمز.",
-        ticketInstructionArrived: "تمت طباعة تذكرتك الورقية. تفضل بمتابعة شاشات العرض بالقاعة.",
-        ticketInstructionCalled: "تفضل بالتوجه فوراً إلى الشباك المحدد على الشاشة.",
-        ticketInstructionSkipped: "فات موعد دورك. يمكنك حجز تذكرة جديدة مباشرة بالضغط على الزر أعلاه.",
-        ticketInstructionCompleted: "شكراً لزيارتكم مكتب بريد حي الأمل.",
+        errPushRegister: "تعذّر تسجيل هاتفك لاستقبال الإشعارات، فلن يعمل التنبيه إلا ما دامت الصفحة مفتوحة.",
+        statusPendingTitle: "طلبك قيد المعالجة",
+        statusPendingMsg: "تُعالَج الطلبات بحسب ترتيب وصولها، فلا تُعِد الضغط ولا تُغلق الصفحة.",
+        statusPendingLong: "الطلبات كثيرة في هذه اللحظة، وطلبك محفوظ في مكانه من الترتيب، فلا حاجة إلى إعادة الضغط.",
+        statusConfirmedTitle: "رقمك محجوز",
+        statusConfirmedMsg: "لم تُطبع تذكرتك بعد.",
+        statusArrivedTitle: "طُبعت تذكرتك",
+        statusArrivedMsg: "انتظر مناداة رقمك في القاعة.",
+        statusCalledTitle: "حان دورك",
+        statusCalledMsg: (t) => `رقمك ${t} يُنادى الآن.`,
+        statusSkippedTitle: "فاتك دورك",
+        statusSkippedMsg: "تجاوز الطابور رقمك قبل أن تسحب تذكرتك.",
+        statusExpiredTitle: "انتهى الحجز",
+        statusExpiredMsg: "انتهى هذا الحجز ولم تُسحب تذكرته.",
+        statusCompletedTitle: "تمّت معاملتك",
+        statusCompletedMsg: "شكراً لزيارتك.",
+        ticketInstructionConfirmed: "حين تصل إلى المكتب، أدخل رمز الاستلام ذا الأرقام الأربعة في الموزّع الآلي فتُطبع تذكرتك.<br><br><strong>تنبيه:</strong> إن تجاوز الطابور رقمك قبل أن تُدخل الرمز أُلغي الحجز.",
+        ticketInstructionArrived: "تابع شاشات العرض في القاعة.",
+        ticketInstructionCalled: "تفضّل إلى الشباك المبيَّن على شاشات القاعة.",
+        ticketInstructionSkipped: "يمكنك أن تحجز من جديد بالزر أعلاه.",
+        ticketInstructionCompleted: "مكتب بريد حي الأمل يسعد بخدمتك.",
         modalCloseBtn: "حسناً",
         alertTurnTitle: "بريد حي الأمل: حان دورك",
-        alertTurnMsg: (t, c) => `التذكرة ${t} مدعوّة إلى الشباك ${c}.`,
+        alertTurnMsg: (t, c) => `تذكرتك ${t}: تفضّل إلى الشباك ${c}.`,
         alertPrepareTitle: "بريد حي الأمل: اقترب دورك",
         alertPrepareMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}.`,
-        alertFinalTitle: "بريد حي الأمل: استعدّ",
-        alertFinalMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}، ودورك قريبٌ جداً.`,
+        alertFinalTitle: "بريد حي الأمل: دورك وشيك",
+        alertFinalMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}، فتهيّأ.`,
         alertNextMsg: (t) => `تذكرتك ${t}: أنت التالي.`,
         alertEnabledTitle: "✅ تم تفعيل التنبيهات",
         alertEnabledMsg: "سيصلك هنا إشعار عند اقتراب دورك.",
