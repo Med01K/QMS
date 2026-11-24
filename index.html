@@ -1343,11 +1343,11 @@ const i18n = {
         ticketInstructionSkipped: "Votre tour est passé. Vous pouvez effectuer une nouvelle réservation immédiatement en cliquant sur le bouton ci-dessus.",
         ticketInstructionCompleted: "Merci pour votre visite chez Poste El Amal.",
         modalCloseBtn: "J'AI COMPRIS",
-        alertTurnTitle: "🔔 C'EST VOTRE TOUR !",
-        alertTurnMsg: (t, c) => `Votre numéro #${t} est appelé au Guichet ${c} !`,
-        alertPrepareTitle: "⚠️ Préparez-vous !",
-        alertPrepareMsg: (rem, t) => `Il ne reste que ${rem} personne(s) avant vous (Ticket #${t}). Veuillez vous approcher du guichet.`,
-        alertNextMsg: (t) => `Vous êtes le prochain (Ticket #${t}). Veuillez vous approcher du guichet.`,
+        alertTurnTitle: "Poste El Amal : c'est votre tour",
+        alertTurnMsg: (t, c) => `Le ticket ${t} est appelé au guichet ${c}.`,
+        alertPrepareTitle: "Poste El Amal : votre tour approche",
+        alertPrepareMsg: (rem, t) => `Personnes avant vous : ${rem} (ticket ${t}).`,
+        alertNextMsg: (t) => `Vous êtes le prochain (ticket ${t}).`,
         alertEnabledTitle: "✅ Notifications activées",
         alertEnabledMsg: "Vous recevrez ici une notification à l'approche de votre tour.",
         pushUnsupportedTitle: "Notifications limitées",
@@ -1456,11 +1456,11 @@ const i18n = {
         ticketInstructionSkipped: "فات موعد دورك. يمكنك حجز تذكرة جديدة مباشرة بالضغط على الزر أعلاه.",
         ticketInstructionCompleted: "شكراً لزيارتكم مكتب بريد حي الأمل.",
         modalCloseBtn: "حسناً",
-        alertTurnTitle: "🔔 حان دورك الآن!",
-        alertTurnMsg: (t, c) => `الرقم ${t} مدعو إلى الشباك ${c}!`,
-        alertPrepareTitle: "⚠️ اقترب دورك!",
-        alertPrepareMsg: (rem, t) => `بقي ${rem} فقط قبلك (تذكرة ${t}). يرجى الاستعداد.`,
-        alertNextMsg: (t) => `أنت التالي (تذكرة ${t}). يرجى الاستعداد.`,
+        alertTurnTitle: "بريد حي الأمل: حان دورك",
+        alertTurnMsg: (t, c) => `التذكرة ${t} مدعوّة إلى الشباك ${c}.`,
+        alertPrepareTitle: "بريد حي الأمل: اقترب دورك",
+        alertPrepareMsg: (rem, t) => `عدد الأشخاص قبلك: ${rem} (التذكرة ${t}).`,
+        alertNextMsg: (t) => `أنت التالي (التذكرة ${t}).`,
         alertEnabledTitle: "✅ تم تفعيل التنبيهات",
         alertEnabledMsg: "سيصلك هنا إشعار عند اقتراب دورك.",
         pushUnsupportedTitle: "الإشعارات محدودة",
@@ -2019,6 +2019,16 @@ function showInfoModal(icon, title, message) {
     inAppModalOverlay.style.display = "flex";
 }
 
+// [NOTIF-CALM] نفس قواعد الـ Worker [17]: ثلاثة إشعارات قبل الدور (دخول الهامش، منتصفه، أنت التالي)،
+// إشعار واحد عند بلوغ كل مرحلة (أعلى مرحلة فقط). لا إشعار «حان دورك» إلا إن كان TURN_ALERT_ENABLED.
+const TURN_ALERT_ENABLED = false;
+function alertStage(before, margin) {
+    if (before > margin) return 0;
+    if (before === 0) return 3;
+    const mid = Math.max(1, Math.floor(margin / 2));
+    return (before <= mid) ? 2 : 1;
+}
+
 function checkAlertsEngine() {
     if (!alertToggle.checked || !activeUserTicketData || activeUserTicketData.ticket <= 0) return;
     const status = activeUserTicketData.status;
@@ -2048,7 +2058,7 @@ function checkAlertsEngine() {
         if (alertedExactTurnForTicket !== ticketNum) {
             alertedExactTurnForTicket = ticketNum;
             lastAlertedRemaining = 0;
-            triggerTurnAlert(
+            if (TURN_ALERT_ENABLED) triggerTurnAlert(
                 t.alertTurnTitle,
                 t.alertTurnMsg(formatNumber(ticketNum), currentConsole || 1),
                 true,
@@ -2059,11 +2069,12 @@ function checkAlertsEngine() {
     }
 
     if (peopleBefore <= margin) {
-        const justEnteredMargin = (lastAlertedRemaining === null || lastAlertedRemaining > margin);
-        const threePeoplePassed = (lastAlertedRemaining !== null && (lastAlertedRemaining - peopleBefore) >= 3);
-        const becameNext = (peopleBefore === 0 && lastAlertedRemaining !== 0);
+        let last = lastAlertedRemaining;
+        if (last !== null && peopleBefore > last) last = null;   // الطابور رجع للخلف
+        const lastStage = (last === null) ? 0 : alertStage(last, margin);
 
-        if (justEnteredMargin || threePeoplePassed || becameNext) {
+        // [NOTIF-CALM] إشعار عند بلوغ مرحلة جديدة فقط (دخول الهامش، منتصفه، أنت التالي)
+        if (alertStage(peopleBefore, margin) > lastStage) {
             lastAlertedRemaining = peopleBefore;
             triggerTurnAlert(
                 t.alertPrepareTitle,
@@ -3149,7 +3160,7 @@ function checkTrackAlerts(steps) {
 
     if (steps === 0) {
         if (!track.turnAlerted) {
-            triggerTurnAlert(t.alertTurnTitle, t.alertTurnMsg(num, currentConsole || 1), true, `qms-${track.ticket}-turn`);
+            if (TURN_ALERT_ENABLED) triggerTurnAlert(t.alertTurnTitle, t.alertTurnMsg(num, currentConsole || 1), true, `qms-${track.ticket}-turn`);
             track.turnAlerted = true;
             track.lastBefore = 0;
         }
@@ -3161,10 +3172,8 @@ function checkTrackAlerts(steps) {
     let last = (track.lastBefore === null || track.lastBefore === undefined) ? null : Number(track.lastBefore);
     if (last !== null && before > last) last = null;   // الطابور رجع للخلف
 
-    const entered = (last === null || last > track.margin);
-    const threePassed = (last !== null && (last - before) >= 3);
-    const becameNext = (before === 0 && last !== 0);
-    if (!(entered || threePassed || becameNext)) return;
+    const lastStage = (last === null) ? 0 : alertStage(last, track.margin);
+    if (alertStage(before, track.margin) <= lastStage) return;   // [NOTIF-CALM] مرحلة جديدة فقط
 
     // إن مُنع التنبيه (فاصل الثواني الأربع) لا تُحفظ الحالة، فيُعاد في التحديث التالي
     const shown = triggerTurnAlert(
