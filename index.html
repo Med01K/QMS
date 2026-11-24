@@ -1052,12 +1052,24 @@ body[dir="rtl"] .tk-hint { font-size: 13px; font-weight: 600 !important; color: 
 .track-card.is-active .track-margin-label { margin-bottom: 8px; }
 .track-card.is-active .track-chip,
 body[dir="rtl"] .track-card.is-active .track-chip { min-width: 42px; padding: 6px 10px; font-size: 14px; border-radius: 10px; box-shadow: none; }
+/* [TRACK-BTN] «إيقاف التتبع»: زر كامل العرض، أبيض بإطار وردي خفيف ونص أحمر هادئ */
 .track-card.is-active .btn-ghost,
 body[dir="rtl"] .track-card.is-active .btn-ghost {
-    margin-top: 6px; padding: 6px; border: none; background: transparent;
-    color: #94a3b8; font-size: 13px; text-decoration: underline;
+    margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+    background: #ffffff; color: #b91c1c; border: 1.5px solid #f1c4c4; box-shadow: none;
+    font-family: 'Cairo', Arial, sans-serif; font-size: 15px; font-weight: 600 !important;
+    letter-spacing: 0; text-decoration: none;
 }
-.track-card.is-active .btn-ghost:hover { background: transparent; color: var(--red); }
+.track-card.is-active .btn-ghost:hover,
+body[dir="rtl"] .track-card.is-active .btn-ghost:hover { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
+/* [TRACK-BTN] «تتبّع تذكرة أخرى» بعد المناداة أو التجاوز: زر رئيسي بلون الموقع */
+.track-card.is-active.ph-done .btn-ghost,
+body[dir="rtl"] .track-card.is-active.ph-done .btn-ghost {
+    background: var(--primary); color: #ffffff; border: none;
+    box-shadow: 0 4px 12px rgba(21, 26, 93, 0.22);
+}
+.track-card.is-active.ph-done .btn-ghost:hover,
+body[dir="rtl"] .track-card.is-active.ph-done .btn-ghost:hover { background: var(--primary-dark); color: #ffffff; }
 
 @keyframes track-pulse {
     0%, 100% { box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22); transform: scale(1); }
