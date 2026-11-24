@@ -1736,6 +1736,28 @@ const recentAlerts = new Map();   // [TRACK] منع تكرار التنبيه ن
 const STORAGE_PREFIX = "poste_elamal_reservation_";
 function getReservationKey(uid) { return STORAGE_PREFIX + uid; }
 
+/* [EXPIRY-FIX] تذكرة منتهية (فات الدور، نوديت...) تبقى 5 دقائق ثم تُمسح ولا تعود.
+   كان سجلها إن بقي في Firebase يُعيد بناءها عند كل فتح للصفحة بوقت انتهاء جديد، فلا تُمسح أبداً.
+   - وقت الانتهاء الأول يُحفظ للتذكرة نفسها (الرقم + المفتاح) ولا يُعاد كتابته.
+   - بعد المسح تُسجَّل التذكرة «مُغلقة» فلا تظهر ثانية ولو بقي سجلها في Firebase. */
+function dismissedKey(uid) { return "qms_dismissed_" + uid; }
+function reservationIdOf(r) { return r ? `${Number(r.ticket || 0)}|${r.id || ""}` : ""; }
+function markReservationDismissed(uid, r) {
+    if (!uid || !r || !(Number(r.ticket) > 0)) return;
+    try {
+        const list = JSON.parse(localStorage.getItem(dismissedKey(uid)) || "[]");
+        const id = reservationIdOf(r);
+        if (!list.includes(id)) list.push(id);
+        localStorage.setItem(dismissedKey(uid), JSON.stringify(list.slice(-20)));
+    } catch (e) {}
+}
+function isReservationDismissed(uid, ticket, id) {
+    try {
+        const list = JSON.parse(localStorage.getItem(dismissedKey(uid)) || "[]");
+        return list.includes(`${Number(ticket || 0)}|${id || ""}`);
+    } catch (e) { return false; }
+}
+
 function formatNumber(number) {
     const n = Number(number);
     if (!Number.isFinite(n) || n <= 0) return "---";
@@ -2223,6 +2245,7 @@ function loadReservation() {
         if (FINISHED_STATUSES.includes(res.status)) {
             const timePassed = Date.now() - (res.expired_at || res.saved_at || 0);
             if (timePassed > EXPIRED_RETENTION_MS) {
+                markReservationDismissed(currentUser.uid, res);   // [EXPIRY-FIX]
                 localStorage.removeItem(getReservationKey(currentUser.uid));
                 return null;
             }
@@ -2289,6 +2312,7 @@ function scheduleAutoClearTicket(delayMs = EXPIRED_RETENTION_MS) {
     clearAutoClearTimer();
     autoClearTimer = setTimeout(async () => {
         if (!currentUser) return;
+        markReservationDismissed(currentUser.uid, activeUserTicketData);   // [EXPIRY-FIX]
         localStorage.removeItem(getReservationKey(currentUser.uid));
         await removeFCMTokenFromDatabase();
         resetUserReservationUI();
@@ -2733,6 +2757,8 @@ function watchUserActiveTicket(uid) {
         const tNum = Number(data.ticket || 0);
 
         if (ACTIVE_STATUSES.includes(status) && tNum > 0) {
+            // [EXPIRY-FIX] تذكرة انتهت ومُسحت من قبل: لا تعود ولو بقي سجلها في Firebase
+            if (isReservationDismissed(uid, tNum, data.original_key || "")) return;
             userTicketSeenInDb = true;
             if (userTicketGoneTimer) { clearTimeout(userTicketGoneTimer); userTicketGoneTimer = null; }
             clearPendingTimer();
@@ -2746,6 +2772,14 @@ function watchUserActiveTicket(uid) {
                 status: status,
                 user_id: uid
             };
+            // [EXPIRY-FIX] نفس التذكرة انتهت من قبل: يبقى وقت انتهائها الأول (لا يبدأ العدّ من جديد)
+            try {
+                const prev = JSON.parse(localStorage.getItem(getReservationKey(uid)) || "null");
+                if (prev && prev.expired_at && reservationIdOf(prev) === reservationIdOf(resData)) {
+                    resData.expired_at = prev.expired_at;
+                    if (FINISHED_STATUSES.includes(prev.status)) resData.status = prev.status;
+                }
+            } catch (e) {}
             saveReservation(resData);
 
             if (isTicketOvertaken(tNum, currentTicket)) {
