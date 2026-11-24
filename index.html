@@ -2396,11 +2396,14 @@ function updateReserveButton() {
 
     printerOfflineBanner.style.display = "none";
 
-    // [TRACK] صاحب حجز نشط تتتبعه بطاقة الحجز نفسها: لا تظهر بطاقة التذكرة الورقية
-    trackSection.classList.toggle("track-hidden", !!hasActiveReservation);
-
     // [BOOKING-PRINTER] النظام متصل لكن الحجز مغلق: يختفي قسم الحجز، ويبقى الرقم الجاري والمنتظرون
     const bookingClosed = queueConnected && serviceAvailable && !bookingOpen;
+
+    // [TRACK] بطاقة تتبّع التذكرة الورقية تظهر فقط حين يكون الحجز مغلقاً (الطابعة غير متصلة)،
+    // أو إذا كان الزبون يتتبع تذكرة الآن (فلا ينقطع تتبعه إن عادت الطابعة).
+    // وصاحب حجز نشط تتتبعه بطاقة الحجز نفسها: لا تظهر له بطاقة التذكرة الورقية.
+    const showTrackCard = !hasActiveReservation && (bookingClosed || !!track);
+    trackSection.classList.toggle("track-hidden", !showTrackCard);
     reservationSection.classList.toggle("booking-closed", bookingClosed);
     newReservationButton.classList.toggle("booking-closed", bookingClosed);
 
