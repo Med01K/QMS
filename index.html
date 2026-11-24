@@ -406,24 +406,38 @@ button:disabled { opacity: 0.55; cursor: not-allowed; }
     background: var(--primary-dark);
 }
 
-/* زر الحجز المباشر عبر Google */
+/* زر الحجز المباشر عبر Google — [2026-11-24] التصميم A: أبيض بسيط، خط أخف، نص في سطر واحد */
 .btn-google-reserve {
     background: #ffffff !important;
-    color: #1e293b !important;
-    border: 1.5px solid #cbd5e1 !important;
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
-    display: inline-flex !important;
+    color: #1f2937 !important;
+    border: 1px solid #d6dbe4 !important;
+    box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08) !important;
+    display: flex !important;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    font-weight: 700 !important;
+    gap: 10px;
+    padding: 14px 16px !important;
+    border-radius: 12px;
+}
+
+.btn-google-reserve span,
+body[dir="rtl"] .btn-google-reserve,
+body[dir="rtl"] .btn-google-reserve span {
+    font-family: 'Cairo', Arial, sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 15.5px !important;
+    letter-spacing: 0 !important;
+    white-space: nowrap;
 }
 
 .btn-google-reserve:hover:not(:disabled) {
     background: #f8fafc !important;
-    border-color: #94a3b8 !important;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12) !important;
+    border-color: #b8c1cf !important;
+    box-shadow: 0 2px 6px rgba(16, 24, 40, 0.10) !important;
 }
+
+/* [BOOKING-PRINTER] الطابعة غير متصلة: قسم الحجز وزر «حجز تذكرة جديدة» لا يظهران */
+.booking-closed { display: none !important; }
 
 .google-icon {
     width: 22px;
@@ -919,7 +933,7 @@ const i18n = {
         lblReservationTitle: "Réservation en ligne",
         lblReservationDesc: "Réservez votre place dans la file d'attente et récupérez votre ticket à la borne lors de votre arrivée.",
         btnReserve: "RÉSERVER UN TICKET",
-        btnGoogleReserve: "Se connecter avec Google et réserver",
+        btnGoogleReserve: "Réserver avec Google",
         btnReserving: "RÉSERVATION EN COURS...",
         btnLoggingIn: "Connexion en cours...",
         btnAlreadyActive: "VOUS AVEZ DÉJÀ UNE RÉSERVATION",
@@ -946,6 +960,7 @@ const i18n = {
         errRejected: "Votre demande n'a pas pu être validée par le système.",
         errTimeout: "La confirmation n'est pas encore arrivée. Si elle arrive plus tard, elle s'affichera ici automatiquement ; sinon, prenez votre ticket à la borne.",
         errRejectedOffline: "La borne a perdu la connexion pendant votre demande. Veuillez réserver à nouveau.",
+        errBookingClosed: "La réservation en ligne n'est pas disponible pour le moment.",
         errRejectedReset: "La file a été réinitialisée avant le traitement de votre demande. Vous pouvez réserver à nouveau.",
         errRejectedOld: "Votre demande a attendu plus de 30 minutes sans place disponible. Réessayez ou prenez un ticket à la borne.",
         errStillProcessing: "Votre demande précédente est encore en cours de traitement, patientez quelques instants.",
@@ -995,7 +1010,7 @@ const i18n = {
         lblReservationTitle: "حجز تذكرة عن بُعد",
         lblReservationDesc: "احجز دورك مسبقاً، واستلم تذكرتك المطبوعة من الموزع الآلي فور وصولك.",
         btnReserve: "حجز تذكرة",
-        btnGoogleReserve: "الدخول بواسطة Google وحجز التذكرة",
+        btnGoogleReserve: "احجز تذكرتك بحساب Google",
         btnReserving: "جارٍ الحجز...",
         btnLoggingIn: "جارٍ تسجيل الدخول...",
         btnAlreadyActive: "لديك حجز نشط حالياً",
@@ -1022,6 +1037,7 @@ const i18n = {
         errRejected: "تعذر قبول طلب الحجز.",
         errTimeout: "لم يصل تأكيد الحجز بعد. إن تأكد لاحقاً سيظهر هنا تلقائياً، وإلا اسحب تذكرتك مباشرة من الموزع بالمكتب.",
         errRejectedOffline: "انقطع اتصال الموزع أثناء طلبك. يرجى الحجز من جديد.",
+        errBookingClosed: "الحجز عن بُعد غير متاح حالياً.",
         errRejectedReset: "بدأ دور جديد للطابور قبل معالجة طلبك. يمكنك الحجز من جديد.",
         errRejectedOld: "انتظر طلبك أكثر من 30 دقيقة دون أن يتوفر مكان. أعد المحاولة أو اسحب تذكرة من الموزع.",
         errStillProcessing: "طلبك السابق ما يزال قيد المعالجة، انتظر لحظات.",
@@ -1250,6 +1266,7 @@ let isClientInternetConnected = true;
 let serviceAvailable = false;
 let printerOnline = false;
 let printerStatus = 0;
+let bookingOpen = false;   // [BOOKING-PRINTER] queue/booking_open: يكتبه الجهاز الرئيسي حسب اتصال الطابعة
 
 const HEARTBEAT_TIMEOUT_MS = 200 * 1000;
 let lastMasterHeartbeat = 0;
@@ -1861,6 +1878,7 @@ onValue(queueRef, (snapshot) => {
     serviceAvailable = (data.service_available === true);
     printerOnline    = (data.printer_online === true);
     printerStatus    = Number(data.printer_status ?? 0);
+    bookingOpen      = (data.booking_open === true);   // [BOOKING-PRINTER]
     lastIssuedTicket = Number(data.last_issued_ticket ?? 0);
 
     if (currentTicket >= 0 && currentTicket <= 999 && lastIssuedTicket >= 0 && lastIssuedTicket <= 999) {
@@ -1900,10 +1918,16 @@ function updateReserveButton() {
     const isCurrentTicketOvertaken = activeUserTicketData && isTicketOvertaken(activeUserTicketData.ticket, currentTicket);
     const hasActiveReservation = activeUserTicketData && ACTIVE_STATUSES.includes(activeUserTicketData.status) && !isCurrentTicketOvertaken;
     // [2026-11-20] الحجز ممكن ما دام الجهاز الرئيسي متصلاً بالإنترنت (حالة الطابعة لا تؤثر ولا تُعرض)
-    const isHardwareReady = queueConnected && serviceAvailable;
+    // [BOOKING-PRINTER] والحجز مفتوح (الطابعة متصلة أو انفصلت منذ أقل من 5 دقائق)
+    const isHardwareReady = queueConnected && serviceAvailable && bookingOpen;
     const t = i18n[currentLang];
 
     printerOfflineBanner.style.display = "none";
+
+    // [BOOKING-PRINTER] النظام متصل لكن الحجز مغلق: يختفي قسم الحجز، ويبقى الرقم الجاري والمنتظرون
+    const bookingClosed = queueConnected && serviceAvailable && !bookingOpen;
+    reservationSection.classList.toggle("booking-closed", bookingClosed);
+    newReservationButton.classList.toggle("booking-closed", bookingClosed);
 
     reserveButton.disabled = !isHardwareReady || reservationInProgress || loginInProgress || hasActiveReservation;
     newReservationButton.disabled = !isHardwareReady || reservationInProgress;
@@ -2254,6 +2278,10 @@ async function createReservation() {
         showError(t.errBorneOffline);
         return;
     }
+    if (!bookingOpen) {   // [BOOKING-PRINTER]
+        showError(t.errBookingClosed);
+        return;
+    }
 
     if (!currentUser || reservationInProgress) return;
 
@@ -2299,7 +2327,7 @@ async function createReservation() {
         // [V5.33.0] القواعد ترفض الكتابة (PERMISSION_DENIED) إن كان الجهاز غير متصل،
         // أو إن كان للحساب طلب عمره أقل من 30 ثانية
         const denied = String((error && (error.code || error.message)) || "").toUpperCase().includes("PERMISSION_DENIED");
-        if (denied) showError(isMasterOnlineNow() ? t.errStillProcessing : t.errBorneOffline);
+        if (denied) showError(!bookingOpen ? t.errBookingClosed : (isMasterOnlineNow() ? t.errStillProcessing : t.errBorneOffline));
         else showError(t.errNetwork);
         updateReserveButton();
     }
@@ -2309,6 +2337,10 @@ async function loginAndReserve() {
     const t = i18n[currentLang];
     if (!queueConnected || !serviceAvailable) {
         showError(t.errBorneOffline);
+        return;
+    }
+    if (!bookingOpen) {   // [BOOKING-PRINTER]
+        showError(t.errBookingClosed);
         return;
     }
 
@@ -2358,6 +2390,10 @@ newReservationButton.addEventListener("click", async () => {
 
     if (!queueConnected || !serviceAvailable) {
         showError(i18n[currentLang].errBorneOffline);
+        return;
+    }
+    if (!bookingOpen) {   // [BOOKING-PRINTER]
+        showError(i18n[currentLang].errBookingClosed);
         return;
     }
 
