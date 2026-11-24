@@ -2207,7 +2207,7 @@ function checkAlertsEngine() {
         if (alertStage(peopleBefore, margin) > lastStage) {
             lastAlertedRemaining = peopleBefore;
             const tx = alertTexts(t, peopleBefore, formatNumber(ticketNum));
-            triggerTurnAlert(tx.title, tx.msg, false, `qms-${ticketNum}-prep`, reservationPushOk);
+            triggerTurnAlert(tx.title, tx.msg, false, `qms-${ticketNum}-prep-${peopleBefore}`, reservationPushOk);   // [19] وسم لكل مرحلة
         }
     }
 }
@@ -3321,7 +3321,7 @@ function checkTrackAlerts(steps) {
 
     // إن مُنع التنبيه (فاصل الثواني الأربع) لا تُحفظ الحالة، فيُعاد في التحديث التالي
     const tx = alertTexts(t, before, num);
-    const shown = triggerTurnAlert(tx.title, tx.msg, false, `qms-${track.ticket}-prep`, !!track.pushOk);
+    const shown = triggerTurnAlert(tx.title, tx.msg, false, `qms-${track.ticket}-prep-${before}`, !!track.pushOk);   // [19]
     if (shown) track.lastBefore = before;
 }
 
