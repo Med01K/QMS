@@ -1017,6 +1017,48 @@ body[dir="rtl"] .track-card.ph-done .btn-ghost { color: var(--primary); border-c
 .track-card.ph-done .track-active-margin,
 .track-card.ph-done .track-notif { display: none; }
 
+/* ========================================================
+   [TRACK-COMPACT] التتبّع مدمج في البطاقة العليا، وبطاقة التتبّع للتنبيهات فقط
+======================================================== */
+.tk-badge-wrap, .tk-top-extra { display: none; text-align: center; }
+.waiting-box.is-tracking .tk-badge-wrap,
+.waiting-box.is-tracking .tk-top-extra { display: block; }
+.tk-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin: 0 auto 10px; padding: 6px 14px; border-radius: 999px;
+    background: #fff7e0; border: 1px solid #f3d27a; color: var(--primary);
+    font-family: 'Cairo', Arial, sans-serif; font-size: 14px; font-weight: 700;
+}
+.tk-badge svg { width: 18px; height: 18px; color: var(--yellow-dark); flex-shrink: 0; }
+.tk-badge b { font-family: Arial, Helvetica, sans-serif !important; font-size: 16px; font-weight: 800; letter-spacing: .5px; }
+.tk-bar { height: 6px; border-radius: 99px; background: #eef0f6; margin: 12px 28px 6px; overflow: hidden; }
+.tk-bar > i { display: block; height: 100%; width: 0; border-radius: 99px;
+    background: linear-gradient(90deg, var(--yellow), var(--yellow-dark)); transition: width .5s ease; }
+.tk-hint,
+body[dir="rtl"] .tk-hint { font-size: 13px; font-weight: 600 !important; color: var(--muted); margin: 4px 12px 2px; line-height: 1.7; }
+.waiting-box.ph-soon .tk-hint, .waiting-box.ph-next .tk-hint { color: #92400e; }
+.waiting-box.ph-turn .tk-hint { color: #166534; font-size: 15px; }
+.waiting-box.ph-turn .tk-bar > i { background: #22c55e; }
+.waiting-box.ph-offline .tk-hint { color: #991b1b; }
+
+/* بطاقة التتبّع أثناء التتبّع: لا تكرار للأرقام، بل التنبيهات وزر الإيقاف فقط */
+.track-card.is-active { padding: 16px 18px 12px; }
+.track-card.is-active .track-stub,
+.track-card.is-active .track-status { display: none !important; }
+.track-card.is-active .track-notif { margin-top: 0; padding: 8px 10px; background: transparent; border: none; }
+.track-card.is-active .track-notif.on { background: transparent; }
+.track-card.is-active .track-notif-txt { font-size: 13px; }
+.track-card.is-active .track-active-margin { margin: 8px 0 0; }
+.track-card.is-active .track-margin-label { margin-bottom: 8px; }
+.track-card.is-active .track-chip,
+body[dir="rtl"] .track-card.is-active .track-chip { min-width: 42px; padding: 6px 10px; font-size: 14px; border-radius: 10px; box-shadow: none; }
+.track-card.is-active .btn-ghost,
+body[dir="rtl"] .track-card.is-active .btn-ghost {
+    margin-top: 6px; padding: 6px; border: none; background: transparent;
+    color: #94a3b8; font-size: 13px; text-decoration: underline;
+}
+.track-card.is-active .btn-ghost:hover { background: transparent; color: var(--red); }
+
 @keyframes track-pulse {
     0%, 100% { box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22); transform: scale(1); }
     50% { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32); transform: scale(1.012); }
@@ -1072,8 +1114,14 @@ body[dir="rtl"] .track-card.ph-done .btn-ghost { color: var(--primary); border-c
 
         <!-- صندوق الانتظار: يتغير لونه ونصّه تلقائياً بعد الحجز -->
         <div class="waiting-box" id="waitingBox">
+            <!-- [TRACK-COMPACT] أثناء التتبع: رقم التذكرة، وشريط التقدّم، وسطر الحالة هنا لا في بطاقة التتبع -->
+            <div class="tk-badge-wrap" id="trackBadgeWrap"><span class="tk-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9a2 2 0 0 0 0 6v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0 0-6V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/><path d="M13 5v2"/><path d="M13 11v2"/><path d="M13 17v2"/></svg><span id="lblTrackBadge">تذكرتك</span> <b id="trackBadgeNum">---</b></span></div>
             <div class="section-title" id="lblWaitingCount">عدد المنتظرين</div>
             <div class="waiting-number" id="waitingCount">--</div>
+            <div class="tk-top-extra" id="trackTopExtra">
+                <div class="tk-bar"><i id="trackTopBar"></i></div>
+                <div class="tk-hint" id="trackTopHint"></div>
+            </div>
         </div>
 
         <div class="queue-footer">
@@ -1256,6 +1304,7 @@ const i18n = {
         lblTrackMarginUnit: "personnes",
         lblTrackStart: "Suivre et activer les notifications",
         lblTrackYourTicket: "VOTRE TICKET",
+        lblTrackBadge: "Votre ticket",
         lblTrackBefore: "Avant vous",
         lblTrackCurrent: "Numéro en cours",
         btnTrackStop: "Arrêter le suivi",
@@ -1369,6 +1418,7 @@ const i18n = {
         lblTrackMarginUnit: "أشخاص",
         lblTrackStart: "تتبّع رقمي وفعّل الإشعارات",
         lblTrackYourTicket: "تذكرتك",
+        lblTrackBadge: "تذكرتك",
         lblTrackBefore: "قبلك",
         lblTrackCurrent: "الرقم الحالي",
         btnTrackStop: "إيقاف التتبع",
@@ -1819,15 +1869,15 @@ function updateWaitingDisplay() {
     }
 
     // [TRACK] تذكرة ورقية قيد التتبع: عدد الأشخاص قبلها (يُحسب من الرقم الحالي فقط، فيصح والطابعة مفصولة)
-    if (!isUserActive && track && !track.doneAt && !isTicketOvertaken(track.ticket, currentTicket)) {
-        const before = calculatePeopleBefore(track.ticket, currentTicket);
-        if (before !== null) {
-            lblWaitingCountEl.textContent = t.lblWaitingBeforeYou;
-            waitingCountEl.textContent = before;
-            waitingCountEl.classList.add("personal-count");
-            waitingBoxEl.classList.add("is-personal");
-            return;
-        }
+    // [TRACK-COMPACT] يبقى العرض الشخصي في كل مراحل التتبّع (حتى بعد المناداة أو التجاوز: «--»)
+    if (!isUserActive && track) {
+        const live = !track.doneAt && !isTicketOvertaken(track.ticket, currentTicket);
+        const before = live ? calculatePeopleBefore(track.ticket, currentTicket) : null;
+        lblWaitingCountEl.textContent = t.lblWaitingBeforeYou;
+        waitingCountEl.textContent = (before !== null) ? before : "--";
+        waitingCountEl.classList.add("personal-count");
+        waitingBoxEl.classList.add("is-personal");
+        return;
     }
 
     // [TRACK] الطابعة غير متصلة (الحجز مغلق): عدد المنتظرين يأتي من آخر رقم أصدرته الطابعة،
@@ -3062,6 +3112,10 @@ function renderTrack() {
 
     trackSection.classList.remove("ph-waiting", "ph-soon", "ph-next", "ph-turn", "ph-done", "ph-offline");
 
+    // [TRACK-COMPACT] البطاقة العليا: شارة التذكرة + الشريط + سطر الحالة
+    waitingBoxEl.classList.remove("ph-waiting", "ph-soon", "ph-next", "ph-turn", "ph-done", "ph-offline");
+    waitingBoxEl.classList.toggle("is-tracking", !!track);
+
     if (!track) {
         trackSection.classList.remove("is-active");
         trackIdleEl.style.display = "block";
@@ -3109,6 +3163,13 @@ function renderTrack() {
     else if (phase === "passed") msg = t.trackMsgPassed;
     else if (phase === "offline") msg = t.trackMsgOffline;
     trackStatusEl.textContent = msg;
+
+    // [TRACK-COMPACT] نفس المعلومة في البطاقة العليا، مرة واحدة
+    waitingBoxEl.classList.add(done ? "ph-done" : `ph-${phase}`);
+    document.getElementById("lblTrackBadge").textContent = t.lblTrackBadge;
+    document.getElementById("trackBadgeNum").textContent = formatNumber(track.ticket);
+    document.getElementById("trackTopBar").style.width = pct + "%";
+    document.getElementById("trackTopHint").textContent = msg;
 
     // سطر الإشعارات
     const denied = ("Notification" in window) && Notification.permission === "denied";
