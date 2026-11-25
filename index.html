@@ -1427,7 +1427,9 @@ const i18n = {
         alertTurnTitle: "Poste El Amal : c'est votre tour",
         alertTurnMsg: (t, c) => `Ticket ${t} : présentez-vous au guichet ${c}.`,
         alertPrepareTitle: "Poste El Amal : votre tour approche",
-        alertPrepareMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}.`,
+        alertPrepareMsg: (rem, t, c) => `Ticket ${t} : ${frBefore(rem)}, numéro en cours : ${c}.`,   // [NOTIF-VARY]
+        alertMidTitle: "Poste El Amal : la file avance",
+        alertMidMsg: (rem, t, c) => `Le guichet appelle le ${c} : plus que ${rem} personnes avant votre ticket ${t}.`,
         alertFinalTitle: "Poste El Amal : votre tour est imminent",
         alertFinalMsg: (rem, t) => `Ticket ${t} : ${frBefore(rem)}, préparez-vous.`,
         alertNextMsg: (t) => `Ticket ${t} : vous êtes le prochain.`,
@@ -1543,7 +1545,9 @@ const i18n = {
         alertTurnTitle: "بريد حي الأمل: حان دورك",
         alertTurnMsg: (t, c) => `تذكرتك ${t}: تفضّل إلى الشباك ${c}.`,
         alertPrepareTitle: "بريد حي الأمل: اقترب دورك",
-        alertPrepareMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}.`,
+        alertPrepareMsg: (rem, t, c) => `تذكرتك ${t}: ${arBefore(rem)}، والرقم الجاري الآن ${c}.`,   // [NOTIF-VARY]
+        alertMidTitle: "بريد حي الأمل: الطابور يتقدّم",
+        alertMidMsg: (rem, t, c) => `بلغ النداء الرقم ${c}، فلم يبقَ قبل تذكرتك ${t} إلا ${arCount(rem)}.`,
         alertFinalTitle: "بريد حي الأمل: دورك وشيك",
         alertFinalMsg: (rem, t) => `تذكرتك ${t}: ${arBefore(rem)}، فتهيّأ.`,
         alertNextMsg: (t) => `تذكرتك ${t}: أنت التالي.`,
@@ -2166,10 +2170,14 @@ function alertStage(before, margin) {
     if (mid > FINAL_ALERT_BEFORE && before <= mid) return 2;
     return 1;
 }
-function alertTexts(t, before, num) {
-    const fin = before <= FINAL_ALERT_BEFORE;
-    return { title: fin ? t.alertFinalTitle : t.alertPrepareTitle,
-             msg: fin ? t.alertFinalMsg(before, num) : t.alertPrepareMsg(before, num) };
+// [NOTIF-VARY] لكل مرحلة عنوان وصياغة مختلفان، وفيهما الرقم الجاري: إشعارات متشابهة متتابعة يعدّها
+// Chrome على أندرويد «سبام محتمل». يجب أن تطابق الـ Worker [22] (prepTexts).
+function alertTexts(t, before, num, margin, cur) {
+    const stage = alertStage(before, margin);
+    const c = formatNumber(cur);
+    if (stage === 3) return { title: t.alertFinalTitle, msg: t.alertFinalMsg(before, num) };
+    if (stage === 2) return { title: t.alertMidTitle, msg: t.alertMidMsg(before, num, c) };
+    return { title: t.alertPrepareTitle, msg: t.alertPrepareMsg(before, num, c) };
 }
 
 function checkAlertsEngine() {
@@ -2224,9 +2232,10 @@ function checkAlertsEngine() {
                 lastAlertedRemaining = peopleBefore;
                 return;
             }
-            const tx = alertTexts(t, peopleBefore, formatNumber(ticketNum));
+            const tx = alertTexts(t, peopleBefore, formatNumber(ticketNum), margin, currentTicket);
             // [ALERT-DEDUP] تُحفظ المرحلة إذا وصل التنبيه، لا قبل (فاصل الثواني الأربع يؤجّله للتحديث التالي)
-            if (triggerTurnAlert(tx.title, tx.msg, false, `qms-${ticketNum}-prep-${peopleBefore}`, reservationPushOk)) {   // [19] وسم لكل مرحلة
+            // [NOTIF-TAG] وسم واحد لكل تذكرة: الإشعار الجديد يحلّ محل السابق بدل أن يتراكما
+            if (triggerTurnAlert(tx.title, tx.msg, false, `qms-${ticketNum}-prep`, reservationPushOk)) {
                 lastAlertedRemaining = peopleBefore;
             }
         }
@@ -3397,8 +3406,8 @@ function checkTrackAlerts(steps) {
         return;
     }
     // إن مُنع التنبيه (فاصل الثواني الأربع) لا تُحفظ الحالة، فيُعاد في التحديث التالي
-    const tx = alertTexts(t, before, num);
-    const shown = triggerTurnAlert(tx.title, tx.msg, false, `qms-${track.ticket}-prep-${before}`, !!track.pushOk);   // [19]
+    const tx = alertTexts(t, before, num, track.margin, currentTicket);   // [NOTIF-VARY]
+    const shown = triggerTurnAlert(tx.title, tx.msg, false, `qms-${track.ticket}-prep`, !!track.pushOk);   // [NOTIF-TAG]
     if (shown) track.lastBefore = before;
 }
 
