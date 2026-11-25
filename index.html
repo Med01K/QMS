@@ -1801,7 +1801,11 @@ let alertedExactTurnForTicket = null;
 let lastAlertTimestamp = 0;
 let wakeLock = null;
 
-const EXPIRED_RETENTION_MS = 5 * 60 * 1000;   // [2026-11-20] مدة بقاء رسالة الحجز المنتهي (كانت 20 دقيقة)
+const EXPIRED_RETENTION_MS = 5 * 60 * 1000;   // [2026-11-20] لم يعد يُستعمل للحجز (انظر SEEN-30S)
+// [SEEN-30S] رسالة الحجز المنتهي (فاتك دورك، نوديت، انتهى...) تبقى 30 ثانية من الوقت الذي **رآها فيه** الزائر
+// (الصفحة ظاهرة على الشاشة)، ثم تُمحى. لا مؤقِّت يُجمَّد ولا ساعة: عدّاد يزيد ثانيةً كل ثانية والصفحة ظاهرة.
+// ويُحفظ ما رآه (seen_ms) فلا تعود الرسالة 30 ثانية كاملة إذا أُعيد تحميل الصفحة.
+const FINISHED_VISIBLE_MS = 30 * 1000;
 let autoClearTimer = null;
 
 /* [TRACK] حالة تتبّع التذكرة الورقية — تُحفظ في المتصفح فتبقى بعد إعادة التحميل أو إغلاق الصفحة.
@@ -2351,8 +2355,8 @@ function loadReservation() {
         if (res.user_id !== currentUser.uid) return null;
 
         if (FINISHED_STATUSES.includes(res.status)) {
-            const timePassed = Date.now() - (res.expired_at || res.saved_at || 0);
-            if (timePassed > EXPIRED_RETENTION_MS) {
+            // [SEEN-30S] رآها الزائر 30 ثانية من قبل: لا تُعرض ثانية
+            if (Number(res.seen_ms || 0) >= FINISHED_VISIBLE_MS) {
                 markReservationDismissed(currentUser.uid, res);   // [EXPIRY-FIX]
                 localStorage.removeItem(getReservationKey(currentUser.uid));
                 return null;
@@ -2416,16 +2420,49 @@ function clearAutoClearTimer() {
     }
 }
 
-function scheduleAutoClearTicket(delayMs = EXPIRED_RETENTION_MS) {
+function scheduleAutoClearTicket() {
+    // [SEEN-30S] لم يعد المحو بمؤقِّت: يتولاه tickFinishedTicket أدناه
     clearAutoClearTimer();
-    autoClearTimer = setTimeout(async () => {
-        if (!currentUser) return;
-        markReservationDismissed(currentUser.uid, activeUserTicketData);   // [EXPIRY-FIX]
-        localStorage.removeItem(getReservationKey(currentUser.uid));
-        await removeFCMTokenFromDatabase();
-        resetUserReservationUI();
-    }, delayMs);
 }
+
+// [SEEN-30S] محو التذكرة المنتهية فوراً (لا يشترط اكتمال تسجيل الدخول)
+async function clearFinishedTicketNow() {
+    const r = activeUserTicketData;
+    const uid = (currentUser && currentUser.uid) || (r && r.user_id) || "";
+    if (uid && r) {
+        markReservationDismissed(uid, r);   // [EXPIRY-FIX] لا تعود ولو بقي سجلها في Firebase
+        try { localStorage.removeItem(getReservationKey(uid)); } catch (e) {}
+    }
+    resetUserReservationUI();
+    updateReserveButton();
+    updateWaitingDisplay();
+    if (currentUser) await removeFCMTokenFromDatabase();
+}
+
+// [SEEN-30S] كل ثانية: إن كانت التذكرة منتهية والصفحة ظاهرة، يُضاف إلى ما رآه الزائر ثانية
+let finishedSeenId = "";
+let finishedSeenMs = 0;
+let finishedClearing = false;
+function tickFinishedTicket() {
+    const r = activeUserTicketData;
+    if (!r || !FINISHED_STATUSES.includes(r.status) || ticketSection.style.display !== "block") return;
+    if (document.visibilityState !== "visible") return;
+    const id = reservationIdOf(r);
+    if (finishedSeenId !== id) {
+        finishedSeenId = id;
+        finishedSeenMs = Number(r.seen_ms || 0);
+    }
+    finishedSeenMs += 1000;
+    if (finishedSeenMs % 5000 === 0) {   // يُحفظ كل 5 ثوانٍ
+        r.seen_ms = finishedSeenMs;
+        saveReservation(r);
+    }
+    if (finishedSeenMs >= FINISHED_VISIBLE_MS && !finishedClearing) {
+        finishedClearing = true;
+        clearFinishedTicketNow().finally(() => { finishedClearing = false; finishedSeenId = ""; });
+    }
+}
+setInterval(tickFinishedTicket, 1000);
 
 function setConnectionStatus(masterOnline) {
     queueConnected = masterOnline;
@@ -2885,6 +2922,7 @@ function watchUserActiveTicket(uid) {
                 const prev = JSON.parse(localStorage.getItem(getReservationKey(uid)) || "null");
                 if (prev && prev.expired_at && reservationIdOf(prev) === reservationIdOf(resData)) {
                     resData.expired_at = prev.expired_at;
+                    if (prev.seen_ms) resData.seen_ms = prev.seen_ms;   // [SEEN-30S]
                     if (FINISHED_STATUSES.includes(prev.status)) resData.status = prev.status;
                 }
             } catch (e) {}
