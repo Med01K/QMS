@@ -1816,7 +1816,8 @@ const TRACK_STORAGE_KEY = "qms_track_v1";
 const TRACK_MARGIN_KEY = "qms_track_margin";
 const TRACK_MARGINS = [2, 5, 10, 15, 30];
 const TRACK_MAX_AGE_MS = 12 * 3600 * 1000;      // نفس مهلة الـ Worker
-const TRACK_DONE_RETENTION_MS = 5 * 60 * 1000;  // بعد المناداة أو التجاوز: يُزال التتبع بعد 5 دقائق
+// [TRACK-SEEN-30S] بعد المناداة أو التجاوز: رسالة التتبع تبقى 30 ثانية يراها الزائر فعلاً ثم يُزال التتبع
+// (كانت 5 دقائق). نفس حكم الحجز المنتهي (FINISHED_VISIBLE_MS). ما رآه يُحفظ في track.seenMs.
 let track = null;
 let trackIdleMargin = 10;
 let trackClearTimer = null;
@@ -2591,8 +2592,11 @@ function updateReserveButton() {
     // وصاحب حجز نشط تتتبعه بطاقة الحجز نفسها: لا تظهر له بطاقة التذكرة الورقية.
     const showTrackCard = !hasActiveReservation && (bookingClosed || !!track);
     trackSection.classList.toggle("track-hidden", !showTrackCard);
-    reservationSection.classList.toggle("booking-closed", bookingClosed);
-    newReservationButton.classList.toggle("booking-closed", bookingClosed);
+    // [TRACK-BOOKING] من يتتبع تذكرة ورقية لم يُنادَ عليها بعد لا يرى قسم الحجز (بيده مكان في الطابور)،
+    // كصاحب الحجز القائم. ينتهي التتبع أو يوقفه بنفسه => يظهر الحجز في الحال.
+    const trackingNow = !!track && !track.doneAt && !hasActiveReservation;
+    reservationSection.classList.toggle("booking-closed", bookingClosed || trackingNow);
+    newReservationButton.classList.toggle("booking-closed", bookingClosed || trackingNow);
 
     reserveButton.disabled = !isHardwareReady || reservationInProgress || loginInProgress || hasActiveReservation;
     newReservationButton.disabled = !isHardwareReady || reservationInProgress;
@@ -3163,7 +3167,7 @@ function loadTrack() {
         if (!(ticket >= 1 && ticket <= 999)) return null;
         const now = Date.now();
         if (!d.startedAt || now - d.startedAt > TRACK_MAX_AGE_MS) return null;
-        if (d.doneAt && now - d.doneAt > TRACK_DONE_RETENTION_MS) return null;
+        if (d.doneAt && Number(d.seenMs || 0) >= FINISHED_VISIBLE_MS) return null;   // [TRACK-SEEN-30S]
         d.ticket = ticket;
         d.margin = TRACK_MARGINS.includes(Number(d.margin)) ? Number(d.margin) : 10;
         return d;
@@ -3300,11 +3304,22 @@ function renderTrack() {
 }
 
 function scheduleTrackClear() {
+    // [TRACK-SEEN-30S] لم يعد الإزالة بمؤقِّت: يتولاها tickFinishedTrack أدناه
     if (trackClearTimer) { clearTimeout(trackClearTimer); trackClearTimer = null; }
-    if (!track || !track.doneAt) return;
-    const left = Math.max(1000, TRACK_DONE_RETENTION_MS - (Date.now() - track.doneAt));
-    trackClearTimer = setTimeout(() => clearTrack(true), left);
 }
+
+// [TRACK-SEEN-30S] كل ثانية: تتبّع منتهٍ وبطاقته ظاهرة والصفحة أمام الزائر => تُضاف ثانية إلى ما رآه
+function tickFinishedTrack() {
+    if (!track || !track.doneAt) return;
+    if (document.visibilityState !== "visible" || trackSection.classList.contains("track-hidden")) return;
+    track.seenMs = Number(track.seenMs || 0) + 1000;
+    if (track.seenMs >= FINISHED_VISIBLE_MS) {
+        clearTrack(true);
+        return;
+    }
+    if (track.seenMs % 5000 === 0) saveTrack();   // يُحفظ كل 5 ثوانٍ
+}
+setInterval(tickFinishedTrack, 1000);
 
 function clearTrack(unregister) {
     const token = track && track.token;
@@ -3341,7 +3356,9 @@ function onQueueUpdateForTrack() {
     }
     if (!track.doneAt && steps !== 0 && isTicketOvertaken(track.ticket, currentTicket)) {
         track.doneAt = Date.now();
+        track.seenMs = 0;
         scheduleTrackClear();
+        updateReserveButton();   // [TRACK-BOOKING] انتهى التتبع: يعود قسم الحجز إن كانت الطابعة متصلة
     }
 
     if (track.notify && !track.doneAt && steps !== null) checkTrackAlerts(steps);
