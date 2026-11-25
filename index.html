@@ -1820,7 +1820,8 @@ const TRACK_DONE_RETENTION_MS = 5 * 60 * 1000;  // بعد المناداة أو 
 let track = null;
 let trackIdleMargin = 10;
 let trackClearTimer = null;
-let trackPushInFlight = false;
+let trackPushChain = Promise.resolve();   // [TRACK-SYNC] تسجيلات /watch بالترتيب، واحداً بعد واحد
+let trackDeletePending = null;           // [TRACK-SYNC] حذف /watch لم يكتمل بعد
 const recentAlerts = new Map();   // [TRACK] منع تكرار التنبيه نفسه (تنبيه الصفحة + إشعار الـ Worker)
 
 const STORAGE_PREFIX = "poste_elamal_reservation_";
@@ -2216,6 +2217,12 @@ function checkAlertsEngine() {
 
         // [NOTIF-CALM] إشعار عند بلوغ مرحلة جديدة فقط (دخول الهامش، منتصفه، أنت التالي)
         if (alertStage(peopleBefore, margin) > lastStage) {
+            // [TRACK-SYNC] إشعارات الهاتف تعمل: الـ Worker وحده يرسل، والصفحة تحفظ المرحلة فقط.
+            // كانت الصفحة ترسل أيضاً بعد رجوعها من الخلفية بعدد مختلف (9 بعد 10 من الـ Worker).
+            if (reservationPushOk) {
+                lastAlertedRemaining = peopleBefore;
+                return;
+            }
             const tx = alertTexts(t, peopleBefore, formatNumber(ticketNum));
             // [ALERT-DEDUP] تُحفظ المرحلة إذا وصل التنبيه، لا قبل (فاصل الثواني الأربع يؤجّله للتحديث التالي)
             if (triggerTurnAlert(tx.title, tx.msg, false, `qms-${ticketNum}-prep-${peopleBefore}`, reservationPushOk)) {   // [19] وسم لكل مرحلة
@@ -3366,6 +3373,12 @@ function checkTrackAlerts(steps) {
     const lastStage = (last === null) ? 0 : alertStage(last, track.margin);
     if (alertStage(before, track.margin) <= lastStage) return;   // [NOTIF-CALM] مرحلة جديدة فقط
 
+    // [TRACK-SYNC] إشعارات الهاتف تعمل: الـ Worker وحده يرسل (والصفحة مفتوحة يصل إشعاره أيضاً)،
+    // والصفحة تحفظ المرحلة فقط. كانت تنبّه بنفسها عند فتحها بعد إشعار الـ Worker (10 ثم 9 أو 8).
+    if (track.pushOk) {
+        track.lastBefore = before;
+        return;
+    }
     // إن مُنع التنبيه (فاصل الثواني الأربع) لا تُحفظ الحالة، فيُعاد في التحديث التالي
     const tx = alertTexts(t, before, num);
     const shown = triggerTurnAlert(tx.title, tx.msg, false, `qms-${track.ticket}-prep-${before}`, !!track.pushOk);   // [19]
@@ -3386,14 +3399,25 @@ async function getTrackPushToken() {
 }
 
 // تسجيل/تجديد الاشتراك في الـ Worker. نفس الهاتف ونفس الرقم => تبقى حالة آخر تنبيه في الخادم.
-async function registerTrackPush() {
-    if (!track || !track.notify || trackPushInFlight) return false;
+// [TRACK-SYNC] التسجيلات تُنفَّذ بالترتيب: طلب جديد وقت انشغال القديم لا يُرفض، بل يُرسَل بعده بالرقم الحالي.
+// (كان يُرفض، فيبقى الـ Worker على الرقم القديم أو بلا اشتراك، وتظهر «تعذر التفعيل».)
+function registerTrackPush() {
+    const run = trackPushChain.then(() => doRegisterTrackPush());
+    trackPushChain = run.catch(() => false);
+    return run;
+}
+
+async function doRegisterTrackPush() {
+    if (!track || !track.notify) return false;
     if (!("Notification" in window) || Notification.permission !== "granted") return false;
-    trackPushInFlight = true;
     const ticketAtStart = track.ticket;
     try {
         const token = await getTrackPushToken();
         if (!token) throw new Error("no token");
+        if (!track || track.ticket !== ticketAtStart || !track.notify) return false;   // تغيّر الرقم: التسجيل التالي يتكفّل به
+        if (trackDeletePending) await trackDeletePending;   // [TRACK-SYNC] لا يسبق حذفَ الاشتراك القديم
+        if (!track || track.ticket !== ticketAtStart) return false;
+        const lb = (track.lastBefore === null || track.lastBefore === undefined) ? null : Number(track.lastBefore);
         const res = await fetch(`${WORKER_URL}/watch`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -3401,12 +3425,14 @@ async function registerTrackPush() {
                 token,
                 ticket: track.ticket,
                 margin: track.margin,
-                lang: (currentLang === "fr") ? "fr" : "ar"
+                lang: (currentLang === "fr") ? "fr" : "ar",
+                last_before: (Number.isInteger(lb) && lb >= 0) ? lb : null   // [TRACK-SYNC] آخر عدد عُدّ مُبلَّغاً
             })
         });
         const out = await res.json().catch(() => ({}));
         if (!res.ok || !out.ok) throw new Error(out.error || ("HTTP " + res.status));
-        if (!track || track.ticket !== ticketAtStart) return false;
+        if (!track) { unregisterTrackPush(token); return false; }   // [TRACK-SYNC] أُوقف التتبع أثناء التسجيل
+        if (track.ticket !== ticketAtStart) return false;           // التسجيل التالي (بالرقم الجديد) يستبدله
         if (track.token && track.token !== token) unregisterTrackPush(track.token);   // تغيّر رمز الهاتف
         track.token = token;
         track.pushOk = true;
@@ -3421,20 +3447,21 @@ async function registerTrackPush() {
             renderTrack();
         }
         return false;
-    } finally {
-        trackPushInFlight = false;
     }
 }
 
 function unregisterTrackPush(token) {
     if (!token) return;
     try {
-        fetch(`${WORKER_URL}/watch`, {
+        const p = fetch(`${WORKER_URL}/watch`, {
             method: "DELETE",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token }),
             keepalive: true
         }).catch(() => {});
+        // [TRACK-SYNC] تسجيل رقم جديد بالرمز نفسه ينتظر اكتمال هذا الحذف، فلا يمحوه الحذف بعد وصوله
+        trackDeletePending = p;
+        p.finally(() => { if (trackDeletePending === p) trackDeletePending = null; });
     } catch (e) {}
 }
 
