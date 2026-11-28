@@ -1295,7 +1295,7 @@ body[dir="rtl"] .track-card.is-active.ph-done .btn-ghost:hover { background: var
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getDatabase, ref, onValue, push, set, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getDatabase, ref, onValue, push, set, update, remove, serverTimestamp, goOffline, goOnline } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 // [إشعارات] أُضيف onMessage: استقبال الإشعار والصفحة مفتوحة أمام المستخدم
 import { getMessaging, getToken, onMessage, isSupported } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
 
@@ -1816,6 +1816,52 @@ let autoClearTimer = null;
    { ticket, margin, notify, pushOk, token, startedAt, startBefore, seenCurrent,
      turnSeen, turnConsole, doneAt, lastBefore, turnAlerted } */
 const WORKER_URL = "https://bitter-art-c98c.mohammed-khemila.workers.dev";
+
+/* [TURNSTILE] 2026-11-28 — تحقق Cloudflare Turnstile قبل اشتراك تتبّع جديد (يمنع البرامج من الإغراق).
+   المفتاح العلني (Site Key) من لوحة Cloudflare. فارغ = معطّل، والـ Worker لا يطلبه ما لم يُضبط سره.
+   في الغالب لا يرى الزبون شيئاً، ولا يظهر المربع إلا إن احتاج Cloudflare تأكيداً منه. */
+const TURNSTILE_SITE_KEY = "0x4AAAAAAGW4ECDKDzlvYc6B";
+let turnstileLoading = null;
+let turnstileWidgetId = null;
+function loadTurnstile() {
+    if (!TURNSTILE_SITE_KEY) return Promise.resolve(false);
+    if (window.turnstile) return Promise.resolve(true);
+    if (turnstileLoading) return turnstileLoading;
+    turnstileLoading = new Promise((resolve) => {
+        const sc = document.createElement("script");
+        sc.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        sc.async = true;
+        sc.onload = () => resolve(!!window.turnstile);
+        sc.onerror = () => { turnstileLoading = null; resolve(false); };
+        document.head.appendChild(sc);
+    });
+    return turnstileLoading;
+}
+async function getTurnstileToken() {
+    if (!(await loadTurnstile()) || !window.turnstile) return "";
+    let box = document.getElementById("tsBox");
+    if (!box) {
+        box = document.createElement("div");
+        box.id = "tsBox";
+        box.style.cssText = "position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:10000";
+        document.body.appendChild(box);
+    }
+    return new Promise((resolve) => {
+        let done = false;
+        const finish = (tok) => { if (done) return; done = true; resolve(tok || ""); };
+        try {
+            if (turnstileWidgetId !== null) { try { window.turnstile.remove(turnstileWidgetId); } catch (e) {} }
+            turnstileWidgetId = window.turnstile.render(box, {
+                sitekey: TURNSTILE_SITE_KEY,
+                appearance: "interaction-only",
+                callback: (tok) => finish(tok),
+                "error-callback": () => finish(""),
+                "timeout-callback": () => finish("")
+            });
+        } catch (e) { finish(""); }
+        setTimeout(() => finish(""), 30000);
+    });
+}
 const TRACK_STORAGE_KEY = "qms_track_v1";
 const TRACK_MARGIN_KEY = "qms_track_margin";
 const TRACK_MARGINS = [2, 5, 10, 15, 30];
@@ -2524,6 +2570,34 @@ function checkMasterStatus() {
 onValue(ref(db, ".info/connected"), (snapshot) => {
     isClientInternetConnected = (snapshot.val() === true);
     checkMasterStatus();
+});
+
+/* [CONN-LIMIT] 2026-11-28 — الصفحة الغائبة عن الشاشة لا تمسك اتصالاً بقاعدة البيانات.
+   الخطة المجانية لا تقبل أكثر من 100 اتصال متزامن، وكل صفحة مفتوحة اتصال، ولو كان الهاتف في الجيب.
+   بعد 30 ثانية من غياب الصفحة تنقطع عن Firebase، وتعود فور ظهورها (والبيانات تُحدَّث وحدها).
+   الإشعارات لا تتأثر: تصل عبر FCM لا عبر هذا الاتصال. ولا انقطاع ما دام طلب حجز ينتظر نتيجته. */
+const HIDDEN_OFFLINE_MS = 30000;
+let hiddenOfflineTimer = null;
+let dbWentOffline = false;
+function dbMayGoOffline() {
+    return !reservationInProgress && !(activeUserTicketData && activeUserTicketData.status === "pending");
+}
+function armHiddenOffline() {
+    if (hiddenOfflineTimer) clearTimeout(hiddenOfflineTimer);
+    hiddenOfflineTimer = setTimeout(() => {
+        hiddenOfflineTimer = null;
+        if (document.visibilityState !== "hidden" || dbWentOffline) return;
+        if (!dbMayGoOffline()) { armHiddenOffline(); return; }   // ينتظر نتيجة الحجز أولاً
+        try { goOffline(db); dbWentOffline = true; } catch (e) {}
+    }, HIDDEN_OFFLINE_MS);
+}
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        armHiddenOffline();
+    } else {
+        if (hiddenOfflineTimer) { clearTimeout(hiddenOfflineTimer); hiddenOfflineTimer = null; }
+        if (dbWentOffline) { dbWentOffline = false; try { goOnline(db); } catch (e) {} }
+    }
 });
 
 onValue(ref(db, ".info/serverTimeOffset"), (snapshot) => {
@@ -3444,7 +3518,7 @@ async function doRegisterTrackPush() {
         if (trackDeletePending) await trackDeletePending;   // [TRACK-SYNC] لا يسبق حذفَ الاشتراك القديم
         if (!track || track.ticket !== ticketAtStart) return false;
         const lb = (track.lastBefore === null || track.lastBefore === undefined) ? null : Number(track.lastBefore);
-        const res = await fetch(`${WORKER_URL}/watch`, {
+        const postWatch = (ts) => fetch(`${WORKER_URL}/watch`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -3452,10 +3526,19 @@ async function doRegisterTrackPush() {
                 ticket: track.ticket,
                 margin: track.margin,
                 lang: (currentLang === "fr") ? "fr" : "ar",
-                last_before: (Number.isInteger(lb) && lb >= 0) ? lb : null   // [TRACK-SYNC] آخر عدد عُدّ مُبلَّغاً
+                last_before: (Number.isInteger(lb) && lb >= 0) ? lb : null,   // [TRACK-SYNC] آخر عدد عُدّ مُبلَّغاً
+                ts: ts || undefined                                            // [TURNSTILE]
             })
         });
-        const out = await res.json().catch(() => ({}));
+        // [TURNSTILE] الاشتراك الجديد يحتاج رمز تحقق؛ التجديد (الهاتف نفسه والرقم نفسه) لا يحتاجه
+        const isRenewal = !!(track.pushOk && track.token === token);
+        let res = await postWatch(isRenewal ? "" : await getTurnstileToken());
+        let out = await res.json().catch(() => ({}));
+        if (res.status === 403 && out && out.error === "captcha" && TURNSTILE_SITE_KEY) {
+            if (!track || track.ticket !== ticketAtStart) return false;
+            res = await postWatch(await getTurnstileToken());   // انتهى الاشتراك عند الخادم: تحقق ثم اشتراك جديد
+            out = await res.json().catch(() => ({}));
+        }
         if (!res.ok || !out.ok) throw new Error(out.error || ("HTTP " + res.status));
         if (!track) { unregisterTrackPush(token); return false; }   // [TRACK-SYNC] أُوقف التتبع أثناء التسجيل
         if (track.ticket !== ticketAtStart) return false;           // التسجيل التالي (بالرقم الجديد) يستبدله
