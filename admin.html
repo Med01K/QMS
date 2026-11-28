@@ -56,6 +56,10 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px 120px}
 .sys-switch{display:flex;gap:8px;background:#fff;padding:6px;border-radius:14px;box-shadow:var(--shadow);margin-bottom:18px;width:fit-content;max-width:100%;flex-wrap:wrap}
 .sys-switch button{border:0;background:transparent;padding:9px 18px;border-radius:10px;font-size:14.5px;font-weight:800;color:var(--muted);cursor:pointer}
 .sys-switch button.on{background:var(--primary);color:#fff}
+/* [SYS-LIVE] 2026-11-28 علامة النظام العامل على زرّه، ونوع الجهاز تحت اسم النسخة */
+.sys-switch .live{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;font-size:12px;font-weight:700;opacity:.95}
+.sys-switch .live .dot{width:8px;height:8px}
+.kind{font-family:inherit;font-size:13px;font-weight:700;color:var(--secondary);margin-top:4px}
 
 /* ---------- البطاقات ---------- */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
@@ -448,6 +452,65 @@ let reportWaitSince = 0;
 // أدوات صغيرة
 // =====================================================================
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+// [SYS-LIVE] 2026-11-28 — أيّ الأنظمة يعمل الآن، وما نوع الجهاز الرئيسي (DF أو I2S).
+// كلّ جهاز يكتب حالته في system_status/<النظام> عند كلّ إقلاع وعند كلّ تغيير، فأحدثهما كتابةً هو العامل.
+const allSt = { master: null, gateway: null };
+const VARIANT_KEYS = {
+  i2s: FIELDS.filter(f => f.g === "i2s").map(f => f.k),     // لا تعرفها إلا نسخة I2S
+  df:  FIELDS.filter(f => f.g === "busy").map(f => f.k),    // لا تعرفها إلا نسخ DFPlayer
+};
+const KINDS = {
+  df:  { name: "الجهاز الرئيسي DF (شريحة DFPlayer)", short: "DF" },
+  i2s: { name: "الجهاز الرئيسي I2S (مكبّر I2S)", short: "I2S" },
+  gw:  { name: "البوابة ESP32 + Atmega", short: "البوابة" },
+};
+function deviceKind(s, which) {
+  if (which === "gateway") return "gw";
+  if (!s) return null;
+  const v = (s.values && typeof s.values === "object") ? s.values : null;
+  if (v && VARIANT_KEYS.i2s.some(k => k in v)) return "i2s";
+  if (v && VARIANT_KEYS.df.some(k => k in v)) return "df";
+  const m = String(s.fw || s.ota?.running || "").match(/MasterV(\d+)\.(\d+)/);
+  if (m) return (Number(m[1]) > 2 || (Number(m[1]) === 2 && Number(m[2]) >= 7)) ? "i2s" : "df";
+  return null;
+}
+function lastWriteTs(s) {
+  let t = 0;
+  const look = (o, d) => {
+    if (!o || typeof o !== "object" || d > 2) return;
+    for (const [k, v] of Object.entries(o)) {
+      if (typeof v === "number" && (k === "at" || k.endsWith("_at"))) t = Math.max(t, v);
+      else if (v && typeof v === "object") look(v, d + 1);
+    }
+  };
+  look(s, 0);
+  return t;
+}
+function liveSys() {
+  const tm = lastWriteTs(allSt.master), tg = lastWriteTs(allSt.gateway);
+  if (!tm && !tg) return null;
+  return tm >= tg ? "master" : "gateway";
+}
+function queueOnline() {
+  if (!queue) return false;
+  const seen = Number(queue.meta?.esp32_last_seen_ms || 0), age = nowServer() - seen;
+  return seen > 0 && age > -60000 && age < HEARTBEAT_TIMEOUT_MS;
+}
+function renderSysSwitch() {
+  const live = liveSys(), on = queueOnline();
+  document.querySelectorAll("#sysSwitch button").forEach(b => {
+    const k = b.dataset.sys;
+    let html = esc(SYSTEMS[k].name);
+    if (k === live) {
+      const kind = deviceKind(allSt[k], k);
+      const what = kind && kind !== "gw" ? ` · ${KINDS[kind].short}` : "";
+      html += on ? `<span class="live"><span class="dot g"></span>يعمل الآن${what}</span>`
+                 : `<span class="live"><span class="dot o"></span>آخر من اتصل${what}</span>`;
+    }
+    b.innerHTML = html;
+  });
+}
 function nowServer() { return Date.now() + serverOffset; }
 function fmtTime(ms) {
   if (!ms || typeof ms !== "number") return "—";
@@ -547,12 +610,17 @@ function stopAll() { subs.forEach(u => u()); globalSubs.forEach(u => u()); subs 
 
 function startGlobal() {
   globalSubs.push(onValue(ref(db, ".info/serverTimeOffset"), s => { serverOffset = Number(s.val()) || 0; }));
-  globalSubs.push(onValue(ref(db, "queue"), s => { queue = s.val() || {}; renderQueue(); }, () => {}));
+  globalSubs.push(onValue(ref(db, "queue"), s => { queue = s.val() || {}; renderQueue(); renderSysSwitch(); }, () => {}));
+  for (const k of ["master", "gateway"]) {   // [SYS-LIVE]
+    globalSubs.push(onValue(ref(db, "system_status/" + k), s => {
+      allSt[k] = s.val() || null; renderSysSwitch(); renderDevice();
+    }, () => {}));
+  }
   globalSubs.push(onValue(query(ref(db, "admin_log"), orderByChild("at"), limitToLast(30)), s => {
     const items = []; s.forEach(c => { items.push(c.val()); });
     renderLog(items.reverse());
   }, permError));
-  const tick = setInterval(() => { renderQueue(); renderDeviceTimes(); }, 5000);
+  const tick = setInterval(() => { renderQueue(); renderDeviceTimes(); renderSysSwitch(); }, 5000);
   globalSubs.push(() => clearInterval(tick));
 }
 
@@ -608,7 +676,12 @@ function renderDevice() {
   const box = $("dNotices"); box.innerHTML = "";
   $("devSub").textContent = `${SYSTEMS[sys].name}: النسخة التي تعمل، وهل وصله آخر تعديل.`;
   if (!stLoaded) { $("dFw").textContent = "…"; $("dRev").textContent = "…"; $("dApplied").textContent = "…"; return; }
-  $("dFw").textContent = st.fw || st.ota?.running || "—";
+  const kind = deviceKind(st, sys);   // [SYS-LIVE]
+  $("dFw").innerHTML = esc(st.fw || st.ota?.running || "—") + (kind ? `<div class="kind">${esc(KINDS[kind].name)}</div>` : "");
+  const live = liveSys();
+  if (live && live !== sys) {
+    box.insertAdjacentHTML("beforeend", `<div class="notice info">النظام الذي يعمل الآن هو «${esc(SYSTEMS[live].name)}». وما تراه هنا حالةُ «${esc(SYSTEMS[sys].name)}» كما كانت آخر مرة اتصل.</div>`);
+  }
   const cRev = cfg?.rev, sRev = st.rev;
   if (cRev === undefined || cRev === null) {
     $("dRev").innerHTML = '<span class="pill n">لا تعديلات</span>';
@@ -620,7 +693,15 @@ function renderDevice() {
   $("dApplied").textContent = st.applied_at ? ago(st.applied_at) : "—";
   if (!st.fw) box.insertAdjacentHTML("beforeend", '<div class="notice info">لم يكتب هذا الجهاز حالته في Firebase بعد. تظهر حالته حين يعمل بنسخة تدعم الضبط عن بُعد ويتصل بالإنترنت.</div>');
   if (st.rejected) box.insertAdjacentHTML("beforeend", `<div class="notice err">رفض الجهاز قيماً خارج حدودها، فبقي على السابقة: <span class="mono">${esc(st.rejected)}</span></div>`);
-  if (st.unknown) box.insertAdjacentHTML("beforeend", `<div class="notice warn">قيم لا تعرفها النسخة العاملة فتجاهلها: <span class="mono">${esc(st.unknown)}</span></div>`);
+  if (st.unknown) {   // [SYS-LIVE] ما يخصّ النوع الآخر من الجهاز الرئيسي ليس خطأً، فيُعرض هادئاً
+    const keys = String(st.unknown).split(",").map(x => x.trim()).filter(Boolean);
+    const other = kind === "df" ? "i2s" : kind === "i2s" ? "df" : null;
+    const foreign = other ? keys.filter(k => VARIANT_KEYS[other].includes(k)) : [];
+    const rest = keys.filter(k => !foreign.includes(k));
+    if (foreign.length) box.insertAdjacentHTML("beforeend",
+      `<div class="notice info">${foreign.length === 1 ? "قيمةٌ خاصّة" : "قيمٌ خاصّة"} بـ«${esc(KINDS[other].name)}»، لا عمل لها في نسخة ${esc(KINDS[kind].short)} العاملة، فتجاهلها الجهاز ولا ضرر في ذلك: <span class="mono">${esc(foreign.join(", "))}</span></div>`);
+    if (rest.length) box.insertAdjacentHTML("beforeend", `<div class="notice warn">قيم لا تعرفها النسخة العاملة فتجاهلها: <span class="mono">${esc(rest.join(","))}</span></div>`);
+  }
 }
 
 // =====================================================================
