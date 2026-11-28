@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<!-- admin.html: لوحة تحكم نظام الطابور (QMS) — لصاحب النظام وحده.
-     تقرأ وتكتب: system_config/<النظام>  وتقرأ: system_status/<النظام>  و queue  و admin_log
-     الحماية الحقيقية في قواعد Firebase (البريد المصرّح وحده)، وفحص البريد هنا للعرض فقط. -->
+
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#151A5D">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="logo.png">
@@ -13,182 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<style>
-:root{
-  --primary:#151A5D; --primary-dark:#0c0f38; --secondary:#252d87;
-  --yellow:#F6BE29; --yellow-dark:#cf9a11;
-  --green:#16a34a; --green-bg:#dcfce7; --red:#dc2626; --red-bg:#fee2e2;
-  --orange:#d97706; --orange-bg:#fef3c7; --blue-bg:#e0e7ff;
-  --bg:#f4f6fa; --white:#fff; --text:#1e293b; --muted:#64748b; --border:#e2e8f0;
-  --radius:16px; --shadow:0 4px 18px rgba(21,26,93,.07);
-}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Cairo',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-weight:600;line-height:1.6}
-button,input{font-family:inherit}
-.hidden{display:none!important}
-
-/* ---------- الرأس ---------- */
-header{background:linear-gradient(135deg,var(--primary-dark),var(--primary) 55%,var(--secondary));color:#fff;padding:18px 20px 22px;position:relative;overflow:hidden}
-header::after{content:"";position:absolute;inset:auto 0 0 0;height:4px;background:var(--yellow)}
-.head-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.head-inner img{width:48px;height:48px;border-radius:12px;background:#fff;object-fit:contain;padding:4px}
-.head-title h1{font-size:20px;font-weight:900;letter-spacing:-.3px}
-.head-title p{font-size:13px;opacity:.8;font-weight:600}
-.user-box{margin-inline-start:auto;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);padding:6px 8px 6px 12px;border-radius:999px}
-.user-box img{width:30px;height:30px;border-radius:50%;padding:0}
-.user-box span{font-size:13px;font-weight:700;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.btn-out{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer}
-.btn-out:hover{background:rgba(255,255,255,.28)}
-
-main{max-width:1100px;margin:0 auto;padding:20px 16px 120px}
-
-/* ---------- شاشة الدخول ---------- */
-.gate{max-width:440px;margin:60px auto;background:#fff;border-radius:22px;box-shadow:var(--shadow);padding:34px 28px;text-align:center}
-.gate .lock{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;font-size:30px}
-.gate h2{font-size:21px;font-weight:900;color:var(--primary);margin-bottom:8px}
-.gate p{color:var(--muted);font-size:14.5px;margin-bottom:22px}
-.btn-google{display:inline-flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px 22px;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;transition:.15s}
-.btn-google:hover{border-color:var(--primary);box-shadow:0 2px 10px rgba(21,26,93,.12)}
-.btn-google svg{width:20px;height:20px}
-.gate .denied-mail{direction:ltr;display:inline-block;background:var(--red-bg);color:var(--red);padding:4px 12px;border-radius:8px;font-size:14px;margin-bottom:18px}
-
-/* ---------- اختيار النظام ---------- */
-.sys-switch{display:flex;gap:8px;background:#fff;padding:6px;border-radius:14px;box-shadow:var(--shadow);margin-bottom:18px;width:fit-content;max-width:100%;flex-wrap:wrap}
-.sys-switch button{border:0;background:transparent;padding:9px 18px;border-radius:10px;font-size:14.5px;font-weight:800;color:var(--muted);cursor:pointer}
-.sys-switch button.on{background:var(--primary);color:#fff}
-/* [SYS-LIVE] 2026-11-28 علامة النظام العامل على زرّه، ونوع الجهاز تحت اسم النسخة */
-.sys-switch .live{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;font-size:12px;font-weight:700;opacity:.95}
-.sys-switch .live .dot{width:8px;height:8px}
-.kind{font-family:inherit;font-size:13px;font-weight:700;color:var(--secondary);margin-top:4px}
-
-/* ---------- البطاقات ---------- */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
-.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}
-.grid .card{margin-bottom:0}
-.card h3{font-size:16.5px;font-weight:900;color:var(--primary);display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.card .sub{font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:600}
-.section-gap{height:16px}
-
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.stat{background:var(--bg);border-radius:12px;padding:12px 14px}
-.stat .k{font-size:12.5px;color:var(--muted);font-weight:700}
-.stat .v{font-size:18px;font-weight:900;color:var(--text);margin-top:2px;display:flex;align-items:center;gap:6px}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#cbd5e1}
-.dot.g{background:var(--green);box-shadow:0 0 0 4px var(--green-bg)}
-.dot.r{background:var(--red);box-shadow:0 0 0 4px var(--red-bg)}
-.dot.o{background:var(--orange);box-shadow:0 0 0 4px var(--orange-bg)}
-
-.pill{display:inline-block;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px}
-.pill.g{background:var(--green-bg);color:var(--green)}
-.pill.r{background:var(--red-bg);color:var(--red)}
-.pill.o{background:var(--orange-bg);color:var(--orange)}
-.pill.b{background:var(--blue-bg);color:var(--secondary)}
-.pill.n{background:var(--bg);color:var(--muted)}
-
-.notice{border-radius:12px;padding:10px 14px;font-size:13.5px;margin-top:12px}
-.notice.warn{background:var(--orange-bg);color:#92400e}
-.notice.err{background:var(--red-bg);color:#991b1b}
-.notice.ok{background:var(--green-bg);color:#166534}
-.notice.info{background:var(--blue-bg);color:var(--secondary)}
-
-/* ---------- الإعدادات ---------- */
-.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
-.field{border:1.5px solid var(--border);border-radius:14px;padding:14px;transition:.15s;background:#fff}
-.field.changed{border-color:var(--yellow);background:#fffbeb}
-.field.invalid{border-color:var(--red);background:#fff5f5}
-.field.unsupported{opacity:.5}
-.f-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-.f-head label{font-size:14.5px;font-weight:800;color:var(--text)}
-.hint{font-size:12.5px;color:var(--muted);margin:4px 0 10px;font-weight:600}
-.f-row{display:flex;align-items:center;gap:8px}
-.f-row input[type=number]{width:130px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-weight:800;text-align:center;direction:ltr;color:var(--primary)}
-.f-row input:focus{outline:none;border-color:var(--secondary);box-shadow:0 0 0 3px var(--blue-bg)}
-.unit{font-size:13px;color:var(--muted);font-weight:700}
-.btn-reset{margin-inline-start:auto;border:0;background:var(--bg);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}
-.btn-reset:hover{background:var(--blue-bg);color:var(--secondary)}
-.f-meta{font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}
-.f-meta b{color:var(--text);font-weight:800}
-.f-err{font-size:12.5px;color:var(--red);margin-top:6px;font-weight:700}
-
-/* مفتاح تشغيل */
-.switch{position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0}
-.switch input{opacity:0;width:0;height:0}
-.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;cursor:pointer;transition:.2s}
-.slider::before{content:"";position:absolute;width:22px;height:22px;top:3px;right:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.switch input:checked + .slider{background:var(--green)}
-.switch input:checked + .slider::before{transform:translateX(-22px)}
-.switch input:disabled + .slider{opacity:.5;cursor:wait}
-
-/* ---------- الأدوات ---------- */
-.tool-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-.tool-row:last-child{border-bottom:0}
-.tool-row .t{font-size:14.5px;font-weight:800}
-.tool-row .d{font-size:12.5px;color:var(--muted);font-weight:600}
-.btn{border:0;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:800;cursor:pointer;transition:.15s;white-space:nowrap}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn-primary{background:var(--primary);color:#fff}
-.btn-primary:hover:not(:disabled){background:var(--secondary)}
-.btn-yellow{background:var(--yellow);color:var(--primary-dark)}
-.btn-yellow:hover:not(:disabled){background:var(--yellow-dark)}
-.btn-ghost{background:var(--bg);color:var(--text)}
-.btn-ghost:hover:not(:disabled){background:var(--border)}
-.btn-danger{background:var(--red-bg);color:var(--red)}
-.btn-danger:hover:not(:disabled){background:var(--red);color:#fff}
-
-.ota{border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
-.ota:last-child{margin-bottom:0}
-.ota-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.ota-head b{font-size:14.5px;font-weight:900}
-.ota-line{font-size:12.5px;color:var(--muted);margin-top:6px;font-weight:600}
-.ota-line code,.mono{direction:ltr;unicode-bidi:embed;font-family:Consolas,monospace;font-size:12.5px;color:var(--text);background:var(--bg);padding:1px 6px;border-radius:6px}
-.ota-form{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-.ota-form input{flex:1;min-width:180px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;direction:ltr;text-align:left;font-family:Consolas,monospace}
-.progress{height:6px;background:var(--bg);border-radius:999px;margin-top:8px;overflow:hidden}
-.progress div{height:100%;background:var(--green);transition:width .4s}
-
-table.rep{width:100%;border-collapse:collapse;font-size:13.5px}
-table.rep td{padding:7px 4px;border-bottom:1px solid var(--border)}
-table.rep td:last-child{text-align:left;direction:ltr;font-weight:800}
-table.rep tr:last-child td{border-bottom:0}
-
-.log-item{padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}
-.log-item:last-child{border-bottom:0}
-.log-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
-.log-body{margin-top:4px;font-weight:700}
-.log-body .mono{margin:0 2px}
-.empty{color:var(--muted);font-size:13.5px;text-align:center;padding:14px 0}
-
-/* ---------- شريط الحفظ ---------- */
-.savebar{position:fixed;inset:auto 0 0 0;background:var(--primary-dark);color:#fff;padding:12px 16px;box-shadow:0 -6px 20px rgba(0,0,0,.18);transform:translateY(110%);transition:transform .25s;z-index:20}
-.savebar.show{transform:none}
-.savebar:not(.show){visibility:hidden}
-.savebar .in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.savebar .msg{font-size:14.5px;font-weight:800}
-.savebar .msg small{display:block;font-size:12px;opacity:.75;font-weight:600}
-.savebar .acts{margin-inline-start:auto;display:flex;gap:8px}
-.savebar .btn-ghost{background:rgba(255,255,255,.12);color:#fff}
-.savebar .btn-ghost:hover{background:rgba(255,255,255,.22)}
-
-.toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-150%);background:var(--text);color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:50;transition:transform .25s;max-width:92vw;text-align:center}
-.toast.show{transform:translate(-50%,0)}
-.toast:not(.show){visibility:hidden}
-.toast.ok{background:var(--green)} .toast.err{background:var(--red)}
-
-/* نافذة التأكيد */
-.modal-bg{position:fixed;inset:0;background:rgba(12,15,56,.45);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}
-.modal{background:#fff;border-radius:18px;max-width:420px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
-.modal h4{font-size:17px;font-weight:900;color:var(--primary);margin-bottom:8px}
-.modal p{font-size:14px;color:var(--muted);margin-bottom:18px;font-weight:600}
-.modal .acts{display:flex;gap:8px;justify-content:flex-start}
-
-footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}
-@media (max-width:560px){
-  .head-title h1{font-size:17px}
-  .user-box span{max-width:120px}
-  .fields,.grid{grid-template-columns:1fr}
-  .f-row input[type=number]{width:110px}
-}
-</style>
+<style>:root{--primary:#151A5D;--primary-dark:#0c0f38;--secondary:#252d87;--yellow:#F6BE29;--yellow-dark:#cf9a11;--green:#16a34a;--green-bg:#dcfce7;--red:#dc2626;--red-bg:#fee2e2;--orange:#d97706;--orange-bg:#fef3c7;--blue-bg:#e0e7ff;--bg:#f4f6fa;--white:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--radius:16px;--shadow:0 4px 18px rgba(21,26,93,.07)}*{box-sizing:border-box;margin:0;padding:0}body{font-family:Cairo,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-weight:600;line-height:1.6}button,input{font-family:inherit}.hidden{display:none!important}header{background:linear-gradient(135deg,var(--primary-dark),var(--primary) 55%,var(--secondary));color:#fff;padding:18px 20px 22px;position:relative;overflow:hidden}header::after{content:"";position:absolute;inset:auto 0 0 0;height:4px;background:var(--yellow)}.head-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}.head-inner img{width:48px;height:48px;border-radius:12px;background:#fff;object-fit:contain;padding:4px}.head-title h1{font-size:20px;font-weight:900;letter-spacing:-.3px}.head-title p{font-size:13px;opacity:.8;font-weight:600}.user-box{margin-inline-start:auto;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);padding:6px 8px 6px 12px;border-radius:999px}.user-box img{width:30px;height:30px;border-radius:50%;padding:0}.user-box span{font-size:13px;font-weight:700;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.btn-out{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:999px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer}.btn-out:hover{background:rgba(255,255,255,.28)}main{max-width:1100px;margin:0 auto;padding:20px 16px 120px}.gate{max-width:440px;margin:60px auto;background:#fff;border-radius:22px;box-shadow:var(--shadow);padding:34px 28px;text-align:center}.gate .lock{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;font-size:30px}.gate h2{font-size:21px;font-weight:900;color:var(--primary);margin-bottom:8px}.gate p{color:var(--muted);font-size:14.5px;margin-bottom:22px}.btn-google{display:inline-flex;align-items:center;gap:10px;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:11px 22px;font-size:15px;font-weight:700;color:var(--text);cursor:pointer;transition:.15s}.btn-google:hover{border-color:var(--primary);box-shadow:0 2px 10px rgba(21,26,93,.12)}.btn-google svg{width:20px;height:20px}.gate .denied-mail{direction:ltr;display:inline-block;background:var(--red-bg);color:var(--red);padding:4px 12px;border-radius:8px;font-size:14px;margin-bottom:18px}.sys-switch{display:flex;gap:8px;background:#fff;padding:6px;border-radius:14px;box-shadow:var(--shadow);margin-bottom:18px;width:fit-content;max-width:100%;flex-wrap:wrap}.sys-switch button{border:0;background:0 0;padding:9px 18px;border-radius:10px;font-size:14.5px;font-weight:800;color:var(--muted);cursor:pointer}.sys-switch button.on{background:var(--primary);color:#fff}.sys-switch .live{display:inline-flex;align-items:center;gap:6px;margin-inline-start:8px;font-size:12px;font-weight:700;opacity:.95}.sys-switch .live .dot{width:8px;height:8px}.kind{font-family:inherit;font-size:13px;font-weight:700;color:var(--secondary);margin-top:4px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:16px}.grid .card{margin-bottom:0}.card h3{font-size:16.5px;font-weight:900;color:var(--primary);display:flex;align-items:center;gap:8px;margin-bottom:4px}.card .sub{font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:600}.section-gap{height:16px}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}.stat{background:var(--bg);border-radius:12px;padding:12px 14px}.stat .k{font-size:12.5px;color:var(--muted);font-weight:700}.stat .v{font-size:18px;font-weight:900;color:var(--text);margin-top:2px;display:flex;align-items:center;gap:6px}.dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:#cbd5e1}.dot.g{background:var(--green);box-shadow:0 0 0 4px var(--green-bg)}.dot.r{background:var(--red);box-shadow:0 0 0 4px var(--red-bg)}.dot.o{background:var(--orange);box-shadow:0 0 0 4px var(--orange-bg)}.pill{display:inline-block;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px}.pill.g{background:var(--green-bg);color:var(--green)}.pill.r{background:var(--red-bg);color:var(--red)}.pill.o{background:var(--orange-bg);color:var(--orange)}.pill.b{background:var(--blue-bg);color:var(--secondary)}.pill.n{background:var(--bg);color:var(--muted)}.notice{border-radius:12px;padding:10px 14px;font-size:13.5px;margin-top:12px}.notice.warn{background:var(--orange-bg);color:#92400e}.notice.err{background:var(--red-bg);color:#991b1b}.notice.ok{background:var(--green-bg);color:#166534}.notice.info{background:var(--blue-bg);color:var(--secondary)}.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}.field{border:1.5px solid var(--border);border-radius:14px;padding:14px;transition:.15s;background:#fff}.field.changed{border-color:var(--yellow);background:#fffbeb}.field.invalid{border-color:var(--red);background:#fff5f5}.field.unsupported{opacity:.5}.f-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}.f-head label{font-size:14.5px;font-weight:800;color:var(--text)}.hint{font-size:12.5px;color:var(--muted);margin:4px 0 10px;font-weight:600}.f-row{display:flex;align-items:center;gap:8px}.f-row input[type=number]{width:130px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:16px;font-weight:800;text-align:center;direction:ltr;color:var(--primary)}.f-row input:focus{outline:0;border-color:var(--secondary);box-shadow:0 0 0 3px var(--blue-bg)}.unit{font-size:13px;color:var(--muted);font-weight:700}.btn-reset{margin-inline-start:auto;border:0;background:var(--bg);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer}.btn-reset:hover{background:var(--blue-bg);color:var(--secondary)}.f-meta{font-size:12px;color:var(--muted);margin-top:8px;font-weight:600}.f-meta b{color:var(--text);font-weight:800}.f-err{font-size:12.5px;color:var(--red);margin-top:6px;font-weight:700}.switch{position:relative;display:inline-block;width:50px;height:28px;flex-shrink:0}.switch input{opacity:0;width:0;height:0}.slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;cursor:pointer;transition:.2s}.slider::before{content:"";position:absolute;width:22px;height:22px;top:3px;right:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}.switch input:checked+.slider{background:var(--green)}.switch input:checked+.slider::before{transform:translateX(-22px)}.switch input:disabled+.slider{opacity:.5;cursor:wait}.tool-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}.tool-row:last-child{border-bottom:0}.tool-row .t{font-size:14.5px;font-weight:800}.tool-row .d{font-size:12.5px;color:var(--muted);font-weight:600}.btn{border:0;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:800;cursor:pointer;transition:.15s;white-space:nowrap}.btn:disabled{opacity:.5;cursor:not-allowed}.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover:not(:disabled){background:var(--secondary)}.btn-yellow{background:var(--yellow);color:var(--primary-dark)}.btn-yellow:hover:not(:disabled){background:var(--yellow-dark)}.btn-ghost{background:var(--bg);color:var(--text)}.btn-ghost:hover:not(:disabled){background:var(--border)}.btn-danger{background:var(--red-bg);color:var(--red)}.btn-danger:hover:not(:disabled){background:var(--red);color:#fff}.ota{border:1.5px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}.ota:last-child{margin-bottom:0}.ota-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}.ota-head b{font-size:14.5px;font-weight:900}.ota-line{font-size:12.5px;color:var(--muted);margin-top:6px;font-weight:600}.mono,.ota-line code{direction:ltr;unicode-bidi:embed;font-family:Consolas,monospace;font-size:12.5px;color:var(--text);background:var(--bg);padding:1px 6px;border-radius:6px}.ota-form{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}.ota-form input{flex:1;min-width:180px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;direction:ltr;text-align:left;font-family:Consolas,monospace}.progress{height:6px;background:var(--bg);border-radius:999px;margin-top:8px;overflow:hidden}.progress div{height:100%;background:var(--green);transition:width .4s}table.rep{width:100%;border-collapse:collapse;font-size:13.5px}table.rep td{padding:7px 4px;border-bottom:1px solid var(--border)}table.rep td:last-child{text-align:left;direction:ltr;font-weight:800}table.rep tr:last-child td{border-bottom:0}.log-item{padding:10px 0;border-bottom:1px solid var(--border);font-size:13.5px}.log-item:last-child{border-bottom:0}.log-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:12.5px}.log-body{margin-top:4px;font-weight:700}.log-body .mono{margin:0 2px}.empty{color:var(--muted);font-size:13.5px;text-align:center;padding:14px 0}.savebar{position:fixed;inset:auto 0 0 0;background:var(--primary-dark);color:#fff;padding:12px 16px;box-shadow:0 -6px 20px rgba(0,0,0,.18);transform:translateY(110%);transition:transform .25s;z-index:20}.savebar.show{transform:none}.savebar:not(.show){visibility:hidden}.savebar .in{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}.savebar .msg{font-size:14.5px;font-weight:800}.savebar .msg small{display:block;font-size:12px;opacity:.75;font-weight:600}.savebar .acts{margin-inline-start:auto;display:flex;gap:8px}.savebar .btn-ghost{background:rgba(255,255,255,.12);color:#fff}.savebar .btn-ghost:hover{background:rgba(255,255,255,.22)}.toast{position:fixed;top:18px;left:50%;transform:translate(-50%,-150%);background:var(--text);color:#fff;padding:10px 20px;border-radius:12px;font-size:14px;font-weight:700;z-index:50;transition:transform .25s;max-width:92vw;text-align:center}.toast.show{transform:translate(-50%,0)}.toast:not(.show){visibility:hidden}.toast.ok{background:var(--green)}.toast.err{background:var(--red)}.modal-bg{position:fixed;inset:0;background:rgba(12,15,56,.45);display:flex;align-items:center;justify-content:center;z-index:40;padding:16px}.modal{background:#fff;border-radius:18px;max-width:420px;width:100%;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.25)}.modal h4{font-size:17px;font-weight:900;color:var(--primary);margin-bottom:8px}.modal p{font-size:14px;color:var(--muted);margin-bottom:18px;font-weight:600}.modal .acts{display:flex;gap:8px;justify-content:flex-start}footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}@media (max-width:560px){.head-title h1{font-size:17px}.user-box span{max-width:120px}.fields,.grid{grid-template-columns:1fr}.f-row input[type=number]{width:110px}}</style>
 </head>
 <body>
 
@@ -208,14 +31,14 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}
 </header>
 
 <main>
-  <!-- جارٍ التحميل -->
+  
   <div class="gate" id="viewLoading">
     <div class="lock">⏳</div>
     <h2>لحظةً من فضلك…</h2>
     <p>نتحقّق من حالة الدخول.</p>
   </div>
 
-  <!-- الدخول -->
+  
   <div class="gate hidden" id="viewLogin">
     <div class="lock">🔒</div>
     <h2>هذه الصفحة لصاحب النظام وحده</h2>
@@ -226,7 +49,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}
     </button>
   </div>
 
-  <!-- حساب غير مصرّح -->
+  
   <div class="gate hidden" id="viewDenied">
     <div class="lock">⛔</div>
     <h2>هذا الحساب لا يملك صلاحية الدخول</h2>
@@ -235,7 +58,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}
     <button class="btn btn-primary" id="btnLogout2">الخروج من هذا الحساب</button>
   </div>
 
-  <!-- اللوحة -->
+  
   <div class="hidden" id="viewPanel">
     <div class="sys-switch" id="sysSwitch">
       <button data-sys="master">الجهاز الرئيسي ESP32</button>
@@ -262,7 +85,7 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}
         <h3>🧩 الجهاز وإعداداته</h3>
         <div class="sub" id="devSub">النسخة التي تعمل، وهل وصله آخر تعديل.</div>
         <div class="stats">
-          <div class="stat"><div class="k">النسخة العاملة</div><div class="v mono" id="dFw" style="font-size:14px;background:none;padding:0">—</div></div>
+          <div class="stat"><div class="k">النسخة العاملة</div><div class="v mono" id="dFw" style="font-size:14px;background:0 0;padding:0">—</div></div>
           <div class="stat"><div class="k">آخر تعديل</div><div class="v" id="dRev">—</div></div>
           <div class="stat"><div class="k">طبّق الجهاز الإعدادات في</div><div class="v" id="dApplied" style="font-size:14px">—</div></div>
         </div>
@@ -327,12 +150,14 @@ footer{text-align:center;color:var(--muted);font-size:12px;padding:10px 0 0}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
 import { getDatabase, ref, onValue, update, set, push, serverTimestamp, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-// البريد الوحيد المسموح له (القواعد في Firebase تفرضه أيضاً، وهي الحماية الحقيقية)
 const ADMIN_EMAIL = "mohammed.khemila@gmail.com";
-const HEARTBEAT_TIMEOUT_MS = 200 * 1000;   // كما في الموقع: بعدها يُعدّ النظام غير متصل
+
+const HEARTBEAT_TIMEOUT_MS = 200 * 1e3;
 
 const firebaseConfig = {
   apiKey: "AIzaSyDMXCn68jPTrbwHZ7-YXI3HtiG84gOkITU",
@@ -340,163 +165,418 @@ const firebaseConfig = {
   databaseURL: "https://qms-online-2658d-default-rtdb.firebaseio.com",
   projectId: "qms-online-2658d"
 };
-const app  = initializeApp(firebaseConfig);
+
+const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
-const db   = getDatabase(app);
-const provider = new GoogleAuthProvider();
-provider.setCustomParameters({ prompt: "select_account" });
 
-// =====================================================================
-// الإعدادات المعروفة: الاسم في Firebase، والعنوان، والشرح، والوحدة، والحدود (كما في الكود)
-// unit: ms | s | min  (تُحفظ دائماً بالمللي ثانية)
-// =====================================================================
-const GROUPS = [
-  { id: "voice",   icon: "🗣️", title: "إيقاع النداء الصوتي", sub: "الوقفات بين أجزاء الجملة التي ينطقها الجهاز." },
-  { id: "busy",    icon: "🎚️", title: "شريحة الصوت DFPlayer (إشارة BUSY)", sub: "ضبط دقيق لمتابعة الشريحة؛ لا تغيّره إلا لسبب." },
-  { id: "i2s",     icon: "🔊", title: "مكبّر الصوت (نسخ I2S)", sub: "فتح المكبّر وإغلاقه حول كل نداء." },
-  { id: "printer", icon: "🖨️", title: "الطابعة والحجز عبر الموقع", sub: "متى تُعدّ الطابعة منقطعة، وماذا يجري للحجز حينئذ." },
-  { id: "power",   icon: "🌙", title: "توفير الطاقة", sub: "" },
-];
-const FIELDS = [
-  { k: "silence_between_calls_ms",      g: "voice", t: "الصمت بين نداءين", h: "المدّة التي يسكت فيها الجهاز بعد نداءٍ قبل أن يبدأ الذي يليه.", u: "ms", min: 0, max: 10000 },
-  { k: "pause_after_word_raqam_ms",     g: "voice", t: "وقفة بعد كلمة «رقم»", h: "", u: "ms", min: 0, max: 5000 },
-  { k: "pause_between_number_words_ms", g: "voice", t: "وقفة بين كلمات العدد", h: "بين أجزاء العدد الواحد، كـ«مئة» و«خمسة وعشرين».", u: "ms", min: 0, max: 5000 },
-  { k: "pause_after_ticket_number_ms",  g: "voice", t: "وقفة بعد رقم التذكرة", h: "", u: "ms", min: 0, max: 5000 },
-  { k: "pause_after_word_shubbak_ms",   g: "voice", t: "وقفة بعد كلمة «الشبّاك»", h: "", u: "ms", min: 0, max: 5000 },
-  { k: "pause_after_window_number_ms",  g: "voice", t: "وقفة بعد رقم الشبّاك", h: "", u: "ms", min: 0, max: 5000 },
+const db = getDatabase(app);
 
-  { k: "busy_audio_min_low_ms",  g: "busy", t: "أقصر إشارة تُعدّ صوتاً", h: "النبضة الأقصر منها تُهمَل، لأنها استلامُ أمرٍ لا تشغيل.", u: "ms", min: 150, max: 1500 },
-  { k: "busy_no_low_resend_ms",  g: "busy", t: "إعادة الأمر إن لم تبدأ الإشارة", h: "إن لم تنخفض BUSY خلال هذه المدّة أُعيد أمر التشغيل مرّة واحدة.", u: "ms", min: 300, max: 5000 },
-  { k: "busy_start_timeout_ms",  g: "busy", t: "مهلة بدء الصوت", h: "إن لم يبدأ الصوت خلالها انتقل الجهاز إلى جدول المدد الاحتياطي.", u: "ms", min: 800, max: 10000 },
-  { k: "busy_fallback_extra_ms", g: "busy", t: "تعديل جدول المدد الاحتياطي", h: "يُضاف إلى مدّة كل كلمة حين يعمل الجهاز بالجدول؛ والقيمة السالبة تقصّرها.", u: "ms", min: -2000, max: 3000 },
-  { k: "busy_stuck_extra_ms",    g: "busy", t: "هامش الإشارة العالقة", h: "إن طالت الإشارة عن مدّة الكلمة بهذا القدر عُدّت الكلمة منتهية.", u: "ms", min: 200, max: 10000 },
-  { k: "df_guard_after_vol_ms",  g: "busy", t: "مهلة بعد أمر مستوى الصوت", h: "", u: "ms", min: 0, max: 1000 },
-  { k: "df_guard_after_stop_ms", g: "busy", t: "مهلة بعد أمر الإيقاف", h: "", u: "ms", min: 0, max: 1000 },
-  { k: "vol_refresh_idle_ms",    g: "busy", t: "تجديد مستوى الصوت أثناء الخمول", h: "يُعاد إرسال مستوى الصوت كلّ هذه المدّة، احتياطاً إن أعادت الشريحة تشغيل نفسها فارتفع صوتها.", u: "s", min: 5000, max: 600000 },
+const provider = new GoogleAuthProvider;
 
-  { k: "audio_unmute_lead_ms", g: "i2s", t: "فتح المكبّر قبل النطق", h: "", u: "ms", min: 0, max: 500 },
-  { k: "audio_mute_tail_ms",   g: "i2s", t: "إغلاق المكبّر بعد النطق", h: "", u: "ms", min: 0, max: 1000 },
+provider.setCustomParameters({
+  prompt: "select_account"
+});
 
-  { k: "printer_timeout_ms",   g: "printer", t: "مهلة انقطاع الطابعة", h: "إن لم يصل من الطابعة شيء خلالها عُدّت غير متصلة.", u: "s", min: 5000, max: 300000 },
-  { k: "web_printer_grace_ms", g: "printer", t: "إبقاء الحجز مفتوحاً بعد انقطاع الطابعة", h: "ثم يُغلق الحجز عبر الموقع حتى تعود الطابعة. القيمة 0 تُغلقه فوراً.", u: "min", min: 0, max: 3600000 },
-  { k: "offline_call_enabled", g: "printer", t: "النداء والطابعة منقطعة", h: "إن انقطعت الطابعة ولم يبقَ رقم معروف، ينادي «التالي» الرقم الذي بعد آخر رقم صدر، حتى لا يتعطّل الشبّاك.", bool: true, min: 0, max: 1 },
+const GROUPS = [ {
+  id: "voice",
+  icon: "🗣️",
+  title: "إيقاع النداء الصوتي",
+  sub: "الوقفات بين أجزاء الجملة التي ينطقها الجهاز."
+}, {
+  id: "busy",
+  icon: "🎚️",
+  title: "شريحة الصوت DFPlayer (إشارة BUSY)",
+  sub: "ضبط دقيق لمتابعة الشريحة؛ لا تغيّره إلا لسبب."
+}, {
+  id: "i2s",
+  icon: "🔊",
+  title: "مكبّر الصوت (نسخ I2S)",
+  sub: "فتح المكبّر وإغلاقه حول كل نداء."
+}, {
+  id: "printer",
+  icon: "🖨️",
+  title: "الطابعة والحجز عبر الموقع",
+  sub: "متى تُعدّ الطابعة منقطعة، وماذا يجري للحجز حينئذ."
+}, {
+  id: "power",
+  icon: "🌙",
+  title: "توفير الطاقة",
+  sub: ""
+} ];
 
-  { k: "inactivity_sleep_timeout_ms", g: "power", t: "الدخول في وضع التوفير بعد خمول", h: "إن لم يُستعمل النظام هذه المدّة دخل وضع توفير الطاقة.", u: "min", min: 600000, max: 86400000 },
-];
-const FIELD_BY_KEY = Object.fromEntries(FIELDS.map(f => [f.k, f]));
-const UNIT = { ms: { f: 1, n: "مللي ثانية" }, s: { f: 1000, n: "ثانية" }, min: { f: 60000, n: "دقيقة" } };
+const FIELDS = [ {
+  k: "silence_between_calls_ms",
+  g: "voice",
+  t: "الصمت بين نداءين",
+  h: "المدّة التي يسكت فيها الجهاز بعد نداءٍ قبل أن يبدأ الذي يليه.",
+  u: "ms",
+  min: 0,
+  max: 1e4
+}, {
+  k: "pause_after_word_raqam_ms",
+  g: "voice",
+  t: "وقفة بعد كلمة «رقم»",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 5e3
+}, {
+  k: "pause_between_number_words_ms",
+  g: "voice",
+  t: "وقفة بين كلمات العدد",
+  h: "بين أجزاء العدد الواحد، كـ«مئة» و«خمسة وعشرين».",
+  u: "ms",
+  min: 0,
+  max: 5e3
+}, {
+  k: "pause_after_ticket_number_ms",
+  g: "voice",
+  t: "وقفة بعد رقم التذكرة",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 5e3
+}, {
+  k: "pause_after_word_shubbak_ms",
+  g: "voice",
+  t: "وقفة بعد كلمة «الشبّاك»",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 5e3
+}, {
+  k: "pause_after_window_number_ms",
+  g: "voice",
+  t: "وقفة بعد رقم الشبّاك",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 5e3
+}, {
+  k: "busy_audio_min_low_ms",
+  g: "busy",
+  t: "أقصر إشارة تُعدّ صوتاً",
+  h: "النبضة الأقصر منها تُهمَل، لأنها استلامُ أمرٍ لا تشغيل.",
+  u: "ms",
+  min: 150,
+  max: 1500
+}, {
+  k: "busy_no_low_resend_ms",
+  g: "busy",
+  t: "إعادة الأمر إن لم تبدأ الإشارة",
+  h: "إن لم تنخفض BUSY خلال هذه المدّة أُعيد أمر التشغيل مرّة واحدة.",
+  u: "ms",
+  min: 300,
+  max: 5e3
+}, {
+  k: "busy_start_timeout_ms",
+  g: "busy",
+  t: "مهلة بدء الصوت",
+  h: "إن لم يبدأ الصوت خلالها انتقل الجهاز إلى جدول المدد الاحتياطي.",
+  u: "ms",
+  min: 800,
+  max: 1e4
+}, {
+  k: "busy_fallback_extra_ms",
+  g: "busy",
+  t: "تعديل جدول المدد الاحتياطي",
+  h: "يُضاف إلى مدّة كل كلمة حين يعمل الجهاز بالجدول؛ والقيمة السالبة تقصّرها.",
+  u: "ms",
+  min: -2e3,
+  max: 3e3
+}, {
+  k: "busy_stuck_extra_ms",
+  g: "busy",
+  t: "هامش الإشارة العالقة",
+  h: "إن طالت الإشارة عن مدّة الكلمة بهذا القدر عُدّت الكلمة منتهية.",
+  u: "ms",
+  min: 200,
+  max: 1e4
+}, {
+  k: "df_guard_after_vol_ms",
+  g: "busy",
+  t: "مهلة بعد أمر مستوى الصوت",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 1e3
+}, {
+  k: "df_guard_after_stop_ms",
+  g: "busy",
+  t: "مهلة بعد أمر الإيقاف",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 1e3
+}, {
+  k: "vol_refresh_idle_ms",
+  g: "busy",
+  t: "تجديد مستوى الصوت أثناء الخمول",
+  h: "يُعاد إرسال مستوى الصوت كلّ هذه المدّة، احتياطاً إن أعادت الشريحة تشغيل نفسها فارتفع صوتها.",
+  u: "s",
+  min: 5e3,
+  max: 6e5
+}, {
+  k: "audio_unmute_lead_ms",
+  g: "i2s",
+  t: "فتح المكبّر قبل النطق",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 500
+}, {
+  k: "audio_mute_tail_ms",
+  g: "i2s",
+  t: "إغلاق المكبّر بعد النطق",
+  h: "",
+  u: "ms",
+  min: 0,
+  max: 1e3
+}, {
+  k: "printer_timeout_ms",
+  g: "printer",
+  t: "مهلة انقطاع الطابعة",
+  h: "إن لم يصل من الطابعة شيء خلالها عُدّت غير متصلة.",
+  u: "s",
+  min: 5e3,
+  max: 3e5
+}, {
+  k: "web_printer_grace_ms",
+  g: "printer",
+  t: "إبقاء الحجز مفتوحاً بعد انقطاع الطابعة",
+  h: "ثم يُغلق الحجز عبر الموقع حتى تعود الطابعة. القيمة 0 تُغلقه فوراً.",
+  u: "min",
+  min: 0,
+  max: 36e5
+}, {
+  k: "offline_call_enabled",
+  g: "printer",
+  t: "النداء والطابعة منقطعة",
+  h: "إن انقطعت الطابعة ولم يبقَ رقم معروف، ينادي «التالي» الرقم الذي بعد آخر رقم صدر، حتى لا يتعطّل الشبّاك.",
+  bool: true,
+  min: 0,
+  max: 1
+}, {
+  k: "inactivity_sleep_timeout_ms",
+  g: "power",
+  t: "الدخول في وضع التوفير بعد خمول",
+  h: "إن لم يُستعمل النظام هذه المدّة دخل وضع توفير الطاقة.",
+  u: "min",
+  min: 6e5,
+  max: 864e5
+} ];
+
+const FIELD_BY_KEY = Object.fromEntries(FIELDS.map(f => [ f.k, f ]));
+
+const UNIT = {
+  ms: {
+    f: 1,
+    n: "مللي ثانية"
+  },
+  s: {
+    f: 1e3,
+    n: "ثانية"
+  },
+  min: {
+    f: 6e4,
+    n: "دقيقة"
+  }
+};
 
 const SYSTEMS = {
   master: {
     name: "الجهاز الرئيسي ESP32",
-    toggles: [
-      { k: "df_trace",  t: "تتبّع الصوت", d: "يطبع تفاصيل شريحة الصوت في Serial Monitor (كالأمر d)." },
-      { k: "net_trace", t: "تتبّع الشبكة", d: "يطبع تفاصيل الاتصال بالإنترنت (كالأمر v)." },
-    ],
-    ota: [
-      { k: "ota",         t: "الجهاز الرئيسي" },
-      { k: "ota_printer", t: "الطابعة" },
-      { k: "ota_camera",  t: "كاميرا QR" },
-    ],
+    toggles: [ {
+      k: "df_trace",
+      t: "تتبّع الصوت",
+      d: "يطبع تفاصيل شريحة الصوت في Serial Monitor (كالأمر d)."
+    }, {
+      k: "net_trace",
+      t: "تتبّع الشبكة",
+      d: "يطبع تفاصيل الاتصال بالإنترنت (كالأمر v)."
+    } ],
+    ota: [ {
+      k: "ota",
+      t: "الجهاز الرئيسي"
+    }, {
+      k: "ota_printer",
+      t: "الطابعة"
+    }, {
+      k: "ota_camera",
+      t: "كاميرا QR"
+    } ]
   },
   gateway: {
     name: "نظام ESP32 + Atmega",
-    toggles: [
-      { k: "net_trace",  t: "تتبّع الشبكة", d: "يطبع تفاصيل الاتصال بالإنترنت في Serial Monitor." },
-      { k: "link_trace", t: "تتبّع الوصلة مع Atmega", d: "يطبع ما يجري بين ESP32 و Atmega." },
-    ],
-    ota: [
-      { k: "ota",         t: "بوابة ESP32" },
-      { k: "ota_atmega",  t: "Atmega" },
-      { k: "ota_printer", t: "الطابعة" },
-      { k: "ota_camera",  t: "كاميرا QR" },
-    ],
-  },
+    toggles: [ {
+      k: "net_trace",
+      t: "تتبّع الشبكة",
+      d: "يطبع تفاصيل الاتصال بالإنترنت في Serial Monitor."
+    }, {
+      k: "link_trace",
+      t: "تتبّع الوصلة مع Atmega",
+      d: "يطبع ما يجري بين ESP32 و Atmega."
+    } ],
+    ota: [ {
+      k: "ota",
+      t: "بوابة ESP32"
+    }, {
+      k: "ota_atmega",
+      t: "Atmega"
+    }, {
+      k: "ota_printer",
+      t: "الطابعة"
+    }, {
+      k: "ota_camera",
+      t: "كاميرا QR"
+    } ]
+  }
 };
 
 const OTA_STATE = {
-  idle: ["لا تحديث جارٍ", "n"], waiting: ["بانتظار لحظة خاملة", "o"], downloading: ["يُنزَّل الآن", "b"],
-  installed: ["نُزِّل وسيُعاد التشغيل", "b"], verifying: ["تحت التجربة", "o"], ok: ["تمّ بنجاح", "g"],
-  failed: ["فشل", "r"], retry_later: ["سيُعاد لاحقاً", "o"], rolled_back: ["أُرجعت النسخة السابقة", "r"],
-  bad_name: ["اسم الملف غير صالح", "r"], no_camera: ["الكاميرا غير متصلة", "r"],
+  idle: [ "لا تحديث جارٍ", "n" ],
+  waiting: [ "بانتظار لحظة خاملة", "o" ],
+  downloading: [ "يُنزَّل الآن", "b" ],
+  installed: [ "نُزِّل وسيُعاد التشغيل", "b" ],
+  verifying: [ "تحت التجربة", "o" ],
+  ok: [ "تمّ بنجاح", "g" ],
+  failed: [ "فشل", "r" ],
+  retry_later: [ "سيُعاد لاحقاً", "o" ],
+  rolled_back: [ "أُرجعت النسخة السابقة", "r" ],
+  bad_name: [ "اسم الملف غير صالح", "r" ],
+  no_camera: [ "الكاميرا غير متصلة", "r" ]
 };
 
 const REPORT_LABELS = {
-  at: "وقت التقرير", fw: "النسخة", uptime_s: "مدّة التشغيل", heap_free: "الذاكرة الحرّة (بايت)",
-  heap_min: "أدنى ذاكرة حرّة بلغها", heap_max_block: "أكبر كتلة متاحة", loop_max_ms: "أطول دورة (ms)",
-  wifi_rssi: "قوّة إشارة WiFi (dBm)", wifi_disconnects: "مرّات انقطاع WiFi", printer_online: "الطابعة متصلة",
-  printer_status: "حالة الطابعة", eco_sleep: "وضع التوفير", df_ready: "شريحة الصوت جاهزة", busy_pin: "طرف BUSY الآن",
-  busy_suspect: "BUSY موضع شكّ", busy_start_timeouts: "تأخّر بدء الصوت", busy_stuck_low: "إشارة عالقة",
-  sync_busy: "كلمات تتبّعت BUSY", sync_table: "كلمات بالجدول", df_tx: "أوامر أُرسلت للشريحة", df_errors: "أخطاء الشريحة",
-  last_issued: "آخر تذكرة صدرت", on_screen: "الرقم على الشاشة", console: "الشبّاك", df_trace: "تتبّع الصوت",
-  net_trace: "تتبّع الشبكة", link_trace: "تتبّع الوصلة", atmega_link: "الوصلة مع Atmega",
-  atmega_confirmed: "قيم أكّدتها Atmega", link_frames: "إطارات الوصلة", link_bad_checksum: "إطارات تالفة",
+  at: "وقت التقرير",
+  fw: "النسخة",
+  uptime_s: "مدّة التشغيل",
+  heap_free: "الذاكرة الحرّة (بايت)",
+  heap_min: "أدنى ذاكرة حرّة بلغها",
+  heap_max_block: "أكبر كتلة متاحة",
+  loop_max_ms: "أطول دورة (ms)",
+  wifi_rssi: "قوّة إشارة WiFi (dBm)",
+  wifi_disconnects: "مرّات انقطاع WiFi",
+  printer_online: "الطابعة متصلة",
+  printer_status: "حالة الطابعة",
+  eco_sleep: "وضع التوفير",
+  df_ready: "شريحة الصوت جاهزة",
+  busy_pin: "طرف BUSY الآن",
+  busy_suspect: "BUSY موضع شكّ",
+  busy_start_timeouts: "تأخّر بدء الصوت",
+  busy_stuck_low: "إشارة عالقة",
+  sync_busy: "كلمات تتبّعت BUSY",
+  sync_table: "كلمات بالجدول",
+  df_tx: "أوامر أُرسلت للشريحة",
+  df_errors: "أخطاء الشريحة",
+  last_issued: "آخر تذكرة صدرت",
+  on_screen: "الرقم على الشاشة",
+  console: "الشبّاك",
+  df_trace: "تتبّع الصوت",
+  net_trace: "تتبّع الشبكة",
+  link_trace: "تتبّع الوصلة",
+  atmega_link: "الوصلة مع Atmega",
+  atmega_confirmed: "قيم أكّدتها Atmega",
+  link_frames: "إطارات الوصلة",
+  link_bad_checksum: "إطارات تالفة"
 };
 
-// =====================================================================
-// الحالة
-// =====================================================================
 const $ = id => document.getElementById(id);
+
 let currentUser = null;
+
 let sys = "master";
-try { const s = localStorage.getItem("qms_admin_sys"); if (s && SYSTEMS[s]) sys = s; } catch (e) {}
+
+try {
+  const s = localStorage.getItem("qms_admin_sys");
+  if (s && SYSTEMS[s]) sys = s;
+} catch (e) {}
+
 let cfg = null, st = null, queue = null;
+
 let cfgLoaded = false, stLoaded = false;
-let edits = {};          // key -> عدد بالمللي ثانية | null (الرجوع إلى قيمة الكود)
-let invalid = new Set();
+
+let edits = {};
+
+let invalid = new Set;
+
 let serverOffset = 0;
+
 let subs = [], globalSubs = [];
+
 let reportWaitSince = 0;
 
-// =====================================================================
-// أدوات صغيرة
-// =====================================================================
-function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  }[c]));
+}
 
-// [SYS-LIVE] 2026-11-28 — أيّ الأنظمة يعمل الآن، وما نوع الجهاز الرئيسي (DF أو I2S).
-// كلّ جهاز يكتب حالته في system_status/<النظام> عند كلّ إقلاع وعند كلّ تغيير، فأحدثهما كتابةً هو العامل.
-const allSt = { master: null, gateway: null };
+const allSt = {
+  master: null,
+  gateway: null
+};
+
 const VARIANT_KEYS = {
-  i2s: FIELDS.filter(f => f.g === "i2s").map(f => f.k),     // لا تعرفها إلا نسخة I2S
-  df:  FIELDS.filter(f => f.g === "busy").map(f => f.k),    // لا تعرفها إلا نسخ DFPlayer
+  i2s: FIELDS.filter(f => f.g === "i2s").map(f => f.k),
+  df: FIELDS.filter(f => f.g === "busy").map(f => f.k)
 };
+
 const KINDS = {
-  df:  { name: "الجهاز الرئيسي DF (شريحة DFPlayer)", short: "DF" },
-  i2s: { name: "الجهاز الرئيسي I2S (مكبّر I2S)", short: "I2S" },
-  gw:  { name: "البوابة ESP32 + Atmega", short: "البوابة" },
+  df: {
+    name: "الجهاز الرئيسي DF (شريحة DFPlayer)",
+    short: "DF"
+  },
+  i2s: {
+    name: "الجهاز الرئيسي I2S (مكبّر I2S)",
+    short: "I2S"
+  },
+  gw: {
+    name: "البوابة ESP32 + Atmega",
+    short: "البوابة"
+  }
 };
+
 function deviceKind(s, which) {
   if (which === "gateway") return "gw";
   if (!s) return null;
-  const v = (s.values && typeof s.values === "object") ? s.values : null;
+  const v = s.values && typeof s.values === "object" ? s.values : null;
   if (v && VARIANT_KEYS.i2s.some(k => k in v)) return "i2s";
   if (v && VARIANT_KEYS.df.some(k => k in v)) return "df";
   const m = String(s.fw || s.ota?.running || "").match(/MasterV(\d+)\.(\d+)/);
-  if (m) return (Number(m[1]) > 2 || (Number(m[1]) === 2 && Number(m[2]) >= 7)) ? "i2s" : "df";
+  if (m) return Number(m[1]) > 2 || Number(m[1]) === 2 && Number(m[2]) >= 7 ? "i2s" : "df";
   return null;
 }
+
 function lastWriteTs(s) {
   let t = 0;
   const look = (o, d) => {
     if (!o || typeof o !== "object" || d > 2) return;
     for (const [k, v] of Object.entries(o)) {
-      if (typeof v === "number" && (k === "at" || k.endsWith("_at"))) t = Math.max(t, v);
-      else if (v && typeof v === "object") look(v, d + 1);
+      if (typeof v === "number" && (k === "at" || k.endsWith("_at"))) t = Math.max(t, v); else if (v && typeof v === "object") look(v, d + 1);
     }
   };
   look(s, 0);
   return t;
 }
+
 function liveSys() {
   const tm = lastWriteTs(allSt.master), tg = lastWriteTs(allSt.gateway);
   if (!tm && !tg) return null;
   return tm >= tg ? "master" : "gateway";
 }
+
 function queueOnline() {
   if (!queue) return false;
   const seen = Number(queue.meta?.esp32_last_seen_ms || 0), age = nowServer() - seen;
-  return seen > 0 && age > -60000 && age < HEARTBEAT_TIMEOUT_MS;
+  return seen > 0 && age > -6e4 && age < HEARTBEAT_TIMEOUT_MS;
 }
+
 function renderSysSwitch() {
   const live = liveSys(), on = queueOnline();
   document.querySelectorAll("#sysSwitch button").forEach(b => {
@@ -505,21 +585,34 @@ function renderSysSwitch() {
     if (k === live) {
       const kind = deviceKind(allSt[k], k);
       const what = kind && kind !== "gw" ? ` · ${KINDS[kind].short}` : "";
-      html += on ? `<span class="live"><span class="dot g"></span>يعمل الآن${what}</span>`
-                 : `<span class="live"><span class="dot o"></span>آخر من اتصل${what}</span>`;
+      html += on ? `<span class="live"><span class="dot g"></span>يعمل الآن${what}</span>` : `<span class="live"><span class="dot o"></span>آخر من اتصل${what}</span>`;
     }
     b.innerHTML = html;
   });
 }
-function nowServer() { return Date.now() + serverOffset; }
+
+function nowServer() {
+  return Date.now() + serverOffset;
+}
+
 function fmtTime(ms) {
   if (!ms || typeof ms !== "number") return "—";
-  try { return new Date(ms).toLocaleString("ar-TN-u-nu-latn", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
-  catch (e) { return new Date(ms).toLocaleString(); }
+  try {
+    return new Date(ms).toLocaleString("ar-TN-u-nu-latn", {
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+  } catch (e) {
+    return new Date(ms).toLocaleString();
+  }
 }
+
 function ago(ms) {
   if (!ms) return "—";
-  const s = Math.max(0, Math.round((nowServer() - ms) / 1000));
+  const s = Math.max(0, Math.round((nowServer() - ms) / 1e3));
   if (s < 60) return `منذ ${s} ثانية`;
   const m = Math.round(s / 60);
   if (m < 60) return `منذ ${m} دقيقة`;
@@ -527,49 +620,58 @@ function ago(ms) {
   if (h < 48) return `منذ ${h} ساعة`;
   return fmtTime(ms);
 }
+
 function human(ms, f) {
   if (ms === undefined || ms === null || ms === "") return "—";
   const n = Number(ms);
   if (f && f.bool) return n ? "مفعّل" : "معطّل";
   if (!f || f.u === "ms") {
-    if (Math.abs(n) >= 1000 && n % 100 === 0) return `${n} مللي ثانية (${(n / 1000).toLocaleString("en")} ث)`;
+    if (Math.abs(n) >= 1e3 && n % 100 === 0) return `${n} مللي ثانية (${(n / 1e3).toLocaleString("en")} ث)`;
     return `${n} مللي ثانية`;
   }
   const u = UNIT[f.u];
   const v = n / u.f;
   return `${Number.isInteger(v) ? v : v.toFixed(2)} ${u.n}`;
 }
+
 function toast(msg, kind = "") {
   const t = $("toast");
-  t.textContent = msg; t.className = "toast show " + kind;
-  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = "toast", 3200);
+  t.textContent = msg;
+  t.className = "toast show " + kind;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.className = "toast", 3200);
 }
+
 function confirmBox(title, text, okLabel = "نعم، تابِع") {
   return new Promise(res => {
-    $("mTitle").textContent = title; $("mText").textContent = text; $("mOk").textContent = okLabel;
+    $("mTitle").textContent = title;
+    $("mText").textContent = text;
+    $("mOk").textContent = okLabel;
     $("modal").classList.remove("hidden");
-    const done = v => { $("modal").classList.add("hidden"); $("mOk").onclick = $("mCancel").onclick = null; res(v); };
+    const done = v => {
+      $("modal").classList.add("hidden");
+      $("mOk").onclick = $("mCancel").onclick = null;
+      res(v);
+    };
     $("mOk").onclick = () => done(true);
     $("mCancel").onclick = () => done(false);
   });
 }
+
 function show(view) {
-  ["viewLoading", "viewLogin", "viewDenied", "viewPanel"].forEach(v => $(v).classList.toggle("hidden", v !== view));
+  [ "viewLoading", "viewLogin", "viewDenied", "viewPanel" ].forEach(v => $(v).classList.toggle("hidden", v !== view));
 }
+
 function permError(err) {
   const n = $("permNotice");
   n.classList.remove("hidden");
-  n.textContent = (err && String(err.code || err.message || "").includes("PERMISSION"))
-    ? "رفض Firebase القراءة أو الكتابة. تأكّد أنّ القواعد الجديدة (system_config و system_status و admin_log) قد نُشرت في Firebase."
-    : "تعذّر الاتصال بـ Firebase: " + (err?.message || err);
+  n.textContent = err && String(err.code || err.message || "").includes("PERMISSION") ? "رفض Firebase القراءة أو الكتابة. تأكّد أنّ القواعد الجديدة (system_config و system_status و admin_log) قد نُشرت في Firebase." : "تعذّر الاتصال بـ Firebase: " + (err?.message || err);
 }
 
-// =====================================================================
-// الدخول
-// =====================================================================
 $("btnLogin").onclick = async () => {
-  try { await signInWithPopup(auth, provider); }
-  catch (e) {
+  try {
+    await signInWithPopup(auth, provider);
+  } catch (e) {
     if (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment") {
       await signInWithRedirect(auth, provider);
     } else if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") {
@@ -577,21 +679,32 @@ $("btnLogin").onclick = async () => {
     }
   }
 };
+
 const doLogout = async () => {
-  if (Object.keys(edits).length && !(await confirmBox("لديك تعديلات لم تُحفظ", "إن خرجت الآن ضاعت هذه التعديلات. أتريد الخروج؟", "نعم، اخرج"))) return;
-  edits = {}; invalid.clear();
+  if (Object.keys(edits).length && !await confirmBox("لديك تعديلات لم تُحفظ", "إن خرجت الآن ضاعت هذه التعديلات. أتريد الخروج؟", "نعم، اخرج")) return;
+  edits = {};
+  invalid.clear();
   await signOut(auth);
 };
+
 $("btnLogout").onclick = doLogout;
+
 $("btnLogout2").onclick = doLogout;
 
 onAuthStateChanged(auth, user => {
   stopAll();
   currentUser = user;
-  if (!user) { $("userBox").classList.add("hidden"); show("viewLogin"); return; }
+  if (!user) {
+    $("userBox").classList.add("hidden");
+    show("viewLogin");
+    return;
+  }
   $("userBox").classList.remove("hidden");
   $("userEmail").textContent = user.email || "";
-  if (user.photoURL) { $("userPhoto").src = user.photoURL; $("userPhoto").classList.remove("hidden"); } else $("userPhoto").classList.add("hidden");
+  if (user.photoURL) {
+    $("userPhoto").src = user.photoURL;
+    $("userPhoto").classList.remove("hidden");
+  } else $("userPhoto").classList.add("hidden");
   const mail = (user.email || "").toLowerCase();
   if (mail !== ADMIN_EMAIL || !user.emailVerified) {
     $("deniedMail").textContent = user.email || "(بلا بريد)";
@@ -603,80 +716,117 @@ onAuthStateChanged(auth, user => {
   switchSys(sys, true);
 });
 
-// =====================================================================
-// الاستماع إلى Firebase
-// =====================================================================
-function stopAll() { subs.forEach(u => u()); globalSubs.forEach(u => u()); subs = []; globalSubs = []; }
+function stopAll() {
+  subs.forEach(u => u());
+  globalSubs.forEach(u => u());
+  subs = [];
+  globalSubs = [];
+}
 
 function startGlobal() {
-  globalSubs.push(onValue(ref(db, ".info/serverTimeOffset"), s => { serverOffset = Number(s.val()) || 0; }));
-  globalSubs.push(onValue(ref(db, "queue"), s => { queue = s.val() || {}; renderQueue(); renderSysSwitch(); }, () => {}));
-  for (const k of ["master", "gateway"]) {   // [SYS-LIVE]
+  globalSubs.push(onValue(ref(db, ".info/serverTimeOffset"), s => {
+    serverOffset = Number(s.val()) || 0;
+  }));
+  globalSubs.push(onValue(ref(db, "queue"), s => {
+    queue = s.val() || {};
+    renderQueue();
+    renderSysSwitch();
+  }, () => {}));
+  for (const k of [ "master", "gateway" ]) {
     globalSubs.push(onValue(ref(db, "system_status/" + k), s => {
-      allSt[k] = s.val() || null; renderSysSwitch(); renderDevice();
+      allSt[k] = s.val() || null;
+      renderSysSwitch();
+      renderDevice();
     }, () => {}));
   }
   globalSubs.push(onValue(query(ref(db, "admin_log"), orderByChild("at"), limitToLast(30)), s => {
-    const items = []; s.forEach(c => { items.push(c.val()); });
+    const items = [];
+    s.forEach(c => {
+      items.push(c.val());
+    });
     renderLog(items.reverse());
   }, permError));
-  const tick = setInterval(() => { renderQueue(); renderDeviceTimes(); renderSysSwitch(); }, 5000);
+  const tick = setInterval(() => {
+    renderQueue();
+    renderDeviceTimes();
+    renderSysSwitch();
+  }, 5e3);
   globalSubs.push(() => clearInterval(tick));
 }
 
 async function switchSys(next, force = false) {
   if (!force && next === sys) return;
-  if (!force && Object.keys(edits).length &&
-      !(await confirmBox("لديك تعديلات لم تُحفظ", "إن انتقلت إلى النظام الآخر ضاعت هذه التعديلات. أتريد الانتقال؟", "نعم، انتقل"))) return;
+  if (!force && Object.keys(edits).length && !await confirmBox("لديك تعديلات لم تُحفظ", "إن انتقلت إلى النظام الآخر ضاعت هذه التعديلات. أتريد الانتقال؟", "نعم، انتقل")) return;
   sys = next;
-  try { localStorage.setItem("qms_admin_sys", sys); } catch (e) {}
-  edits = {}; invalid.clear(); updateSaveBar();
+  try {
+    localStorage.setItem("qms_admin_sys", sys);
+  } catch (e) {}
+  edits = {};
+  invalid.clear();
+  updateSaveBar();
   document.querySelectorAll("#sysSwitch button").forEach(b => b.classList.toggle("on", b.dataset.sys === sys));
-  subs.forEach(u => u()); subs = [];
-  cfg = null; st = null; cfgLoaded = stLoaded = false;
+  subs.forEach(u => u());
+  subs = [];
+  cfg = null;
+  st = null;
+  cfgLoaded = stLoaded = false;
   $("permNotice").classList.add("hidden");
-  buildSettings(); renderDevice(); renderTools(); renderOta(); renderReport();
+  buildSettings();
+  renderDevice();
+  renderTools();
+  renderOta();
+  renderReport();
   subs.push(onValue(ref(db, "system_config/" + sys), s => {
-    cfg = s.val() || {}; cfgLoaded = true;
-    refreshSettings(); renderDevice(); renderTools(); renderOta();
+    cfg = s.val() || {};
+    cfgLoaded = true;
+    refreshSettings();
+    renderDevice();
+    renderTools();
+    renderOta();
   }, permError));
   subs.push(onValue(ref(db, "system_status/" + sys), s => {
-    st = s.val() || {}; stLoaded = true;
-    buildSettings(); renderDevice(); renderOta(); renderReport(); renderTools();
+    st = s.val() || {};
+    stLoaded = true;
+    buildSettings();
+    renderDevice();
+    renderOta();
+    renderReport();
+    renderTools();
   }, permError));
 }
+
 document.querySelectorAll("#sysSwitch button").forEach(b => b.onclick = () => switchSys(b.dataset.sys));
 
-// =====================================================================
-// حالة الطابور
-// =====================================================================
 function renderQueue() {
   if (!queue) return;
   const seen = Number(queue.meta?.esp32_last_seen_ms || 0);
   const age = nowServer() - seen;
-  const online = seen > 0 && age > -60000 && age < HEARTBEAT_TIMEOUT_MS;
+  const online = seen > 0 && age > -6e4 && age < HEARTBEAT_TIMEOUT_MS;
   $("qOnline").innerHTML = online ? '<span class="dot g"></span> متصل' : '<span class="dot r"></span> غير متصل';
-  $("qPrinter").innerHTML = queue.printer_online === true ? '<span class="dot g"></span> متصلة'
-                          : queue.printer_online === false ? '<span class="dot r"></span> منقطعة' : "—";
+  $("qPrinter").innerHTML = queue.printer_online === true ? '<span class="dot g"></span> متصلة' : queue.printer_online === false ? '<span class="dot r"></span> منقطعة' : "—";
   $("qBooking").innerHTML = queue.booking_open === true ? '<span class="dot g"></span> مفتوح' : '<span class="dot o"></span> مغلق';
   const cur = queue.current_ticket, con = queue.current_console;
-  $("qCurrent").textContent = (cur === undefined || cur < 0) ? "—" : (con ? `${cur} ← الشبّاك ${con}` : String(cur));
+  $("qCurrent").textContent = cur === undefined || cur < 0 ? "—" : con ? `${cur} ← الشبّاك ${con}` : String(cur);
   const iss = queue.last_issued_ticket;
-  $("qIssued").textContent = (iss === undefined || iss < 0) ? "—" : String(iss);
+  $("qIssued").textContent = iss === undefined || iss < 0 ? "—" : String(iss);
   $("qSeen").textContent = seen ? ago(seen) : "—";
 }
 
-// =====================================================================
-// الجهاز
-// =====================================================================
 function renderDeviceTimes() {
   if (st && st.applied_at) $("dApplied").textContent = ago(st.applied_at);
 }
+
 function renderDevice() {
-  const box = $("dNotices"); box.innerHTML = "";
+  const box = $("dNotices");
+  box.innerHTML = "";
   $("devSub").textContent = `${SYSTEMS[sys].name}: النسخة التي تعمل، وهل وصله آخر تعديل.`;
-  if (!stLoaded) { $("dFw").textContent = "…"; $("dRev").textContent = "…"; $("dApplied").textContent = "…"; return; }
-  const kind = deviceKind(st, sys);   // [SYS-LIVE]
+  if (!stLoaded) {
+    $("dFw").textContent = "…";
+    $("dRev").textContent = "…";
+    $("dApplied").textContent = "…";
+    return;
+  }
+  const kind = deviceKind(st, sys);
   $("dFw").innerHTML = esc(st.fw || st.ota?.running || "—") + (kind ? `<div class="kind">${esc(KINDS[kind].name)}</div>` : "");
   const live = liveSys();
   if (live && live !== sys) {
@@ -693,35 +843,41 @@ function renderDevice() {
   $("dApplied").textContent = st.applied_at ? ago(st.applied_at) : "—";
   if (!st.fw) box.insertAdjacentHTML("beforeend", '<div class="notice info">لم يكتب هذا الجهاز حالته في Firebase بعد. تظهر حالته حين يعمل بنسخة تدعم الضبط عن بُعد ويتصل بالإنترنت.</div>');
   if (st.rejected) box.insertAdjacentHTML("beforeend", `<div class="notice err">رفض الجهاز قيماً خارج حدودها، فبقي على السابقة: <span class="mono">${esc(st.rejected)}</span></div>`);
-  if (st.unknown) {   // [SYS-LIVE] ما يخصّ النوع الآخر من الجهاز الرئيسي ليس خطأً، فيُعرض هادئاً
+  if (st.unknown) {
     const keys = String(st.unknown).split(",").map(x => x.trim()).filter(Boolean);
     const other = kind === "df" ? "i2s" : kind === "i2s" ? "df" : null;
     const foreign = other ? keys.filter(k => VARIANT_KEYS[other].includes(k)) : [];
     const rest = keys.filter(k => !foreign.includes(k));
-    if (foreign.length) box.insertAdjacentHTML("beforeend",
-      `<div class="notice info">${foreign.length === 1 ? "قيمةٌ خاصّة" : "قيمٌ خاصّة"} بـ«${esc(KINDS[other].name)}»، لا عمل لها في نسخة ${esc(KINDS[kind].short)} العاملة، فتجاهلها الجهاز ولا ضرر في ذلك: <span class="mono">${esc(foreign.join(", "))}</span></div>`);
+    if (foreign.length) box.insertAdjacentHTML("beforeend", `<div class="notice info">${foreign.length === 1 ? "قيمةٌ خاصّة" : "قيمٌ خاصّة"} بـ«${esc(KINDS[other].name)}»، لا عمل لها في نسخة ${esc(KINDS[kind].short)} العاملة، فتجاهلها الجهاز ولا ضرر في ذلك: <span class="mono">${esc(foreign.join(", "))}</span></div>`);
     if (rest.length) box.insertAdjacentHTML("beforeend", `<div class="notice warn">قيم لا تعرفها النسخة العاملة فتجاهلها: <span class="mono">${esc(rest.join(","))}</span></div>`);
   }
 }
 
-// =====================================================================
-// الإعدادات
-// =====================================================================
 function deviceSupports(k) {
-  // النسخة العاملة تكتب في حالتها كلّ ما تعرفه من قيم؛ فإن لم تُكتب الحالة بعد عرضنا ما في الإعدادات
   if (st && st.values && typeof st.values === "object") return k in st.values;
   if (cfg && cfg.values && typeof cfg.values === "object") return k in cfg.values;
   return true;
 }
-function cfgVal(k) { return cfg?.values?.[k]; }
-function hasCfg(k) { return cfg?.values && Object.prototype.hasOwnProperty.call(cfg.values, k); }
+
+function cfgVal(k) {
+  return cfg?.values?.[k];
+}
+
+function hasCfg(k) {
+  return cfg?.values && Object.prototype.hasOwnProperty.call(cfg.values, k);
+}
 
 let builtFor = "";
+
 function buildSettings() {
   const supportKey = sys + "|" + FIELDS.map(f => deviceSupports(f.k) ? 1 : 0).join("");
-  if (builtFor === supportKey && $("settingsWrap").children.length) { refreshSettings(); return; }
+  if (builtFor === supportKey && $("settingsWrap").children.length) {
+    refreshSettings();
+    return;
+  }
   builtFor = supportKey;
-  const wrap = $("settingsWrap"); wrap.innerHTML = "";
+  const wrap = $("settingsWrap");
+  wrap.innerHTML = "";
   for (const g of GROUPS) {
     const fs = FIELDS.filter(f => f.g === g.id && deviceSupports(f.k));
     if (!fs.length) continue;
@@ -738,46 +894,50 @@ function buildSettings() {
 
 function fieldEl(f) {
   const el = document.createElement("div");
-  el.className = "field"; el.dataset.k = f.k;
+  el.className = "field";
+  el.dataset.k = f.k;
   const lim = f.bool ? "" : `المسموح: <b>${human(f.min, f)}</b> إلى <b>${human(f.max, f)}</b>`;
-  const input = f.bool
-    ? `<label class="switch"><input type="checkbox" class="inp"><span class="slider"></span></label><span class="unit st-text"></span>`
-    : `<input type="number" class="inp" step="1" inputmode="numeric"><span class="unit">${UNIT[f.u].n}</span>`;
-  el.innerHTML = `
-    <div class="f-head"><label>${esc(f.t)}</label><span class="pill src"></span></div>
-    ${f.h ? `<p class="hint">${esc(f.h)}</p>` : '<div style="height:8px"></div>'}
-    <div class="f-row">${input}<button class="btn-reset" type="button" title="حذف القيمة المخصّصة والعمل بالقيمة المكتوبة في الكود">↺ قيمة الكود</button></div>
-    <div class="f-meta"><span class="now"></span>${lim ? " · " + lim : ""}</div>
-    <div class="f-err"></div>`;
+  const input = f.bool ? `<label class="switch"><input type="checkbox" class="inp"><span class="slider"></span></label><span class="unit st-text"></span>` : `<input type="number" class="inp" step="1" inputmode="numeric"><span class="unit">${UNIT[f.u].n}</span>`;
+  el.innerHTML = `\n    <div class="f-head"><label>${esc(f.t)}</label><span class="pill src"></span></div>\n    ${f.h ? `<p class="hint">${esc(f.h)}</p>` : '<div style="height:8px"></div>'}\n    <div class="f-row">${input}<button class="btn-reset" type="button" title="حذف القيمة المخصّصة والعمل بالقيمة المكتوبة في الكود">↺ قيمة الكود</button></div>\n    <div class="f-meta"><span class="now"></span>${lim ? " · " + lim : ""}</div>\n    <div class="f-err"></div>`;
   const inp = el.querySelector(".inp");
-  if (f.bool) inp.addEventListener("change", () => onEdit(f, inp.checked ? 1 : 0));
-  else inp.addEventListener("input", () => onEditNumber(f, inp.value));
+  if (f.bool) inp.addEventListener("change", () => onEdit(f, inp.checked ? 1 : 0)); else inp.addEventListener("input", () => onEditNumber(f, inp.value));
   el.querySelector(".btn-reset").onclick = () => onReset(f);
   return el;
 }
 
 function onEditNumber(f, raw) {
   const errBox = document.querySelector(`.field[data-k="${f.k}"] .f-err`);
-  if (raw === "" || raw === null) { invalid.add(f.k); errBox.textContent = "اكتب قيمةً، أو اضغط «قيمة الكود»."; markField(f); updateSaveBar(); return; }
+  if (raw === "" || raw === null) {
+    invalid.add(f.k);
+    errBox.textContent = "اكتب قيمةً، أو اضغط «قيمة الكود».";
+    markField(f);
+    updateSaveBar();
+    return;
+  }
   const n = Number(raw);
   const ms = Math.round(n * UNIT[f.u].f);
   let err = "";
-  if (!Number.isFinite(n)) err = "القيمة ليست عدداً.";
-  else if (Math.abs(n * UNIT[f.u].f - ms) > 1e-6) err = "اكتب عدداً صحيحاً.";
-  else if (ms < f.min || ms > f.max) err = `القيمة خارج الحدود (${human(f.min, f)} إلى ${human(f.max, f)}).`;
-  if (err) { invalid.add(f.k); errBox.textContent = err; markField(f); updateSaveBar(); return; }
-  invalid.delete(f.k); errBox.textContent = "";
+  if (!Number.isFinite(n)) err = "القيمة ليست عدداً."; else if (Math.abs(n * UNIT[f.u].f - ms) > 1e-6) err = "اكتب عدداً صحيحاً."; else if (ms < f.min || ms > f.max) err = `القيمة خارج الحدود (${human(f.min, f)} إلى ${human(f.max, f)}).`;
+  if (err) {
+    invalid.add(f.k);
+    errBox.textContent = err;
+    markField(f);
+    updateSaveBar();
+    return;
+  }
+  invalid.delete(f.k);
+  errBox.textContent = "";
   onEdit(f, ms, true);
 }
+
 function onEdit(f, ms, fromNumber = false) {
-  if (hasCfg(f.k) && Number(cfgVal(f.k)) === ms) delete edits[f.k];
-  else if (!hasCfg(f.k) && st?.values && Number(st.values[f.k]) === ms) {
-    // القيمة نفسها التي يعمل بها الجهاز من الكود: لا داعي لتخصيصها
+  if (hasCfg(f.k) && Number(cfgVal(f.k)) === ms) delete edits[f.k]; else if (!hasCfg(f.k) && st?.values && Number(st.values[f.k]) === ms) {
     delete edits[f.k];
   } else edits[f.k] = ms;
   markField(f, !fromNumber);
   updateSaveBar();
 }
+
 function onReset(f) {
   invalid.delete(f.k);
   if (hasCfg(f.k)) edits[f.k] = null; else delete edits[f.k];
@@ -794,31 +954,34 @@ function markField(f, rewriteInput = false) {
   el.classList.toggle("changed", changed);
   el.classList.toggle("invalid", invalid.has(f.k));
   const src = el.querySelector(".src");
-  if (changed) { src.className = "pill o src"; src.textContent = edits[f.k] === null ? "سيعود إلى قيمة الكود" : "تعديل لم يُحفظ"; }
-  else if (custom) { src.className = "pill b src"; src.textContent = "قيمة مخصّصة"; }
-  else { src.className = "pill n src"; src.textContent = "قيمة الكود"; }
+  if (changed) {
+    src.className = "pill o src";
+    src.textContent = edits[f.k] === null ? "سيعود إلى قيمة الكود" : "تعديل لم يُحفظ";
+  } else if (custom) {
+    src.className = "pill b src";
+    src.textContent = "قيمة مخصّصة";
+  } else {
+    src.className = "pill n src";
+    src.textContent = "قيمة الكود";
+  }
   el.querySelector(".btn-reset").classList.toggle("hidden", !custom && !changed);
-
   const devVal = st?.values?.[f.k];
   el.querySelector(".now").innerHTML = devVal !== undefined ? `على الجهاز الآن: <b>${esc(human(devVal, f))}</b>` : "على الجهاز الآن: —";
-
   let shown;
-  if (changed) shown = edits[f.k] === null ? devVal : edits[f.k];
-  else shown = hasCfg(f.k) ? cfgVal(f.k) : devVal;
+  if (changed) shown = edits[f.k] === null ? devVal : edits[f.k]; else shown = hasCfg(f.k) ? cfgVal(f.k) : devVal;
   if (f.bool) {
     if (rewriteInput || document.activeElement !== inp) inp.checked = Number(shown) === 1;
     el.querySelector(".st-text").textContent = inp.checked ? "مفعّل" : "معطّل";
   } else if ((rewriteInput || document.activeElement !== inp) && !invalid.has(f.k)) {
-    inp.value = (shown === undefined || shown === null || shown === "") ? "" : String(Number(shown) / UNIT[f.u].f);
+    inp.value = shown === undefined || shown === null || shown === "" ? "" : String(Number(shown) / UNIT[f.u].f);
     if (changed && edits[f.k] === null) inp.value = "";
     inp.placeholder = changed && edits[f.k] === null ? "قيمة الكود" : "";
   }
 }
+
 function refreshSettings() {
-  // تعديل لم يُحفظ يبقى؛ وما حُفظ أو صار مطابقاً يُحذف من قائمة التعديلات
   for (const k of Object.keys(edits)) {
-    if (edits[k] === null && !hasCfg(k)) delete edits[k];
-    else if (edits[k] !== null && hasCfg(k) && Number(cfgVal(k)) === edits[k]) delete edits[k];
+    if (edits[k] === null && !hasCfg(k)) delete edits[k]; else if (edits[k] !== null && hasCfg(k) && Number(cfgVal(k)) === edits[k]) delete edits[k];
   }
   FIELDS.forEach(f => markField(f));
   updateSaveBar();
@@ -834,58 +997,86 @@ function updateSaveBar() {
   }
   $("btnSave").disabled = bad > 0 || n === 0;
 }
-$("btnDiscard").onclick = () => { edits = {}; invalid.clear(); FIELDS.forEach(f => { markField(f, true); const e = document.querySelector(`.field[data-k="${f.k}"] .f-err`); if (e) e.textContent = ""; }); updateSaveBar(); };
+
+$("btnDiscard").onclick = () => {
+  edits = {};
+  invalid.clear();
+  FIELDS.forEach(f => {
+    markField(f, true);
+    const e = document.querySelector(`.field[data-k="${f.k}"] .f-err`);
+    if (e) e.textContent = "";
+  });
+  updateSaveBar();
+};
+
 $("btnSave").onclick = async () => {
   const keys = Object.keys(edits);
   if (!keys.length || invalid.size) return;
   $("btnSave").disabled = true;
   const newRev = (Number(cfg?.rev) || 0) + 1;
-  const upd = { rev: newRev };
+  const upd = {
+    rev: newRev
+  };
   const changes = {};
   for (const k of keys) {
     upd["values/" + k] = edits[k];
-    changes[k] = { from: hasCfg(k) ? Number(cfgVal(k)) : "code", to: edits[k] === null ? "code" : edits[k] };
+    changes[k] = {
+      from: hasCfg(k) ? Number(cfgVal(k)) : "code",
+      to: edits[k] === null ? "code" : edits[k]
+    };
   }
   try {
     await update(ref(db, "system_config/" + sys), upd);
     edits = {};
-    await addLog({ type: "values", rev: newRev, changes });
+    await addLog({
+      type: "values",
+      rev: newRev,
+      changes: changes
+    });
     toast("حُفظت الإعدادات، وسيطبّقها الجهاز في غضون دقيقة بين النداءات.", "ok");
   } catch (e) {
-    permError(e); toast("لم تُحفظ الإعدادات. راجع الرسالة أعلى الصفحة.", "err");
+    permError(e);
+    toast("لم تُحفظ الإعدادات. راجع الرسالة أعلى الصفحة.", "err");
   }
   refreshSettings();
 };
-window.addEventListener("beforeunload", e => { if (Object.keys(edits).length) { e.preventDefault(); e.returnValue = ""; } });
 
-// =====================================================================
-// الأدوات: التتبّع، التقرير، إعادة التشغيل
-// =====================================================================
+window.addEventListener("beforeunload", e => {
+  if (Object.keys(edits).length) {
+    e.preventDefault();
+    e.returnValue = "";
+  }
+});
+
 function renderTools() {
   const wrap = $("toolsWrap");
   const S = SYSTEMS[sys];
   let html = "";
   for (const t of S.toggles) {
     const on = cfg?.[t.k] === true;
-    html += `<div class="tool-row"><div><div class="t">${esc(t.t)}</div><div class="d">${esc(t.d)}</div></div>
-      <label class="switch"><input type="checkbox" data-tog="${t.k}" ${on ? "checked" : ""} ${cfgLoaded ? "" : "disabled"}><span class="slider"></span></label></div>`;
+    html += `<div class="tool-row"><div><div class="t">${esc(t.t)}</div><div class="d">${esc(t.d)}</div></div>\n      <label class="switch"><input type="checkbox" data-tog="${t.k}" ${on ? "checked" : ""} ${cfgLoaded ? "" : "disabled"}><span class="slider"></span></label></div>`;
   }
   const repPending = cfg?.report === true;
   const rstPending = cfg?.restart === true;
-  html += `<div class="tool-row"><div><div class="t">طلب تقرير</div><div class="d">${repPending ? "طُلب التقرير، وينتظر أن يقرأه الجهاز…" : "حالة الذاكرة والشبكة والطابعة والصوت لحظة الطلب."}</div></div>
-    <button class="btn btn-primary" id="btnReport" ${repPending || !cfgLoaded ? "disabled" : ""}>${repPending ? "بانتظار الجهاز" : "اطلب تقريراً"}</button></div>`;
-  html += `<div class="tool-row"><div><div class="t">إعادة تشغيل الجهاز</div><div class="d">${rstPending ? "طُلبت إعادة التشغيل، وستجري في أول لحظة خاملة…" : "تجري في أول لحظة لا نداء فيها، فلا تنقطع جملة وهي تُقال."}</div></div>
-    <button class="btn btn-danger" id="btnRestart" ${rstPending || !cfgLoaded ? "disabled" : ""}>${rstPending ? "بانتظار الجهاز" : "أعِد التشغيل"}</button></div>`;
+  html += `<div class="tool-row"><div><div class="t">طلب تقرير</div><div class="d">${repPending ? "طُلب التقرير، وينتظر أن يقرأه الجهاز…" : "حالة الذاكرة والشبكة والطابعة والصوت لحظة الطلب."}</div></div>\n    <button class="btn btn-primary" id="btnReport" ${repPending || !cfgLoaded ? "disabled" : ""}>${repPending ? "بانتظار الجهاز" : "اطلب تقريراً"}</button></div>`;
+  html += `<div class="tool-row"><div><div class="t">إعادة تشغيل الجهاز</div><div class="d">${rstPending ? "طُلبت إعادة التشغيل، وستجري في أول لحظة خاملة…" : "تجري في أول لحظة لا نداء فيها، فلا تنقطع جملة وهي تُقال."}</div></div>\n    <button class="btn btn-danger" id="btnRestart" ${rstPending || !cfgLoaded ? "disabled" : ""}>${rstPending ? "بانتظار الجهاز" : "أعِد التشغيل"}</button></div>`;
   wrap.innerHTML = html;
-
   wrap.querySelectorAll("[data-tog]").forEach(inp => inp.onchange = async () => {
     const k = inp.dataset.tog, v = inp.checked;
     inp.disabled = true;
     try {
       await set(ref(db, `system_config/${sys}/${k}`), v);
-      await addLog({ type: "toggle", key: k, to: v });
+      await addLog({
+        type: "toggle",
+        key: k,
+        to: v
+      });
       toast(v ? "فُعِّل التتبّع." : "أُوقف التتبّع.", "ok");
-    } catch (e) { inp.checked = !v; permError(e); toast("لم يُحفظ التغيير.", "err"); }
+    } catch (e) {
+      inp.checked = !v;
+      permError(e);
+      toast("لم يُحفظ التغيير.", "err");
+    }
     inp.disabled = false;
   });
   const br = $("btnReport");
@@ -894,103 +1085,158 @@ function renderTools() {
     try {
       reportWaitSince = nowServer();
       await set(ref(db, `system_config/${sys}/report`), true);
-      await addLog({ type: "report" });
+      await addLog({
+        type: "report"
+      });
       toast("طُلب التقرير، وسيظهر هنا حين يرسله الجهاز.", "ok");
-    } catch (e) { permError(e); toast("لم يُرسَل الطلب.", "err"); br.disabled = false; }
+    } catch (e) {
+      permError(e);
+      toast("لم يُرسَل الطلب.", "err");
+      br.disabled = false;
+    }
   };
   const bs = $("btnRestart");
   if (bs) bs.onclick = async () => {
-    if (!(await confirmBox("إعادة تشغيل الجهاز؟", `سيُعاد تشغيل ${S.name} في أول لحظة خاملة، ويغيب عن الإنترنت بضع ثوانٍ.`, "نعم، أعِد التشغيل"))) return;
+    if (!await confirmBox("إعادة تشغيل الجهاز؟", `سيُعاد تشغيل ${S.name} في أول لحظة خاملة، ويغيب عن الإنترنت بضع ثوانٍ.`, "نعم، أعِد التشغيل")) return;
     bs.disabled = true;
     try {
       await set(ref(db, `system_config/${sys}/restart`), true);
-      await addLog({ type: "restart" });
+      await addLog({
+        type: "restart"
+      });
       toast("طُلبت إعادة التشغيل.", "ok");
-    } catch (e) { permError(e); toast("لم يُرسَل الطلب.", "err"); bs.disabled = false; }
+    } catch (e) {
+      permError(e);
+      toast("لم يُرسَل الطلب.", "err");
+      bs.disabled = false;
+    }
   };
 }
 
 function renderReport() {
   const r = st?.report;
   const wrap = $("reportWrap");
-  if (!r || typeof r !== "object") { wrap.innerHTML = '<div class="empty">لا يوجد تقرير بعد.</div>'; $("repSub").textContent = "اطلب تقريراً من «أدوات الجهاز» ليظهر هنا."; return; }
+  if (!r || typeof r !== "object") {
+    wrap.innerHTML = '<div class="empty">لا يوجد تقرير بعد.</div>';
+    $("repSub").textContent = "اطلب تقريراً من «أدوات الجهاز» ليظهر هنا.";
+    return;
+  }
   $("repSub").textContent = r.at ? `أُرسل ${ago(r.at)} · ${fmtTime(r.at)}` : "";
   const order = Object.keys(REPORT_LABELS).filter(k => k in r && k !== "at");
   const rest = Object.keys(r).filter(k => !(k in REPORT_LABELS));
   const fmt = (k, v) => {
     if (typeof v === "boolean") return v ? "نعم" : "لا";
-    if (k === "uptime_s") { const d = Math.floor(v / 86400), h = Math.floor(v % 86400 / 3600), m = Math.floor(v % 3600 / 60); return `${d ? d + " ي " : ""}${h} س ${m} د`; }
+    if (k === "uptime_s") {
+      const d = Math.floor(v / 86400), h = Math.floor(v % 86400 / 3600), m = Math.floor(v % 3600 / 60);
+      return `${d ? d + " ي " : ""}${h} س ${m} د`;
+    }
     if (typeof v === "number") return v.toLocaleString("en");
     return String(v);
   };
-  wrap.innerHTML = `<table class="rep">${[...order, ...rest].map(k => `<tr><td>${esc(REPORT_LABELS[k] || k)}</td><td>${esc(fmt(k, r[k]))}</td></tr>`).join("")}</table>`;
+  wrap.innerHTML = `<table class="rep">${[ ...order, ...rest ].map(k => `<tr><td>${esc(REPORT_LABELS[k] || k)}</td><td>${esc(fmt(k, r[k]))}</td></tr>`).join("")}</table>`;
 }
 
-// =====================================================================
-// التحديث عن بُعد (OTA)
-// =====================================================================
 const BIN_RE = /^[A-Za-z0-9._\-]{1,60}\.bin$/;
+
 function renderOta() {
   const wrap = $("otaWrap");
   const keep = {};
-  wrap.querySelectorAll("input[data-ota]").forEach(i => { keep[i.dataset.ota] = { v: i.value, f: document.activeElement === i }; });
+  wrap.querySelectorAll("input[data-ota]").forEach(i => {
+    keep[i.dataset.ota] = {
+      v: i.value,
+      f: document.activeElement === i
+    };
+  });
   let html = "";
   for (const o of SYSTEMS[sys].ota) {
     const want = cfg?.[o.k]?.file || "";
     const s = st?.[o.k] || {};
-    const [stName, stCls] = OTA_STATE[s.state] || [s.state || "لا معلومات بعد", "n"];
+    const [stName, stCls] = OTA_STATE[s.state] || [ s.state || "لا معلومات بعد", "n" ];
     const prog = typeof s.progress === "number" && s.state === "downloading" ? s.progress : null;
-    html += `<div class="ota">
-      <div class="ota-head"><b>${esc(o.t)}</b><span class="pill ${stCls}">${esc(stName)}</span></div>
-      <div class="ota-line">يعمل الآن: ${s.running ? `<code>${esc(s.running)}</code>` : "—"}
-        ${s.file ? ` · آخر ملف: <code>${esc(s.file)}</code>` : ""}
-        ${want ? ` · المطلوب: <code>${esc(want)}</code>` : ""}</div>
-      ${s.error ? `<div class="ota-line" style="color:var(--red)">${esc(s.error)}</div>` : ""}
-      ${prog !== null ? `<div class="progress"><div style="width:${Math.min(100, prog)}%"></div></div>` : ""}
-      <div class="ota-form">
-        <input data-ota="${o.k}" placeholder="MasterV2.6.4.bin" autocomplete="off" spellcheck="false">
-        <button class="btn btn-primary" data-ota-go="${o.k}" ${cfgLoaded ? "" : "disabled"}>ابدأ التحديث</button>
-        ${want ? `<button class="btn btn-ghost" data-ota-clear="${o.k}">امسح الطلب</button>` : ""}
-      </div>
-    </div>`;
+    html += `<div class="ota">\n      <div class="ota-head"><b>${esc(o.t)}</b><span class="pill ${stCls}">${esc(stName)}</span></div>\n      <div class="ota-line">يعمل الآن: ${s.running ? `<code>${esc(s.running)}</code>` : "—"}\n        ${s.file ? ` · آخر ملف: <code>${esc(s.file)}</code>` : ""}\n        ${want ? ` · المطلوب: <code>${esc(want)}</code>` : ""}</div>\n      ${s.error ? `<div class="ota-line" style="color:var(--red)">${esc(s.error)}</div>` : ""}\n      ${prog !== null ? `<div class="progress"><div style="width:${Math.min(100, prog)}%"></div></div>` : ""}\n      <div class="ota-form">\n        <input data-ota="${o.k}" placeholder="MasterV2.6.4.bin" autocomplete="off" spellcheck="false">\n        <button class="btn btn-primary" data-ota-go="${o.k}" ${cfgLoaded ? "" : "disabled"}>ابدأ التحديث</button>\n        ${want ? `<button class="btn btn-ghost" data-ota-clear="${o.k}">امسح الطلب</button>` : ""}\n      </div>\n    </div>`;
   }
   wrap.innerHTML = html;
-  wrap.querySelectorAll("input[data-ota]").forEach(i => { const k = keep[i.dataset.ota]; if (k) { i.value = k.v; if (k.f) i.focus(); } });
-
+  wrap.querySelectorAll("input[data-ota]").forEach(i => {
+    const k = keep[i.dataset.ota];
+    if (k) {
+      i.value = k.v;
+      if (k.f) i.focus();
+    }
+  });
   wrap.querySelectorAll("[data-ota-go]").forEach(b => b.onclick = async () => {
     const k = b.dataset.otaGo, o = SYSTEMS[sys].ota.find(x => x.k === k);
     const inp = wrap.querySelector(`input[data-ota="${k}"]`);
     const file = inp.value.trim();
-    if (!BIN_RE.test(file)) { toast("اسم الملف يجب أن ينتهي بـ ‎.bin‎ وأن يخلو من المسافات والحروف العربية.", "err"); inp.focus(); return; }
-    if (!(await confirmBox(`تحديث ${o.t}؟`, `سيُنزَّل الملف ${file} ويُعاد التشغيل عليه في أول لحظة خاملة. إن تعثّرت النسخة الجديدة رجع الجهاز وحده إلى السابقة.`, "نعم، حدِّث"))) return;
+    if (!BIN_RE.test(file)) {
+      toast("اسم الملف يجب أن ينتهي بـ ‎.bin‎ وأن يخلو من المسافات والحروف العربية.", "err");
+      inp.focus();
+      return;
+    }
+    if (!await confirmBox(`تحديث ${o.t}؟`, `سيُنزَّل الملف ${file} ويُعاد التشغيل عليه في أول لحظة خاملة. إن تعثّرت النسخة الجديدة رجع الجهاز وحده إلى السابقة.`, "نعم، حدِّث")) return;
     b.disabled = true;
     try {
       await set(ref(db, `system_config/${sys}/${k}/file`), file);
-      await addLog({ type: "ota", key: k, to: file });
+      await addLog({
+        type: "ota",
+        key: k,
+        to: file
+      });
       inp.value = "";
       toast("أُرسل طلب التحديث.", "ok");
-    } catch (e) { permError(e); toast("لم يُرسَل الطلب.", "err"); b.disabled = false; }
+    } catch (e) {
+      permError(e);
+      toast("لم يُرسَل الطلب.", "err");
+      b.disabled = false;
+    }
   });
   wrap.querySelectorAll("[data-ota-clear]").forEach(b => b.onclick = async () => {
     const k = b.dataset.otaClear;
     b.disabled = true;
-    try { await set(ref(db, `system_config/${sys}/${k}/file`), ""); await addLog({ type: "ota", key: k, to: "" }); toast("مُسح طلب التحديث.", "ok"); }
-    catch (e) { permError(e); b.disabled = false; }
+    try {
+      await set(ref(db, `system_config/${sys}/${k}/file`), "");
+      await addLog({
+        type: "ota",
+        key: k,
+        to: ""
+      });
+      toast("مُسح طلب التحديث.", "ok");
+    } catch (e) {
+      permError(e);
+      b.disabled = false;
+    }
   });
 }
 
-// =====================================================================
-// السجلّ
-// =====================================================================
 async function addLog(entry) {
-  try { await push(ref(db, "admin_log"), { ...entry, sys, at: serverTimestamp(), by: currentUser?.email || "" }); }
-  catch (e) { /* السجلّ للعلم فقط؛ لا يوقف شيئاً إن فشل */ }
+  try {
+    await push(ref(db, "admin_log"), {
+      ...entry,
+      sys: sys,
+      at: serverTimestamp(),
+      by: currentUser?.email || ""
+    });
+  } catch (e) {}
 }
-const TOG_NAMES = { df_trace: "تتبّع الصوت", net_trace: "تتبّع الشبكة", link_trace: "تتبّع الوصلة" };
-const OTA_NAMES = { ota: "البرنامج الرئيسي", ota_printer: "الطابعة", ota_camera: "كاميرا QR", ota_atmega: "Atmega" };
+
+const TOG_NAMES = {
+  df_trace: "تتبّع الصوت",
+  net_trace: "تتبّع الشبكة",
+  link_trace: "تتبّع الوصلة"
+};
+
+const OTA_NAMES = {
+  ota: "البرنامج الرئيسي",
+  ota_printer: "الطابعة",
+  ota_camera: "كاميرا QR",
+  ota_atmega: "Atmega"
+};
+
 function renderLog(items) {
   const wrap = $("logWrap");
-  if (!items.length) { wrap.innerHTML = '<div class="empty">لا شيء بعد.</div>'; return; }
+  if (!items.length) {
+    wrap.innerHTML = '<div class="empty">لا شيء بعد.</div>';
+    return;
+  }
   wrap.innerHTML = items.map(it => {
     let body = "";
     if (it.type === "values" && it.changes) {
@@ -999,13 +1245,8 @@ function renderLog(items) {
         const v = x => x === "code" ? "قيمة الكود" : human(x, f);
         return `${esc(f ? f.t : k)}: ${esc(v(c.from))} ← <b>${esc(v(c.to))}</b>`;
       }).join("<br>");
-    } else if (it.type === "toggle") body = `${esc(TOG_NAMES[it.key] || it.key)}: ${it.to ? "تشغيل" : "إيقاف"}`;
-    else if (it.type === "report") body = "طلب تقرير";
-    else if (it.type === "restart") body = "طلب إعادة تشغيل";
-    else if (it.type === "ota") body = it.to ? `تحديث ${esc(OTA_NAMES[it.key] || it.key)} إلى <span class="mono">${esc(it.to)}</span>` : `مسح طلب تحديث ${esc(OTA_NAMES[it.key] || it.key)}`;
-    else body = esc(it.type || "");
-    return `<div class="log-item"><div class="log-top"><span class="pill b">${esc(SYSTEMS[it.sys]?.name || it.sys || "")}</span>
-      <span>${esc(fmtTime(it.at))}</span>${it.rev ? `<span>· تعديل #${esc(it.rev)}</span>` : ""}</div><div class="log-body">${body}</div></div>`;
+    } else if (it.type === "toggle") body = `${esc(TOG_NAMES[it.key] || it.key)}: ${it.to ? "تشغيل" : "إيقاف"}`; else if (it.type === "report") body = "طلب تقرير"; else if (it.type === "restart") body = "طلب إعادة تشغيل"; else if (it.type === "ota") body = it.to ? `تحديث ${esc(OTA_NAMES[it.key] || it.key)} إلى <span class="mono">${esc(it.to)}</span>` : `مسح طلب تحديث ${esc(OTA_NAMES[it.key] || it.key)}`; else body = esc(it.type || "");
+    return `<div class="log-item"><div class="log-top"><span class="pill b">${esc(SYSTEMS[it.sys]?.name || it.sys || "")}</span>\n      <span>${esc(fmtTime(it.at))}</span>${it.rev ? `<span>· تعديل #${esc(it.rev)}</span>` : ""}</div><div class="log-body">${body}</div></div>`;
   }).join("");
 }
 </script>
