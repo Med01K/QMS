@@ -110,6 +110,13 @@
     </div>
 
     <div class="section-gap"></div>
+    
+    <div class="card">
+      <h3>📷 كاميرا QR</h3>
+      <div class="sub" id="camSub">الكاميرا المتصلة بالطابعة، كما تبلّغ بها الطابعةُ الجهازَ الرئيسي.</div>
+      <div id="camWrap"><div class="empty">…</div></div>
+    </div>
+
     <div class="card">
       <h3>⬆️ تحديث البرنامج عن بُعد</h3>
       <div class="sub">اكتب اسم ملف ‎.bin‎ كما رفعته في المستودع الخاص، فينزّله الجهاز في أول لحظة خاملة ويُعيد التشغيل عليه.</div>
@@ -782,6 +789,7 @@ function startGlobal() {
         renderQueue();
         renderDeviceTimes();
         renderSysSwitch();
+        renderCamera();
     }, 5e3);
     globalSubs.push(() => clearInterval(tick));
 }
@@ -808,6 +816,7 @@ async function switchSys(next, force = false) {
     renderTools();
     renderOta();
     renderReport();
+    renderCamera();
     subs.push(onValue(ref(db, "system_config/" + sys), s => {
         cfg = s.val() || {};
         cfgLoaded = true;
@@ -824,6 +833,7 @@ async function switchSys(next, force = false) {
         renderOta();
         renderReport();
         renderTools();
+        renderCamera();
     }, permError));
 }
 
@@ -1143,6 +1153,35 @@ function renderTools() {
             bs.disabled = false;
         }
     };
+}
+
+function renderCamera() {
+    const wrap = $("camWrap");
+    if (!wrap) return;
+    if (!stLoaded) {
+        wrap.innerHTML = '<div class="empty">…</div>';
+        return;
+    }
+    const c = st?.camera;
+    if (!c || typeof c !== "object") {
+        wrap.innerHTML = '<div class="notice info" style="margin-top:0">لم تصل بعدُ حالة الكاميرا. تظهر هنا حين تعمل الطابعة بنسخة V1.13 الجديدة والجهاز الرئيسي بنسخته الجديدة، وكلاهما يبلّغ بها.</div>';
+        $("camSub").textContent = "الكاميرا المتصلة بالطابعة، كما تبلّغ بها الطابعةُ الجهازَ الرئيسي.";
+        return;
+    }
+    const at = Number(c.at) || 0;
+    $("camSub").textContent = at ? `آخر تحديث لهذه البيانات ${ago(at)}.` : "";
+    let pill;
+    if (!queueOnline()) pill = '<span class="dot o"></span> غير معروفة'; else if (c.reported === false) pill = '<span class="dot o"></span> غير معروفة'; else if (c.online) pill = '<span class="dot g"></span> متصلة'; else if (c.known) pill = '<span class="dot r"></span> منقطعة'; else pill = '<span class="dot"></span> لم تتصل قط';
+    const link = c.link === "secure" ? '<span class="pill g">موقّعة ومشفّرة</span>' : c.link === "legacy" ? '<span class="pill r">قديمة بلا توقيع</span>' : "—";
+    let lastPkt = "—";
+    if (c.online) lastPkt = "الآن"; else if (c.known && typeof c.last_packet_s === "number" && at) lastPkt = ago(at - c.last_packet_s * 1e3);
+    let lastCode = "—";
+    if (typeof c.last_code_s === "number") lastCode = c.last_code_s < 0 ? "لا شيء منذ تشغيل الطابعة" : at ? ago(at - c.last_code_s * 1e3) : "—";
+    let notes = "";
+    if (!queueOnline()) notes += '<div class="notice warn">النظام غير متصل بالإنترنت الآن، فما يظهر هنا هو آخر ما وصل منه.</div>'; else if (c.reported === false) notes += '<div class="notice warn">الطابعة لا تُجيب الجهاز الرئيسي منذ أكثر من دقيقة ونصف، فحال الكاميرا غير معروف.</div>';
+    if (c.link === "legacy") notes += '<div class="notice err">الكاميرا تعمل ببرنامج قديم لا توقيع فيه، فلا تقبل الطابعة رموزها. حدّثها من قسم «تحديث البرنامج عن بُعد».</div>';
+    if (Number(c.rejected) > 0) notes += `<div class="notice warn">عدد الحزم التي رفضتها الطابعة: ${esc(c.rejected)}، لأنّ توقيعها لم يصحّ، أو جاءت من جهاز غريب، أو أُعيد إرسالها.</div>`;
+    wrap.innerHTML = `<div class="stats">\n      <div class="stat"><div class="k">الحالة</div><div class="v">${pill}</div></div>\n      <div class="stat"><div class="k">نسخة برنامجها</div><div class="v mono" style="font-size:14px;background:none;padding:0">${esc(c.version || "—")}</div></div>\n      <div class="stat"><div class="k">الوصلة مع الطابعة</div><div class="v">${link}</div></div>\n      <div class="stat"><div class="k">آخر حزمة منها</div><div class="v" style="font-size:14px">${esc(lastPkt)}</div></div>\n      <div class="stat"><div class="k">آخر رمز قرأته</div><div class="v" style="font-size:14px">${esc(lastCode)}</div></div>\n      <div class="stat"><div class="k">رموز استلمتها الطابعة</div><div class="v">${esc(c.codes ?? "—")}</div></div>\n    </div>\n    <div class="ota-line">عنوانها: ${c.mac && c.mac !== "00:00:00:00:00:00" ? `<code>${esc(c.mac)}</code>` : "—"} · العدّادات منذ آخر تشغيل للطابعة، وتُحدَّث كل 10 دقائق على الأكثر، أو فوراً حين تطلب تقريراً.</div>\n    ${notes}`;
 }
 
 function renderReport() {
